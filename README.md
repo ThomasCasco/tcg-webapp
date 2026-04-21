@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TCG Marketplace AR
+
+Pokemon-first marketplace MVP for semi-vendedores in Argentina.
+
+Current implementation focus:
+- Web PWA foundation with Next.js App Router
+- Inventory and listing flows (UI + API stubs)
+- Hybrid pricing suggestion endpoint
+- Payment verification endpoint scaffold
+- Supabase schema draft with RLS policies
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies and run local dev server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev
+npm run lint
+npm run build
+```
+
+## Key Routes
+
+- `/` product landing
+- `/login` auth stub
+- `/register` auth stub
+- `/inventory` seller inventory panel
+- `/listings` seller listing panel
+- `/market` buyer-facing market index
+
+## API Stubs
+
+- `GET /api/health`
+- `GET,POST /api/inventory`
+- `GET,POST /api/listings`
+- `POST /api/pricing/suggest`
+- `POST /api/payments/verify`
+
+## Project Structure
+
+```text
+app/
+	(auth)/
+	(dashboard)/
+	(public)/
+	api/
+lib/
+	domain/
+	pricing/
+	reputation/
+supabase/
+	schema.sql
+```
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+Useful docs:
 
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Supabase Docs](https://supabase.com/docs) - auth, database, storage and RLS.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Next Steps
 
-## Deploy on Vercel
+1. Connect Supabase auth/session in login/register flows.
+2. Replace mock arrays with real queries.
+3. Add webhook signature validation in payment verification.
+4. Implement image capture + recognition pipeline for card detection.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

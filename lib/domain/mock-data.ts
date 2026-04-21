@@ -1,0 +1,125 @@
+import type {
+  CatalogCard,
+  InventoryEntry,
+  Listing,
+  ReputationSnapshot,
+} from "@/lib/domain/types";
+
+export const catalogCards: CatalogCard[] = [
+  {
+    id: "sv4pt-001",
+    name: "Pikachu ex",
+    setName: "Paradox Rift",
+    cardNumber: "001/182",
+    rarity: "Double Rare",
+    marketRefPriceArs: 9800,
+  },
+  {
+    id: "sv3pt-089",
+    name: "Charizard ex",
+    setName: "Obsidian Flames",
+    cardNumber: "089/197",
+    rarity: "Double Rare",
+    marketRefPriceArs: 47600,
+  },
+  {
+    id: "sv2pt-151",
+    name: "Mew ex",
+    setName: "151",
+    cardNumber: "151/165",
+    rarity: "Ultra Rare",
+    marketRefPriceArs: 25100,
+  },
+];
+
+export const inventoryEntries: InventoryEntry[] = [
+  {
+    id: "inv_1001",
+    ownerId: "seller_001",
+    cardId: "sv4pt-001",
+    cardName: "Pikachu ex",
+    condition: "near_mint",
+    quantity: 2,
+    askingPriceArs: 10200,
+    createdAt: "2026-04-20T10:00:00.000Z",
+  },
+  {
+    id: "inv_1002",
+    ownerId: "seller_001",
+    cardId: "sv3pt-089",
+    cardName: "Charizard ex",
+    condition: "lightly_played",
+    quantity: 1,
+    askingPriceArs: 46500,
+    createdAt: "2026-04-20T10:05:00.000Z",
+  },
+  {
+    id: "inv_1003",
+    ownerId: "seller_002",
+    cardId: "sv2pt-151",
+    cardName: "Mew ex",
+    condition: "mint",
+    quantity: 1,
+    askingPriceArs: 25900,
+    createdAt: "2026-04-20T10:10:00.000Z",
+  },
+];
+
+export const listings: Listing[] = [
+  {
+    id: "lst_2001",
+    sellerId: "seller_001",
+    inventoryId: "inv_1001",
+    cardName: "Pikachu ex",
+    setName: "Paradox Rift",
+    condition: "near_mint",
+    priceArs: 10200,
+    quantity: 1,
+    status: "active",
+  },
+  {
+    id: "lst_2002",
+    sellerId: "seller_001",
+    inventoryId: "inv_1002",
+    cardName: "Charizard ex",
+    setName: "Obsidian Flames",
+    condition: "lightly_played",
+    priceArs: 46500,
+    quantity: 1,
+    status: "pending_payment",
+  },
+  {
+    id: "lst_2003",
+    sellerId: "seller_002",
+    inventoryId: "inv_1003",
+    cardName: "Mew ex",
+    setName: "151",
+    condition: "mint",
+    priceArs: 25900,
+    quantity: 1,
+    status: "active",
+  },
+];
+
+export const reputationSnapshots: Record<string, ReputationSnapshot> = {
+  seller_001: {
+    sellerId: "seller_001",
+    completedOrders: 38,
+    responseRatio: 94,
+    accountAgeDays: 410,
+    averageRating: 4.7,
+    reportCount: 1,
+    score: 87,
+    tier: "trusted",
+  },
+  seller_002: {
+    sellerId: "seller_002",
+    completedOrders: 9,
+    responseRatio: 88,
+    accountAgeDays: 90,
+    averageRating: 4.4,
+    reportCount: 0,
+    score: 69,
+    tier: "new",
+  },
+};
