@@ -35,9 +35,9 @@ export const catalogCards: CatalogCard[] = [
 export const inventoryEntries: InventoryEntry[] = [
   {
     id: "inv_1001",
-    ownerId: "seller_001",
-    cardId: "sv4pt-001",
+    sellerHandle: "seller_001",
     cardName: "Pikachu ex",
+    setName: "Paradox Rift",
     condition: "near_mint",
     quantity: 2,
     askingPriceArs: 10200,
@@ -45,9 +45,9 @@ export const inventoryEntries: InventoryEntry[] = [
   },
   {
     id: "inv_1002",
-    ownerId: "seller_001",
-    cardId: "sv3pt-089",
+    sellerHandle: "seller_001",
     cardName: "Charizard ex",
+    setName: "Obsidian Flames",
     condition: "lightly_played",
     quantity: 1,
     askingPriceArs: 46500,
@@ -55,9 +55,9 @@ export const inventoryEntries: InventoryEntry[] = [
   },
   {
     id: "inv_1003",
-    ownerId: "seller_002",
-    cardId: "sv2pt-151",
+    sellerHandle: "seller_002",
     cardName: "Mew ex",
+    setName: "151",
     condition: "mint",
     quantity: 1,
     askingPriceArs: 25900,
@@ -68,7 +68,7 @@ export const inventoryEntries: InventoryEntry[] = [
 export const listings: Listing[] = [
   {
     id: "lst_2001",
-    sellerId: "seller_001",
+    sellerHandle: "seller_001",
     inventoryId: "inv_1001",
     cardName: "Pikachu ex",
     setName: "Paradox Rift",
@@ -76,10 +76,12 @@ export const listings: Listing[] = [
     priceArs: 10200,
     quantity: 1,
     status: "active",
+    listingType: "single",
+    createdAt: "2026-04-20T11:00:00.000Z",
   },
   {
     id: "lst_2002",
-    sellerId: "seller_001",
+    sellerHandle: "seller_001",
     inventoryId: "inv_1002",
     cardName: "Charizard ex",
     setName: "Obsidian Flames",
@@ -87,10 +89,12 @@ export const listings: Listing[] = [
     priceArs: 46500,
     quantity: 1,
     status: "pending_payment",
+    listingType: "single",
+    createdAt: "2026-04-20T11:05:00.000Z",
   },
   {
     id: "lst_2003",
-    sellerId: "seller_002",
+    sellerHandle: "seller_002",
     inventoryId: "inv_1003",
     cardName: "Mew ex",
     setName: "151",
@@ -98,12 +102,14 @@ export const listings: Listing[] = [
     priceArs: 25900,
     quantity: 1,
     status: "active",
+    listingType: "single",
+    createdAt: "2026-04-20T11:10:00.000Z",
   },
 ];
 
 export const reputationSnapshots: Record<string, ReputationSnapshot> = {
   seller_001: {
-    sellerId: "seller_001",
+    sellerHandle: "seller_001",
     completedOrders: 38,
     responseRatio: 94,
     accountAgeDays: 410,
@@ -113,7 +119,7 @@ export const reputationSnapshots: Record<string, ReputationSnapshot> = {
     tier: "trusted",
   },
   seller_002: {
-    sellerId: "seller_002",
+    sellerHandle: "seller_002",
     completedOrders: 9,
     responseRatio: 88,
     accountAgeDays: 90,

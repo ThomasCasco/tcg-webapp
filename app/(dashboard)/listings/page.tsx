@@ -1,58 +1,97 @@
-import { listings } from "@/lib/domain/mock-data";
+import Link from "next/link";
+import { ListingCreateForm } from "@/components/listing-create-form";
+import { ListingRow } from "@/components/listing-row";
+import { listListings } from "@/lib/server/repository";
+import { isSupabaseConfigured } from "@/lib/server/supabase";
+import { getAuthenticatedUser } from "@/lib/server/auth";
+import { redirect } from "next/navigation";
 
-const listingStatusColors: Record<string, string> = {
-  active: "bg-emerald-100 text-emerald-800",
-  pending_payment: "bg-sky-100 text-sky-800",
-  sold: "bg-blue-100 text-blue-800",
-  cancelled: "bg-zinc-200 text-zinc-800",
-};
+export const dynamic = "force-dynamic";
 
-export default function ListingsPage() {
+export default async function ListingsPage() {
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  let listings = [] as Awaited<ReturnType<typeof listListings>>;
+  let loadError: string | null = null;
+
+  try {
+    listings = await listListings({ sellerId: user.id });
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : "Failed to load listings.";
+  }
+
+  const active = listings.filter((l) => l.status === "active");
+  const closed = listings.filter((l) => l.status !== "active");
+
   return (
-    <section className="space-y-4">
-      <div className="surface-panel p-5">
+    <section className="space-y-5">
+      <header className="surface-panel p-5">
         <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-          Publicaciones
+          Paso 2 de 2 · Tus ofertas en el Mercado
         </p>
         <h1 className="mt-1 text-3xl [font-family:var(--font-display)]">
-          Estado de listings
+          Publicaciones
         </h1>
         <p className="mt-2 text-sm text-black/70">
-          Vista inicial para administrar precio, estado y conversion por carta.
+          Tus ofertas visibles en el{" "}
+          <Link href="/market" className="underline">Mercado</Link>. Para publicar una
+          carta individual, cargala en{" "}
+          <Link href="/inventory" className="underline">Inventario</Link> y tocá
+          &quot;Publicar en Mercado&quot;. Acá podés publicar{" "}
+          <strong>Mystery Packs</strong> o administrar las publicaciones existentes.
         </p>
+      </header>
+
+      {!isSupabaseConfigured() ? (
+        <article className="surface-panel border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          Configurá Supabase para publicar en producción.
+        </article>
+      ) : null}
+
+      {loadError ? (
+        <article className="surface-panel border-2 border-rose-300 bg-rose-50 p-4 text-sm text-rose-900">
+          Error de backend: {loadError}
+        </article>
+      ) : null}
+
+      <ListingCreateForm />
+
+      <div className="surface-panel p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Publicaciones activas</h2>
+          <span className="text-xs text-black/55">{active.length} activas</span>
+        </div>
+        {active.length === 0 ? (
+          <p className="mt-3 text-sm text-black/60">
+            No tenés publicaciones activas. Publicá una carta desde{" "}
+            <Link href="/inventory" className="underline">Inventario</Link> o
+            creá un Mystery Pack arriba.
+          </p>
+        ) : (
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {active.map((listing) => (
+              <ListingRow key={listing.id} listing={listing} />
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {listings.map((listing) => (
-          <article key={listing.id} className="surface-panel p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-                  Listing {listing.id}
-                </p>
-                <h2 className="mt-1 text-xl font-semibold">{listing.cardName}</h2>
-              </div>
-              <span
-                className={`rounded-full px-2 py-1 text-xs font-semibold ${listingStatusColors[listing.status]}`}
-              >
-                {listing.status}
-              </span>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-xl border border-[var(--color-border)] bg-white/70 p-3">
-                <p className="text-black/55">Precio ARS</p>
-                <p className="mt-1 font-semibold">
-                  {listing.priceArs.toLocaleString("es-AR")}
-                </p>
-              </div>
-              <div className="rounded-xl border border-[var(--color-border)] bg-white/70 p-3">
-                <p className="text-black/55">Stock</p>
-                <p className="mt-1 font-semibold">{listing.quantity}</p>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
+      {closed.length > 0 ? (
+        <div className="surface-panel p-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Historial</h2>
+            <span className="text-xs text-black/55">{closed.length} cerradas</span>
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {closed.map((listing) => (
+              <ListingRow key={listing.id} listing={listing} />
+            ))}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

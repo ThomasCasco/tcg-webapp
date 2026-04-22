@@ -1,5 +1,12 @@
-import { inventoryEntries } from "@/lib/domain/mock-data";
+import {
+  createInventoryEntry,
+  deleteInventoryEntry,
+  listInventoryEntries,
+  updateInventoryEntry,
+} from "@/lib/server/repository";
 import type { CardCondition, InventoryEntry } from "@/lib/domain/types";
+import { requireAuthenticatedUser } from "@/lib/server/auth";
+import { getRequestIp, rateLimit } from "@/lib/server/rate-limit";
 
 const validConditions: CardCondition[] = [
   "mint",
@@ -12,9 +19,22 @@ const validConditions: CardCondition[] = [
 
 type CreateInventoryPayload = {
   cardName?: string;
+  setName?: string;
+  catalogCardId?: string;
+  imageUrl?: string;
   condition?: CardCondition;
   quantity?: number;
   askingPriceArs?: number;
+};
+
+type UpdateInventoryPayload = {
+  id?: string;
+  quantity?: number;
+  askingPriceArs?: number;
+};
+
+type DeleteInventoryPayload = {
+  id?: string;
 };
 
 function isValidCondition(value: unknown): value is CardCondition {
@@ -22,13 +42,43 @@ function isValidCondition(value: unknown): value is CardCondition {
 }
 
 export async function GET() {
-  return Response.json({
-    items: inventoryEntries,
-    total: inventoryEntries.length,
-  });
+  const user = await requireAuthenticatedUser().catch(() => null);
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const items = await listInventoryEntries({ ownerId: user.id });
+    return Response.json({
+      items,
+      total: items.length,
+    });
+  } catch (error) {
+    return Response.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to load inventory.",
+      },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(request: Request) {
+  const user = await requireAuthenticatedUser().catch(() => null);
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const ip = getRequestIp(request);
+  const limit = rateLimit(`inventory-post:${user.id}:${ip}`, 30, 60_000);
+  if (!limit.allowed) {
+    return Response.json(
+      { error: `Too many requests. Retry in ${limit.retryAfterSeconds}s.` },
+      { status: 429 },
+    );
+  }
+
   let payload: CreateInventoryPayload;
 
   try {
@@ -64,22 +114,93 @@ export async function POST(request: Request) {
     );
   }
 
-  const item: InventoryEntry = {
-    id: `inv_${Date.now()}`,
-    ownerId: "seller_demo",
-    cardId: "pending_catalog_match",
-    cardName: payload.cardName.trim(),
-    condition: payload.condition,
-    quantity,
-    askingPriceArs: payload.askingPriceArs,
-    createdAt: new Date().toISOString(),
-  };
+  try {
+    const item: InventoryEntry = await createInventoryEntry({
+      ownerId: user.id,
+      sellerHandle: user.username,
+      cardName: payload.cardName.trim(),
+      setName: payload.setName?.trim(),
+      catalogCardId: payload.catalogCardId?.trim() || undefined,
+      imageUrl: payload.imageUrl?.trim() || undefined,
+      condition: payload.condition,
+      quantity,
+      askingPriceArs: payload.askingPriceArs,
+    });
 
-  return Response.json(
-    {
-      item,
-      warning: "Persistence is not connected yet. This is a stub response.",
-    },
-    { status: 201 },
-  );
+    return Response.json({ item }, { status: 201 });
+  } catch (error) {
+    return Response.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to create inventory entry.",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  const user = await requireAuthenticatedUser().catch(() => null);
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let payload: UpdateInventoryPayload;
+  try {
+    payload = (await request.json()) as UpdateInventoryPayload;
+  } catch {
+    return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  if (!payload.id) {
+    return Response.json({ error: "id is required." }, { status: 400 });
+  }
+
+  try {
+    const item = await updateInventoryEntry({
+      entryId: payload.id,
+      ownerId: user.id,
+      quantity: payload.quantity,
+      askingPriceArs: payload.askingPriceArs,
+    });
+
+    return Response.json({ item });
+  } catch (error) {
+    return Response.json(
+      { error: error instanceof Error ? error.message : "Failed to update inventory." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  const user = await requireAuthenticatedUser().catch(() => null);
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let payload: DeleteInventoryPayload;
+  try {
+    payload = (await request.json()) as DeleteInventoryPayload;
+  } catch {
+    return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  if (!payload.id) {
+    return Response.json({ error: "id is required." }, { status: 400 });
+  }
+
+  try {
+    await deleteInventoryEntry({
+      entryId: payload.id,
+      ownerId: user.id,
+    });
+
+    return Response.json({ success: true });
+  } catch (error) {
+    return Response.json(
+      { error: error instanceof Error ? error.message : "Failed to delete inventory." },
+      { status: 500 },
+    );
+  }
 }
