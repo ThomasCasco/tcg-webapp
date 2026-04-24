@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import type { CardCondition } from "@/lib/domain/types";
+import { formatConditionEs } from "@/lib/shared/condition-labels";
 
 const conditions: CardCondition[] = [
   "mint",
@@ -47,6 +48,9 @@ export function ListingCreateForm() {
       packRarityFloor: String(form.get("packRarityFloor") ?? "common"),
       packTheme: String(form.get("packTheme") ?? "").trim(),
       packDescription: String(form.get("packDescription") ?? "").trim(),
+      offersShipping: form.get("offersShipping") === "on",
+      offersPickup: form.get("offersPickup") === "on",
+      deliveryAreaNotes: String(form.get("deliveryAreaNotes") ?? "").trim(),
     };
 
     if (!payload.cardName || payload.cardName.length < 2) {
@@ -157,7 +161,7 @@ export function ListingCreateForm() {
           >
             {conditions.map((condition) => (
               <option key={condition} value={condition}>
-                {condition}
+                {formatConditionEs(condition)}
               </option>
             ))}
           </select>
@@ -180,6 +184,32 @@ export function ListingCreateForm() {
             type="number"
             min={1}
             defaultValue={1}
+            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
+          />
+        </label>
+      </div>
+
+      <div className="rounded-xl border border-[var(--color-border)] bg-white/50 p-3 text-sm text-black/75">
+        <p className="font-semibold text-black/85">Entrega del pack</p>
+        <p className="mt-1 text-xs text-black/60">
+          El comprador ve esto en el Mercado. Marcá al menos una opción y detallá dónde / cómo.
+        </p>
+        <label className="mt-2 flex cursor-pointer items-center gap-2">
+          <input type="checkbox" name="offersPickup" value="on" defaultChecked />
+          Retiro en persona
+        </label>
+        <label className="mt-1 flex cursor-pointer items-center gap-2">
+          <input type="checkbox" name="offersShipping" value="on" />
+          Envío postal / courier
+        </label>
+        <label className="mt-2 block text-sm text-black/75">
+          Detalle (mín. 8 caracteres)
+          <textarea
+            name="deliveryAreaNotes"
+            required
+            minLength={8}
+            rows={2}
+            placeholder="Ej.: Retiro en Rosario centro / envío OCA a todo el país a cargo del comprador."
             className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
           />
         </label>

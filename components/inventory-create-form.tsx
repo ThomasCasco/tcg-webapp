@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import type { CardCondition } from "@/lib/domain/types";
+import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { CardPicker, type PickedCard } from "@/components/card-picker";
 
 const conditions: CardCondition[] = [
@@ -130,7 +131,7 @@ export function InventoryCreateForm() {
           >
             {conditions.map((condition) => (
               <option key={condition} value={condition}>
-                {condition}
+                {formatConditionEs(condition)}
               </option>
             ))}
           </select>

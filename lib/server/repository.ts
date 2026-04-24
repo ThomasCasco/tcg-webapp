@@ -10,9 +10,15 @@ import type {
   ListingType,
   Notification,
   PaymentEvent,
+  PaymentEventWithListing,
   PaymentProvider,
+  TransactionChatMessage,
   PaymentVerificationStatus,
+  SellerPaymentDetails,
+  SellerPaymentProfile,
+  SellerPaymentProvider,
 } from "@/lib/domain/types";
+import { assertListingLogisticsValid } from "@/lib/shared/listing-logistics";
 import { getSupabaseAdminClient, isSupabaseConfigured } from "@/lib/server/supabase";
 
 const INVENTORY_TABLE = "inventory_entries";
@@ -21,6 +27,8 @@ const PAYMENTS_TABLE = "payment_events";
 const DISPUTES_TABLE = "dispute_events";
 const WATCHES_TABLE = "card_watches";
 const NOTIFICATIONS_TABLE = "notifications";
+const PROFILES_TABLE = "profiles";
+const CHAT_MESSAGES_TABLE = "transaction_chat_messages";
 
 const SUCCESS_PROVIDER_STATUSES = new Set(["approved", "accredited", "succeeded"]);
 
@@ -57,6 +65,10 @@ type ListingRow = {
   pack_theme: string | null;
   pack_description: string | null;
   created_at: string;
+  reserved_at?: string | null;
+  offers_shipping?: boolean | null;
+  offers_pickup?: boolean | null;
+  delivery_area_notes?: string | null;
 };
 
 type WatchRow = {
@@ -75,6 +87,15 @@ type NotificationRow = {
   body: string;
   link_path: string | null;
   read_at: string | null;
+  created_at: string;
+};
+
+type ChatMessageRow = {
+  id: string;
+  transaction_id: string;
+  sender_id: string;
+  sender_handle: string;
+  body: string;
   created_at: string;
 };
 
@@ -106,6 +127,16 @@ type DisputeRow = {
   resolved_at: string | null;
 };
 
+type ProfileRow = {
+  id: string;
+  username: string;
+  whatsapp: string | null;
+  payment_provider: SellerPaymentProvider | null;
+  payment_alias: string | null;
+  payment_instructions: string | null;
+  updated_at: string;
+};
+
 type CreateInventoryInput = {
   ownerId: string;
   sellerHandle: string;
@@ -134,6 +165,9 @@ type CreateListingInput = {
   packRarityFloor?: string;
   packTheme?: string;
   packDescription?: string;
+  offersShipping: boolean;
+  offersPickup: boolean;
+  deliveryAreaNotes: string;
 };
 
 type ReserveListingInput = {
@@ -156,6 +190,18 @@ type UpdateInventoryInput = {
   ownerId: string;
   askingPriceArs?: number;
   quantity?: number;
+  imageUrl?: string | null;
+};
+
+type UpdateListingInput = {
+  listingId: string;
+  sellerId: string;
+  priceArs?: number;
+  quantity?: number;
+  imageUrl?: string | null;
+  offersShipping?: boolean;
+  offersPickup?: boolean;
+  deliveryAreaNotes?: string | null;
 };
 
 type CancelListingInput = {
@@ -176,6 +222,14 @@ type CreateDisputeInput = {
   openedByHandle: string;
   reason: string;
   details: string;
+};
+
+type UpdateSellerPaymentProfileInput = {
+  userId: string;
+  whatsapp?: string;
+  paymentProvider: SellerPaymentProvider;
+  paymentAlias?: string;
+  paymentInstructions?: string;
 };
 
 function mapInventoryRow(row: InventoryRow): InventoryEntry {
@@ -213,7 +267,11 @@ function mapListingRow(row: ListingRow): Listing {
     packRarityFloor: row.pack_rarity_floor ?? undefined,
     packTheme: row.pack_theme ?? undefined,
     packDescription: row.pack_description ?? undefined,
+    reservedAt: row.reserved_at ? String(row.reserved_at) : undefined,
     createdAt: row.created_at,
+    offersShipping: Boolean(row.offers_shipping),
+    offersPickup: Boolean(row.offers_pickup),
+    deliveryAreaNotes: row.delivery_area_notes?.trim() || undefined,
   };
 }
 
@@ -236,6 +294,17 @@ function mapNotificationRow(row: NotificationRow): Notification {
     body: row.body,
     linkPath: row.link_path ?? undefined,
     readAt: row.read_at ?? undefined,
+    createdAt: row.created_at,
+  };
+}
+
+function mapChatMessageRow(row: ChatMessageRow): TransactionChatMessage {
+  return {
+    id: row.id,
+    transactionId: row.transaction_id,
+    senderId: row.sender_id,
+    senderHandle: row.sender_handle,
+    body: row.body,
     createdAt: row.created_at,
   };
 }
@@ -271,12 +340,96 @@ function mapDisputeRow(row: DisputeRow): DisputeEvent {
   };
 }
 
+function mapSellerPaymentProfile(row: ProfileRow): SellerPaymentProfile {
+  return {
+    userId: row.id,
+    username: row.username,
+    whatsapp: row.whatsapp ?? undefined,
+    paymentProvider: row.payment_provider ?? "mercado_pago",
+    paymentAlias: row.payment_alias ?? undefined,
+    paymentInstructions: row.payment_instructions ?? undefined,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapSellerPaymentDetails(row: ProfileRow): SellerPaymentDetails {
+  return {
+    sellerId: row.id,
+    sellerHandle: row.username,
+    whatsapp: row.whatsapp ?? undefined,
+    paymentProvider: row.payment_provider ?? "mercado_pago",
+    paymentAlias: row.payment_alias ?? undefined,
+    paymentInstructions: row.payment_instructions ?? undefined,
+  };
+}
+
+function resolveTransactionProviderFromSellerPayment(
+  paymentProvider?: SellerPaymentProvider,
+): PaymentProvider {
+  if (paymentProvider === "mercado_pago") {
+    return "mercado_pago";
+  }
+
+  return "external_link";
+}
+
 function assertSupabaseReady() {
   if (!isSupabaseConfigured()) {
     throw new Error(
       "Backend not configured. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
     );
   }
+}
+
+export async function getSellerPaymentProfile(userId: string): Promise<SellerPaymentProfile> {
+  assertSupabaseReady();
+
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(PROFILES_TABLE)
+    .select(
+      "id,username,whatsapp,payment_provider,payment_alias,payment_instructions,updated_at",
+    )
+    .eq("id", userId)
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Profile not found.");
+  }
+
+  return mapSellerPaymentProfile(data as ProfileRow);
+}
+
+export async function updateSellerPaymentProfile(
+  input: UpdateSellerPaymentProfileInput,
+): Promise<SellerPaymentProfile> {
+  assertSupabaseReady();
+
+  const client = getSupabaseAdminClient();
+  const paymentAlias = input.paymentAlias?.trim() || null;
+  const paymentInstructions = input.paymentInstructions?.trim() || null;
+  const whatsapp = input.whatsapp?.trim() || null;
+
+  const { data, error } = await client
+    .from(PROFILES_TABLE)
+    .update({
+      whatsapp,
+      payment_provider: input.paymentProvider,
+      payment_alias: paymentAlias,
+      payment_instructions: paymentInstructions,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.userId)
+    .select(
+      "id,username,whatsapp,payment_provider,payment_alias,payment_instructions,updated_at",
+    )
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Failed to update seller payment profile.");
+  }
+
+  return mapSellerPaymentProfile(data as ProfileRow);
 }
 
 export async function checkBackendHealth() {
@@ -379,12 +532,16 @@ export async function updateInventoryEntry(
 ): Promise<InventoryEntry> {
   assertSupabaseReady();
 
-  const updates: Record<string, number> = {};
+  const updates: Record<string, number | string | null> = {};
   if (typeof input.askingPriceArs === "number") {
     updates.asking_price_ars = Math.max(0, Math.round(input.askingPriceArs));
   }
   if (typeof input.quantity === "number") {
     updates.quantity = Math.max(1, Math.round(input.quantity));
+  }
+  if (input.imageUrl !== undefined) {
+    const trimmed = input.imageUrl?.trim();
+    updates.image_url = trimmed && trimmed.length > 0 ? trimmed : null;
   }
 
   if (Object.keys(updates).length === 0) {
@@ -461,6 +618,12 @@ export async function listListings(options?: {
 export async function createListing(input: CreateListingInput): Promise<Listing> {
   assertSupabaseReady();
 
+  assertListingLogisticsValid(
+    input.offersShipping,
+    input.offersPickup,
+    input.deliveryAreaNotes,
+  );
+
   const client = getSupabaseAdminClient();
   const { data, error } = await client
     .from(LISTINGS_TABLE)
@@ -481,6 +644,9 @@ export async function createListing(input: CreateListingInput): Promise<Listing>
       pack_rarity_floor: input.packRarityFloor ?? null,
       pack_theme: input.packTheme ?? null,
       pack_description: input.packDescription ?? null,
+      offers_shipping: input.offersShipping,
+      offers_pickup: input.offersPickup,
+      delivery_area_notes: input.deliveryAreaNotes.trim(),
       created_at: new Date().toISOString(),
     })
     .select("*")
@@ -507,7 +673,7 @@ export async function cancelListing(input: CancelListingInput): Promise<Listing>
   const client = getSupabaseAdminClient();
   const { data, error } = await client
     .from(LISTINGS_TABLE)
-    .update({ status: "cancelled" })
+    .update({ status: "cancelled", reserved_at: null })
     .eq("id", input.listingId)
     .eq("seller_id", input.sellerId)
     .select("*")
@@ -520,9 +686,118 @@ export async function cancelListing(input: CancelListingInput): Promise<Listing>
   return mapListingRow(data as ListingRow);
 }
 
+export async function updateListing(input: UpdateListingInput): Promise<Listing> {
+  assertSupabaseReady();
+
+  const client = getSupabaseAdminClient();
+  const updates: Record<string, number | string | null | boolean> = {};
+  if (typeof input.priceArs === "number" && Number.isFinite(input.priceArs)) {
+    if (input.priceArs <= 0) {
+      throw new Error("priceArs must be greater than 0.");
+    }
+    updates.price_ars = Math.round(input.priceArs);
+  }
+  if (typeof input.quantity === "number" && Number.isFinite(input.quantity)) {
+    const q = Math.max(1, Math.round(input.quantity));
+    if (q > 100) {
+      throw new Error("quantity must be at most 100.");
+    }
+    updates.quantity = q;
+  }
+  if (input.imageUrl !== undefined) {
+    const trimmed = input.imageUrl?.trim();
+    updates.image_url = trimmed && trimmed.length > 0 ? trimmed : null;
+  }
+  if (typeof input.offersShipping === "boolean") {
+    updates.offers_shipping = input.offersShipping;
+  }
+  if (typeof input.offersPickup === "boolean") {
+    updates.offers_pickup = input.offersPickup;
+  }
+  if (input.deliveryAreaNotes !== undefined) {
+    const t = input.deliveryAreaNotes?.trim() ?? "";
+    updates.delivery_area_notes = t.length > 0 ? t : null;
+  }
+
+  const touchesLogistics =
+    typeof input.offersShipping === "boolean" ||
+    typeof input.offersPickup === "boolean" ||
+    input.deliveryAreaNotes !== undefined;
+
+  if (touchesLogistics) {
+    const { data: cur, error: curError } = await client
+      .from(LISTINGS_TABLE)
+      .select("offers_shipping, offers_pickup, delivery_area_notes")
+      .eq("id", input.listingId)
+      .eq("seller_id", input.sellerId)
+      .maybeSingle();
+
+    if (curError || !cur) {
+      throw new Error(curError?.message ?? "Listing not found.");
+    }
+    const row = cur as {
+      offers_shipping: boolean | null;
+      offers_pickup: boolean | null;
+      delivery_area_notes: string | null;
+    };
+    const nextShip =
+      typeof input.offersShipping === "boolean"
+        ? input.offersShipping
+        : Boolean(row.offers_shipping);
+    const nextPick =
+      typeof input.offersPickup === "boolean" ? input.offersPickup : Boolean(row.offers_pickup);
+    const nextNotes =
+      input.deliveryAreaNotes !== undefined
+        ? (input.deliveryAreaNotes?.trim() ?? "")
+        : (row.delivery_area_notes ?? "");
+    assertListingLogisticsValid(nextShip, nextPick, nextNotes);
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new Error("No changes provided.");
+  }
+
+  const { data, error } = await client
+    .from(LISTINGS_TABLE)
+    .update(updates)
+    .eq("id", input.listingId)
+    .eq("seller_id", input.sellerId)
+    .eq("status", "active")
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Failed to update listing.");
+  }
+
+  return mapListingRow(data as ListingRow);
+}
+
+export async function releaseStalePendingListings(maxAgeHours = 24): Promise<number> {
+  assertSupabaseReady();
+
+  const cutoff = new Date(Date.now() - maxAgeHours * 3_600_000).toISOString();
+  const client = getSupabaseAdminClient();
+
+  const { data, error } = await client
+    .from(LISTINGS_TABLE)
+    .update({ status: "active", reserved_at: null })
+    .eq("status", "pending_payment")
+    .not("reserved_at", "is", null)
+    .lt("reserved_at", cutoff)
+    .select("id");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data?.length ?? 0;
+}
+
 export async function reserveListing(input: ReserveListingInput): Promise<{
   listing: Listing;
   transactionId: string;
+  sellerPayment: SellerPaymentDetails;
 }> {
   assertSupabaseReady();
 
@@ -531,7 +806,7 @@ export async function reserveListing(input: ReserveListingInput): Promise<{
 
   const { data: listingCheck, error: listingCheckError } = await client
     .from(LISTINGS_TABLE)
-    .select("id,seller_id")
+    .select("id,seller_id,seller_handle")
     .eq("id", listingId)
     .single();
 
@@ -539,13 +814,19 @@ export async function reserveListing(input: ReserveListingInput): Promise<{
     throw new Error("Listing is not available.");
   }
 
-  if ((listingCheck as { seller_id: string | null }).seller_id === input.buyerId) {
+  const listingOwner = listingCheck as {
+    seller_id: string | null;
+    seller_handle: string;
+  };
+
+  if (listingOwner.seller_id === input.buyerId) {
     throw new Error("You cannot reserve your own listing.");
   }
 
+  const reservedAt = new Date().toISOString();
   const { data: activeListing, error: activeError } = await client
     .from(LISTINGS_TABLE)
-    .update({ status: "pending_payment" })
+    .update({ status: "pending_payment", reserved_at: reservedAt })
     .eq("id", listingId)
     .eq("status", "active")
     .select("*")
@@ -555,6 +836,28 @@ export async function reserveListing(input: ReserveListingInput): Promise<{
     throw new Error("Listing is not available.");
   }
 
+  let sellerPayment: SellerPaymentDetails = {
+    sellerId: listingOwner.seller_id ?? undefined,
+    sellerHandle: listingOwner.seller_handle,
+  };
+
+  if (listingOwner.seller_id) {
+    const { data: sellerProfile, error: sellerProfileError } = await client
+      .from(PROFILES_TABLE)
+      .select(
+        "id,username,whatsapp,payment_provider,payment_alias,payment_instructions,updated_at",
+      )
+      .eq("id", listingOwner.seller_id)
+      .maybeSingle();
+
+    if (!sellerProfileError && sellerProfile) {
+      sellerPayment = mapSellerPaymentDetails(sellerProfile as ProfileRow);
+    }
+  }
+
+  const transactionProvider = resolveTransactionProviderFromSellerPayment(
+    sellerPayment.paymentProvider,
+  );
   const transactionId = `tx_${Date.now()}`;
   const now = new Date().toISOString();
 
@@ -563,7 +866,7 @@ export async function reserveListing(input: ReserveListingInput): Promise<{
     listing_id: listingId,
     buyer_id: input.buyerId,
     buyer_handle: input.buyerHandle.trim().toLowerCase(),
-    provider: "external_link",
+    provider: transactionProvider,
     provider_payment_id: null,
     provider_status: "pending",
     verification_status: "pending_review",
@@ -580,6 +883,7 @@ export async function reserveListing(input: ReserveListingInput): Promise<{
   return {
     listing: mapListingRow(activeListing as ListingRow),
     transactionId,
+    sellerPayment,
   };
 }
 
@@ -592,7 +896,11 @@ export async function verifyTransaction(input: VerifyTransactionInput): Promise<
   const client = getSupabaseAdminClient();
   const normalizedStatus = input.providerStatus.trim().toLowerCase();
   const verificationStatus: PaymentVerificationStatus =
-    SUCCESS_PROVIDER_STATUSES.has(normalizedStatus) ? "verified" : "pending_review";
+    input.provider === "external_link"
+      ? "pending_review"
+      : SUCCESS_PROVIDER_STATUSES.has(normalizedStatus)
+        ? "verified"
+        : "pending_review";
 
   const { data: existingPayment, error: existingPaymentError } = await client
     .from(PAYMENTS_TABLE)
@@ -632,7 +940,7 @@ export async function verifyTransaction(input: VerifyTransactionInput): Promise<
   if (payment.verificationStatus === "verified") {
     const { error: listingError } = await client
       .from(LISTINGS_TABLE)
-      .update({ status: "sold" })
+      .update({ status: "sold", reserved_at: null })
       .eq("id", payment.listingId);
 
     if (listingError) {
@@ -647,7 +955,24 @@ export async function verifyTransaction(input: VerifyTransactionInput): Promise<
   };
 }
 
-export async function listTransactionsForUser(userId: string): Promise<PaymentEvent[]> {
+export async function getTransactionProvider(transactionId: string): Promise<PaymentProvider> {
+  assertSupabaseReady();
+
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(PAYMENTS_TABLE)
+    .select("provider")
+    .eq("transaction_id", transactionId.trim())
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Transaction not found.");
+  }
+
+  return ((data as { provider: PaymentProvider | null }).provider ?? "external_link");
+}
+
+export async function listTransactionsForUser(userId: string): Promise<PaymentEventWithListing[]> {
   assertSupabaseReady();
 
   const client = getSupabaseAdminClient();
@@ -688,13 +1013,72 @@ export async function listTransactionsForUser(userId: string): Promise<PaymentEv
   }
 
   const merged = new Map<string, PaymentRow>();
-  for (const row of ([...(byBuyer ?? []), ...bySeller] as PaymentRow[])) {
+  for (const row of [...(byBuyer ?? []), ...bySeller] as PaymentRow[]) {
     merged.set(row.id, row);
   }
 
-  return Array.from(merged.values())
+  const payments = Array.from(merged.values())
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .map(mapPaymentRow);
+
+  const lids = [...new Set(payments.map((p) => p.listingId))];
+  if (lids.length === 0) {
+    return payments.map((p) => ({ ...p }));
+  }
+
+  const { data: listingRows, error: lrError } = await client
+    .from(LISTINGS_TABLE)
+    .select(
+      "id, card_name, set_name, seller_handle, offers_shipping, offers_pickup, delivery_area_notes",
+    )
+    .in("id", lids);
+
+  if (lrError) {
+    throw new Error(lrError.message);
+  }
+
+  type ListingMeta = {
+    cardName: string;
+    setName: string;
+    sellerHandle: string;
+    offersShipping: boolean;
+    offersPickup: boolean;
+    deliveryAreaNotes?: string;
+  };
+
+  const byListing = new Map<string, ListingMeta>();
+  for (const raw of listingRows ?? []) {
+    const row = raw as {
+      id: string;
+      card_name: string;
+      set_name: string;
+      seller_handle: string;
+      offers_shipping?: boolean | null;
+      offers_pickup?: boolean | null;
+      delivery_area_notes?: string | null;
+    };
+    byListing.set(row.id, {
+      cardName: row.card_name,
+      setName: row.set_name,
+      sellerHandle: row.seller_handle,
+      offersShipping: Boolean(row.offers_shipping),
+      offersPickup: Boolean(row.offers_pickup),
+      deliveryAreaNotes: row.delivery_area_notes?.trim() || undefined,
+    });
+  }
+
+  return payments.map((p) => {
+    const meta = byListing.get(p.listingId);
+    return {
+      ...p,
+      listingCardName: meta?.cardName,
+      listingSetName: meta?.setName,
+      listingSellerHandle: meta?.sellerHandle,
+      offersShipping: meta?.offersShipping,
+      offersPickup: meta?.offersPickup,
+      deliveryAreaNotes: meta?.deliveryAreaNotes,
+    };
+  });
 }
 
 export async function updateFulfillmentStatus(
@@ -983,6 +1367,101 @@ export async function markNotificationsRead(input: {
   const { error, count } = await query;
   if (error) throw new Error(error.message);
   return count ?? 0;
+}
+
+async function assertUserIsTransactionParty(
+  client: ReturnType<typeof getSupabaseAdminClient>,
+  transactionId: string,
+  userId: string,
+): Promise<void> {
+  const { data: payment, error } = await client
+    .from(PAYMENTS_TABLE)
+    .select("buyer_id, listing_id")
+    .eq("transaction_id", transactionId.trim())
+    .maybeSingle();
+
+  if (error || !payment) {
+    throw new Error("Transaction not found.");
+  }
+
+  const row = payment as { buyer_id: string | null; listing_id: string };
+  if (row.buyer_id === userId) {
+    return;
+  }
+
+  const { data: listing, error: listingError } = await client
+    .from(LISTINGS_TABLE)
+    .select("seller_id")
+    .eq("id", row.listing_id)
+    .maybeSingle();
+
+  if (listingError || !listing) {
+    throw new Error("Listing not found.");
+  }
+
+  const sellerId = (listing as { seller_id: string | null }).seller_id;
+  if (sellerId === userId) {
+    return;
+  }
+
+  throw new Error("Not allowed to access this conversation.");
+}
+
+export async function listTransactionChatMessages(input: {
+  transactionId: string;
+  actorUserId: string;
+}): Promise<TransactionChatMessage[]> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  await assertUserIsTransactionParty(client, input.transactionId, input.actorUserId);
+
+  const { data, error } = await client
+    .from(CHAT_MESSAGES_TABLE)
+    .select("*")
+    .eq("transaction_id", input.transactionId.trim())
+    .order("created_at", { ascending: true })
+    .limit(200);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as ChatMessageRow[]).map(mapChatMessageRow);
+}
+
+export async function postTransactionChatMessage(input: {
+  transactionId: string;
+  actorUserId: string;
+  actorHandle: string;
+  body: string;
+}): Promise<TransactionChatMessage> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  await assertUserIsTransactionParty(client, input.transactionId, input.actorUserId);
+
+  const body = input.body.trim();
+  if (body.length < 1 || body.length > 2000) {
+    throw new Error("Message body must be between 1 and 2000 characters.");
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await client
+    .from(CHAT_MESSAGES_TABLE)
+    .insert({
+      transaction_id: input.transactionId.trim(),
+      sender_id: input.actorUserId,
+      sender_handle: input.actorHandle.trim().toLowerCase(),
+      body,
+      created_at: now,
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Failed to send message.");
+  }
+
+  return mapChatMessageRow(data as ChatMessageRow);
 }
 
 async function fanoutListingToWatchers(listing: Listing): Promise<void> {

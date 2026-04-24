@@ -14,6 +14,12 @@ export type ListingStatus =
 
 export type PaymentProvider = "mercado_pago" | "stripe" | "external_link";
 
+export type SellerPaymentProvider =
+  | "mercado_pago"
+  | "bank_transfer"
+  | "cash"
+  | "other";
+
 export type PaymentVerificationStatus = "verified" | "pending_review";
 
 export type FulfillmentStatus =
@@ -69,6 +75,34 @@ export interface Listing {
   packRarityFloor?: string;
   packTheme?: string;
   packDescription?: string;
+  /** Inicio de reserva pendiente de pago (para liberar automaticamente). */
+  reservedAt?: string;
+  createdAt: string;
+  /** Ofrece envío postal / courier. */
+  offersShipping?: boolean;
+  /** Ofrece retiro en persona. */
+  offersPickup?: boolean;
+  /** Dónde y cómo: zona de retiro, couriers, costos, horarios. */
+  deliveryAreaNotes?: string;
+}
+
+/** Transacción + datos de la publicación para la UI de seguimiento. */
+export interface PaymentEventWithListing extends PaymentEvent {
+  listingCardName?: string;
+  listingSetName?: string;
+  listingSellerHandle?: string;
+  offersShipping?: boolean;
+  offersPickup?: boolean;
+  deliveryAreaNotes?: string;
+}
+
+/** Mensaje de chat ligado a una transacción (mismo hilo comprador–vendedor). */
+export interface TransactionChatMessage {
+  id: string;
+  transactionId: string;
+  senderId: string;
+  senderHandle: string;
+  body: string;
   createdAt: string;
 }
 
@@ -127,4 +161,23 @@ export interface ReputationSnapshot {
   reportCount: number;
   score: number;
   tier: "new" | "trusted" | "elite";
+}
+
+export interface SellerPaymentProfile {
+  userId: string;
+  username: string;
+  whatsapp?: string;
+  paymentProvider: SellerPaymentProvider;
+  paymentAlias?: string;
+  paymentInstructions?: string;
+  updatedAt: string;
+}
+
+export interface SellerPaymentDetails {
+  sellerId?: string;
+  sellerHandle: string;
+  paymentProvider?: SellerPaymentProvider;
+  paymentAlias?: string;
+  paymentInstructions?: string;
+  whatsapp?: string;
 }

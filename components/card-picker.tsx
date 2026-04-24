@@ -103,8 +103,6 @@ export function CardPicker({
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
-    // setOpen is a stable React setter, safe to omit from deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, picked, selectedSet]);
 
   useEffect(() => {
@@ -119,8 +117,6 @@ export function CardPicker({
     }
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
-    // setOpen/setSetOpen are stable React setters, safe to omit from deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function choose(card: PickedCard) {

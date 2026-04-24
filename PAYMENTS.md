@@ -86,11 +86,16 @@ El payload espera:
 ```json
 {
   "transactionId": "tx_...",
-  "provider": "mercado_pago",
-  "providerPaymentId": "123456789",
-  "providerStatus": "approved"
+   "providerPaymentId": "123456789"
 }
 ```
+
+El backend obtiene automaticamente el `provider` esperado desde la
+transaccion reservada para evitar errores del cliente.
+
+Para `mercado_pago` y `stripe`, el backend ignora cualquier status enviado
+por cliente y consulta el proveedor por API en server-side. Solo
+`external_link` mantiene flujo manual con `providerStatus` opcional.
 
 Webhook firmado opcional: header `x-webhook-secret` con el valor de la
 env `PAYMENT_WEBHOOK_SECRET`. Esto permite a MP/Stripe avisarnos

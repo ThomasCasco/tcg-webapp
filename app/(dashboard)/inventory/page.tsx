@@ -94,7 +94,7 @@ export default async function InventoryPage() {
         <div className="grid gap-3 md:grid-cols-2">
           {inventoryEntries.map((entry) => (
             <InventoryEntryCard
-              key={entry.id}
+              key={`${entry.id}:${entry.askingPriceArs ?? 0}:${entry.quantity}:${entry.imageUrl ?? ""}:${activeListingsByInventoryId.has(entry.id)}`}
               entry={entry}
               alreadyListed={activeListingsByInventoryId.has(entry.id)}
             />

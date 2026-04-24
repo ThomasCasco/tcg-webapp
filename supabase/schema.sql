@@ -4,6 +4,11 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text not null unique,
   whatsapp text,
+  payment_provider text not null default 'mercado_pago' check (
+    payment_provider in ('mercado_pago', 'bank_transfer', 'cash', 'other')
+  ),
+  payment_alias text,
+  payment_instructions text,
   account_status text not null default 'active' check (account_status in ('active', 'suspended')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -181,6 +186,17 @@ create table if not exists public.dispute_events (
 
 alter table if exists public.inventory_entries
   add column if not exists owner_id uuid references auth.users(id) on delete set null;
+
+alter table if exists public.profiles
+  add column if not exists payment_provider text not null default 'mercado_pago' check (
+    payment_provider in ('mercado_pago', 'bank_transfer', 'cash', 'other')
+  );
+
+alter table if exists public.profiles
+  add column if not exists payment_alias text;
+
+alter table if exists public.profiles
+  add column if not exists payment_instructions text;
 
 alter table if exists public.market_listings
   add column if not exists seller_id uuid references auth.users(id) on delete set null;

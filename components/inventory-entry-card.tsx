@@ -3,15 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { InventoryEntry } from "@/lib/domain/types";
-
-const conditionLabel: Record<string, string> = {
-  mint: "Mint",
-  near_mint: "Near Mint",
-  lightly_played: "Lightly Played",
-  moderately_played: "Moderately Played",
-  heavily_played: "Heavily Played",
-  damaged: "Damaged",
-};
+import { formatConditionEs } from "@/lib/shared/condition-labels";
+import { assertListingLogisticsValid } from "@/lib/shared/listing-logistics";
 
 const conditionBadge: Record<string, string> = {
   mint: "bg-emerald-100 text-emerald-800",
@@ -33,11 +26,19 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
     entry.askingPriceArs ? String(entry.askingPriceArs) : "",
   );
   const [quantity, setQuantity] = useState<number>(entry.quantity);
-  const [savingField, setSavingField] = useState<null | "edit" | "delete" | "publish">(null);
+  const [imageUrl, setImageUrl] = useState(entry.imageUrl ?? "");
+  const [offersShipping, setOffersShipping] = useState(false);
+  const [offersPickup, setOffersPickup] = useState(true);
+  const [deliveryNotes, setDeliveryNotes] = useState("");
+  const [savingField, setSavingField] = useState<null | "edit" | "delete" | "publish" | "upload">(
+    null,
+  );
   const [message, setMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   const dirty =
-    Number(price || 0) !== (entry.askingPriceArs ?? 0) || quantity !== entry.quantity;
+    Number(price || 0) !== (entry.askingPriceArs ?? 0) ||
+    quantity !== entry.quantity ||
+    imageUrl.trim() !== (entry.imageUrl ?? "").trim();
 
   async function save() {
     setSavingField("edit");
@@ -50,6 +51,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
           id: entry.id,
           quantity,
           askingPriceArs: Number(price) || undefined,
+          imageUrl: imageUrl.trim() || null,
         }),
       });
       const data = (await response.json()) as { error?: string };
@@ -60,6 +62,36 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
       setMessage({
         kind: "err",
         text: error instanceof Error ? error.message : "Error al guardar.",
+      });
+    } finally {
+      setSavingField(null);
+    }
+  }
+
+  async function uploadFile(file: File | null) {
+    if (!file) return;
+    setSavingField("upload");
+    setMessage(null);
+    try {
+      const body = new FormData();
+      body.set("file", file);
+      const response = await fetch("/api/upload/card-image", {
+        method: "POST",
+        body,
+      });
+      const data = (await response.json()) as { error?: string; url?: string };
+      if (!response.ok) throw new Error(data.error ?? "No se pudo subir.");
+      if (data.url) {
+        setImageUrl(data.url);
+        setMessage({
+          kind: "ok",
+          text: "Imagen subida. Tocá Guardar para persistir en tu inventario.",
+        });
+      }
+    } catch (error) {
+      setMessage({
+        kind: "err",
+        text: error instanceof Error ? error.message : "Error de subida.",
       });
     } finally {
       setSavingField(null);
@@ -94,6 +126,15 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
       setMessage({ kind: "err", text: "Cargá un precio ARS antes de publicar." });
       return;
     }
+    try {
+      assertListingLogisticsValid(offersShipping, offersPickup, deliveryNotes);
+    } catch (err) {
+      setMessage({
+        kind: "err",
+        text: err instanceof Error ? err.message : "Revisá envío / retiro.",
+      });
+      return;
+    }
     setSavingField("publish");
     setMessage(null);
     try {
@@ -105,11 +146,14 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
           cardName: entry.cardName,
           setName: entry.setName ?? "",
           catalogCardId: entry.catalogCardId,
-          imageUrl: entry.imageUrl,
+          imageUrl: imageUrl.trim() || entry.imageUrl,
           condition: entry.condition,
           priceArs: priceNum,
           quantity,
           listingType: "single",
+          offersShipping,
+          offersPickup,
+          deliveryAreaNotes: deliveryNotes.trim(),
         }),
       });
       const data = (await response.json()) as { error?: string };
@@ -126,13 +170,15 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
     }
   }
 
+  const preview = imageUrl.trim() || entry.imageUrl;
+
   return (
     <article className="surface-panel flex gap-4 p-4">
       <div className="flex-shrink-0">
-        {entry.imageUrl ? (
+        {preview ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={entry.imageUrl}
+            src={preview}
             alt={entry.cardName}
             className="h-32 w-24 rounded-lg object-cover"
           />
@@ -154,8 +200,55 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${conditionBadge[entry.condition]}`}
           >
-            {conditionLabel[entry.condition] ?? entry.condition}
+            {formatConditionEs(entry.condition)}
           </span>
+        </div>
+
+        <label className="text-xs text-black/60">
+          URL de imagen (opcional)
+          <input
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://... o subí una foto abajo"
+            className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/75 px-2 py-1 text-sm outline-none focus:border-[var(--color-accent)]"
+          />
+        </label>
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          disabled={savingField !== null}
+          className="block w-full text-[11px] text-black/60 file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--color-accent)] file:px-2 file:py-1 file:text-xs file:font-semibold file:text-white"
+          onChange={(e) => uploadFile(e.target.files?.[0] ?? null)}
+        />
+
+        <div className="rounded-lg border border-[var(--color-border)] bg-white/50 p-2 text-xs text-black/70">
+          <p className="font-semibold text-black/80">Entrega (visible en el Mercado)</p>
+          <label className="mt-2 flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={offersPickup}
+              onChange={(e) => setOffersPickup(e.target.checked)}
+            />
+            Retiro en persona
+          </label>
+          <label className="mt-1 flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={offersShipping}
+              onChange={(e) => setOffersShipping(e.target.checked)}
+            />
+            Envío postal / courier
+          </label>
+          <label className="mt-2 block text-black/60">
+            Dónde y cómo (zona, horarios, costo de envío)
+            <textarea
+              value={deliveryNotes}
+              onChange={(e) => setDeliveryNotes(e.target.value)}
+              rows={2}
+              placeholder="Ej.: Retiro Caballito CABA lun–vie 18–21 h. Envío Andreani a todo el país, a cargo del comprador."
+              className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/80 px-2 py-1 text-sm outline-none focus:border-[var(--color-accent)]"
+            />
+          </label>
         </div>
 
         <div className="grid grid-cols-2 gap-2">

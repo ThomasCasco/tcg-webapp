@@ -18,7 +18,13 @@ Este proyecto puede salir live hoy con Vercel.
 ## Paso obligatorio: conectar backend cloud
 
 1. Crea un proyecto en Supabase.
-2. Entra a SQL Editor y ejecuta [supabase/schema.sql](supabase/schema.sql).
+2. Entra a SQL Editor y ejecuta en este orden:
+   - [supabase/schema.sql](supabase/schema.sql)
+   - [supabase/migrate-v2.sql](supabase/migrate-v2.sql)
+   - [supabase/migrate-v3.sql](supabase/migrate-v3.sql)
+   - [supabase/migrate-v4.sql](supabase/migrate-v4.sql)
+   - [supabase/migrate-v5.sql](supabase/migrate-v5.sql) (Storage `card-images` + `reserved_at`)
+   - [supabase/migrate-v6.sql](supabase/migrate-v6.sql) (envío / retiro en publicaciones)
 3. En Vercel, agrega estas variables:
    - NEXT_PUBLIC_SUPABASE_URL
    - NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -38,19 +44,21 @@ Si no haces esto, la app se muestra pero no guarda datos para usuarios.
 
 1. npm run lint
 2. npm run build
-3. Verifica rutas:
+3. npm run test
+4. Verifica rutas:
    - /
    - /login
    - /register
    - /inventory
    - /listings
    - /market
-4. Verifica API:
+5. Verifica API:
    - /api/health
    - /api/inventory
    - /api/listings
    - /api/pricing/suggest
    - /api/payments/verify
+   - /api/profile/seller-payment
 
 ## Variables de entorno
 
@@ -61,6 +69,16 @@ Carga estas variables en Vercel:
 - SUPABASE_SERVICE_ROLE_KEY
 - PAYMENT_PROVIDER
 - PAYMENT_WEBHOOK_SECRET
+- MERCADO_PAGO_ACCESS_TOKEN
+- STRIPE_SECRET_KEY
+- CRON_SECRET (opcional; protege el cron que libera reservas sin pago)
+
+### Cron: liberar reservas viejas
+
+Programá en Vercel Cron (o similar) una petición diaria:
+
+`GET https://TU_DOMINIO/api/cron/release-stale-reservations`  
+Header: `Authorization: Bearer CRON_SECRET` (mismo valor que la variable de entorno).
 
 Referencia: .env.example
 

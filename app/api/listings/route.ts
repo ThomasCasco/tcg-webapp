@@ -1,7 +1,13 @@
-import { cancelListing, createListing, listListings } from "@/lib/server/repository";
+import {
+  cancelListing,
+  createListing,
+  listListings,
+  updateListing,
+} from "@/lib/server/repository";
 import type { CardCondition, Listing, ListingType } from "@/lib/domain/types";
 import { requireAuthenticatedUser } from "@/lib/server/auth";
 import { getRequestIp, rateLimit } from "@/lib/server/rate-limit";
+import { assertListingLogisticsValid } from "@/lib/shared/listing-logistics";
 
 const validConditions: CardCondition[] = [
   "mint",
@@ -28,10 +34,19 @@ type CreateListingPayload = {
   packRarityFloor?: string;
   packTheme?: string;
   packDescription?: string;
+  offersShipping?: boolean;
+  offersPickup?: boolean;
+  deliveryAreaNotes?: string;
 };
 
-type CancelListingPayload = {
+type PatchListingPayload = {
   id?: string;
+  priceArs?: number;
+  quantity?: number;
+  imageUrl?: string | null;
+  offersShipping?: boolean;
+  offersPickup?: boolean;
+  deliveryAreaNotes?: string | null;
 };
 
 function isValidCondition(value: unknown): value is CardCondition {
@@ -153,6 +168,24 @@ export async function POST(request: Request) {
   }
 
   try {
+    assertListingLogisticsValid(
+      Boolean(payload.offersShipping),
+      Boolean(payload.offersPickup),
+      String(payload.deliveryAreaNotes ?? ""),
+    );
+  } catch (validationError) {
+    return Response.json(
+      {
+        error:
+          validationError instanceof Error
+            ? validationError.message
+            : "Datos de entrega inválidos.",
+      },
+      { status: 400 },
+    );
+  }
+
+  try {
     const listing: Listing = await createListing({
       sellerId: user.id,
       sellerHandle: user.username,
@@ -169,6 +202,9 @@ export async function POST(request: Request) {
       packRarityFloor: payload.packRarityFloor?.trim(),
       packTheme: payload.packTheme?.trim(),
       packDescription: payload.packDescription?.trim(),
+      offersShipping: Boolean(payload.offersShipping),
+      offersPickup: Boolean(payload.offersPickup),
+      deliveryAreaNotes: String(payload.deliveryAreaNotes ?? "").trim(),
     });
 
     return Response.json({ listing }, { status: 201 });
@@ -189,9 +225,9 @@ export async function PATCH(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let payload: CancelListingPayload;
+  let payload: PatchListingPayload;
   try {
-    payload = (await request.json()) as CancelListingPayload;
+    payload = (await request.json()) as PatchListingPayload;
   } catch {
     return Response.json({ error: "Invalid JSON body." }, { status: 400 });
   }
@@ -200,7 +236,29 @@ export async function PATCH(request: Request) {
     return Response.json({ error: "id is required." }, { status: 400 });
   }
 
+  const wantsUpdate =
+    typeof payload.priceArs === "number" ||
+    typeof payload.quantity === "number" ||
+    payload.imageUrl !== undefined ||
+    typeof payload.offersShipping === "boolean" ||
+    typeof payload.offersPickup === "boolean" ||
+    payload.deliveryAreaNotes !== undefined;
+
   try {
+    if (wantsUpdate) {
+      const listing = await updateListing({
+        listingId: payload.id,
+        sellerId: user.id,
+        priceArs: payload.priceArs,
+        quantity: payload.quantity,
+        imageUrl: payload.imageUrl,
+        offersShipping: payload.offersShipping,
+        offersPickup: payload.offersPickup,
+        deliveryAreaNotes: payload.deliveryAreaNotes,
+      });
+      return Response.json({ listing });
+    }
+
     const listing = await cancelListing({
       listingId: payload.id,
       sellerId: user.id,
@@ -209,7 +267,10 @@ export async function PATCH(request: Request) {
     return Response.json({ listing });
   } catch (error) {
     return Response.json(
-      { error: error instanceof Error ? error.message : "Failed to cancel listing." },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to update or cancel listing.",
+      },
       { status: 500 },
     );
   }

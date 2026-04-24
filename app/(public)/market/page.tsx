@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ReserveListingButton } from "@/components/reserve-listing-button";
-import { WatchFromListingButton } from "@/components/watch-from-listing-button";
+import { MarketListingCard } from "@/components/market-listing-card";
 import { listListings } from "@/lib/server/repository";
+import { getPokemonTypesForCardTitle } from "@/lib/server/pokeapi";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 
@@ -38,11 +38,21 @@ export default async function MarketPage({
     listings = listings.filter((l) => l.listingType !== "mystery_pack");
   }
 
+  const enriched = await Promise.all(
+    listings.map(async (listing, index) => {
+      const pokemonTypes =
+        listing.listingType === "mystery_pack" || index >= 24
+          ? null
+          : await getPokemonTypesForCardTitle(listing.cardName);
+      return { listing, pokemonTypes };
+    }),
+  );
+
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6 md:py-8">
       {!isSupabaseConfigured() ? (
         <section className="surface-panel border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          Falta configurar Supabase en produccion para abrir el marketplace a usuarios.
+          Falta configurar Supabase en producción para abrir el marketplace a usuarios.
         </section>
       ) : null}
 
@@ -54,13 +64,20 @@ export default async function MarketPage({
 
       <section className="surface-panel p-6">
         <p className="text-xs uppercase tracking-[0.15em] text-black/55">
-          Marketplace publico
+          Marketplace público
         </p>
         <h1 className="mt-1 text-4xl [font-family:var(--font-display)]">
-          Buscar y comprar cartas
+          Comprar cartas y packs
         </h1>
-        <p className="mt-2 text-sm text-black/70">
-          Listings con catalogo oficial de Pokemon TCG + packs sorpresa.
+        <p className="mt-2 max-w-2xl text-sm text-black/70">
+          Acá ves <strong>publicaciones activas</strong> de otros vendedores. Cuando reservás,
+          la publicación pasa a <em>pago pendiente</em>: pagás directo al vendedor (Mercado Pago,
+          transferencia, etc.) y después pegás el comprobante en{" "}
+          <Link href="/transactions" className="underline">
+            Transacciones
+          </Link>
+          . Si nadie paga a tiempo, la publicación vuelve sola a activa (revisá el cron de liberación
+          en el README).
         </p>
 
         <form method="GET" className="mt-4 flex flex-wrap items-center gap-2">
@@ -99,80 +116,33 @@ export default async function MarketPage({
         </form>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
-        {listings.map((listing) => {
-          const isPack = listing.listingType === "mystery_pack";
-          return (
-            <article key={listing.id} className="surface-panel p-5">
-              <div className="flex gap-4">
-                {listing.imageUrl && !isPack ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={listing.imageUrl}
-                    alt={listing.cardName}
-                    className="h-28 w-20 rounded-lg object-cover"
-                  />
-                ) : isPack ? (
-                  <div className="grid h-28 w-20 place-items-center rounded-lg bg-gradient-to-br from-[var(--color-accent)] to-rose-500 text-center text-[11px] font-bold uppercase tracking-widest text-white">
-                    Mystery Pack
-                  </div>
-                ) : null}
-                <div className="flex-1">
-                  <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-                    {isPack
-                      ? `Pack sorpresa · ${listing.packCardCount ?? "?"} cartas`
-                      : listing.setName}
-                  </p>
-                  <h2 className="mt-1 text-2xl font-semibold">{listing.cardName}</h2>
-                  <p className="mt-1 text-sm text-black/65">
-                    {isPack
-                      ? `Rareza piso: ${listing.packRarityFloor ?? "n/d"} · Tematica: ${listing.packTheme ?? "mix"}`
-                      : listing.condition}
-                  </p>
-                  {isPack && listing.packDescription ? (
-                    <p className="mt-2 text-sm text-black/70">{listing.packDescription}</p>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between gap-3 text-sm">
-                <span className="rounded-full bg-[#fff1da] px-3 py-1 font-semibold">
-                  ARS {listing.priceArs.toLocaleString("es-AR")}
-                </span>
-                <span className="text-black/65">Seller: {listing.sellerHandle}</span>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {listing.status === "active" ? (
-                  user ? (
-                    <ReserveListingButton listingId={listing.id} />
-                  ) : (
-                    <Link
-                      href="/login"
-                      className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)]"
-                    >
-                      Inicia sesion para comprar
-                    </Link>
-                  )
-                ) : (
-                  <span className="rounded-full bg-black/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-black/60">
-                    {listing.status}
-                  </span>
-                )}
-                {user ? (
-                  <WatchFromListingButton
-                    query={listing.cardName.toLowerCase()}
-                    label={`Seguir ${listing.cardName.split(" ")[0]}`}
-                  />
-                ) : null}
-              </div>
-            </article>
-          );
-        })}
-        {listings.length === 0 ? (
-          <p className="text-sm text-black/60">Sin resultados.</p>
-        ) : null}
-      </section>
+      {enriched.length === 0 ? (
+        <section className="surface-panel p-8 text-center text-sm text-black/65">
+          <p className="font-medium text-black/80">Todavía no hay publicaciones que coincidan.</p>
+          <p className="mt-2">
+            Si vendés, cargá cartas en{" "}
+            <Link href="/inventory" className="underline">
+              Inventario
+            </Link>{" "}
+            y tocá <strong>Publicar en Mercado</strong>, o publicá un pack en{" "}
+            <Link href="/listings" className="underline">
+              Publicaciones
+            </Link>
+            .
+          </p>
+        </section>
+      ) : (
+        <section className="grid gap-4 md:grid-cols-2">
+          {enriched.map(({ listing, pokemonTypes }) => (
+            <MarketListingCard
+              key={listing.id}
+              listing={listing}
+              pokemonTypes={pokemonTypes}
+              isLoggedIn={Boolean(user)}
+            />
+          ))}
+        </section>
+      )}
     </main>
   );
 }

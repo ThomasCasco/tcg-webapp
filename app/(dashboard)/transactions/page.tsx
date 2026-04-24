@@ -1,4 +1,7 @@
 import { redirect } from "next/navigation";
+import { PaymentVerifyForm } from "@/components/payment-verify-form";
+import { P2pPaymentExplainer } from "@/components/p2p-payment-explainer";
+import { TransactionCard } from "@/components/transaction-card";
 import { TransactionFulfillmentForm } from "@/components/transaction-fulfillment-form";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { listTransactionsForUser } from "@/lib/server/repository";
@@ -23,6 +26,9 @@ export default async function TransactionsPage() {
 
   return (
     <section className="space-y-4">
+      <P2pPaymentExplainer />
+
+      <PaymentVerifyForm />
       <TransactionFulfillmentForm />
 
       {loadError ? (
@@ -33,20 +39,34 @@ export default async function TransactionsPage() {
 
       <div className="surface-panel p-5">
         <p className="text-xs uppercase tracking-[0.12em] text-black/55">Transacciones</p>
-        <h1 className="mt-1 text-3xl [font-family:var(--font-display)]">Seguimiento post-venta</h1>
+        <h1 className="mt-1 text-3xl [font-family:var(--font-display)]">
+          Seguimiento entre comprador y vendedor
+        </h1>
+        <p className="mt-2 text-sm text-black/70">
+          Acá ves operaciones donde participás: como comprador verificás el pago que hiciste al
+          vendedor; como vendedor ves el mismo estado y avanzás el envío o retiro cuando corresponda.
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {transactions.map((transaction) => (
-          <article key={transaction.id} className="surface-panel p-5 text-sm">
-            <p className="text-xs uppercase tracking-[0.12em] text-black/55">{transaction.transactionId}</p>
-            <p className="mt-1 font-semibold">Listing: {transaction.listingId}</p>
-            <p className="text-black/70">Comprador: {transaction.buyerHandle}</p>
-            <p className="text-black/70">Pago: {transaction.verificationStatus}</p>
-            <p className="text-black/70">Fulfillment: {transaction.fulfillmentStatus ?? "pending"}</p>
-          </article>
-        ))}
-      </div>
+      {transactions.length === 0 ? (
+        <div className="surface-panel p-8 text-center text-sm text-black/60">
+          Todavía no tenés reservas ni ventas. Reservá una publicación desde el{" "}
+          <a href="/market" className="underline">
+            Mercado
+          </a>
+          .
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {transactions.map((transaction) => (
+            <TransactionCard
+              key={transaction.id}
+              transaction={transaction}
+              viewerUserId={user.id}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

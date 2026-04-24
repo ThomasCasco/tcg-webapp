@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ListingCreateForm } from "@/components/listing-create-form";
+import { SellerPaymentProfileForm } from "@/components/seller-payment-profile-form";
 import { ListingRow } from "@/components/listing-row";
-import { listListings } from "@/lib/server/repository";
+import { getSellerPaymentProfile, listListings } from "@/lib/server/repository";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { redirect } from "next/navigation";
@@ -16,11 +17,20 @@ export default async function ListingsPage() {
 
   let listings = [] as Awaited<ReturnType<typeof listListings>>;
   let loadError: string | null = null;
+  let paymentProfile: Awaited<ReturnType<typeof getSellerPaymentProfile>> | null = null;
+  let paymentProfileError: string | null = null;
 
   try {
     listings = await listListings({ sellerId: user.id });
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Failed to load listings.";
+  }
+
+  try {
+    paymentProfile = await getSellerPaymentProfile(user.id);
+  } catch (error) {
+    paymentProfileError =
+      error instanceof Error ? error.message : "Failed to load seller payment profile.";
   }
 
   const active = listings.filter((l) => l.status === "active");
@@ -57,6 +67,14 @@ export default async function ListingsPage() {
         </article>
       ) : null}
 
+      {paymentProfileError ? (
+        <article className="surface-panel border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          No se pudo cargar tu perfil de cobro: {paymentProfileError}
+        </article>
+      ) : null}
+
+      {paymentProfile ? <SellerPaymentProfileForm initialProfile={paymentProfile} /> : null}
+
       <ListingCreateForm />
 
       <div className="surface-panel p-5">
@@ -73,7 +91,10 @@ export default async function ListingsPage() {
         ) : (
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             {active.map((listing) => (
-              <ListingRow key={listing.id} listing={listing} />
+              <ListingRow
+                key={`${listing.id}:${listing.status}:${listing.priceArs}:${listing.quantity}:${listing.imageUrl ?? ""}:${listing.reservedAt ?? ""}:${listing.offersShipping}:${listing.offersPickup}:${listing.deliveryAreaNotes ?? ""}`}
+                listing={listing}
+              />
             ))}
           </div>
         )}
@@ -87,7 +108,10 @@ export default async function ListingsPage() {
           </div>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             {closed.map((listing) => (
-              <ListingRow key={listing.id} listing={listing} />
+              <ListingRow
+                key={`${listing.id}:${listing.status}:${listing.priceArs}:${listing.quantity}:${listing.imageUrl ?? ""}:${listing.reservedAt ?? ""}:${listing.offersShipping}:${listing.offersPickup}:${listing.deliveryAreaNotes ?? ""}`}
+                listing={listing}
+              />
             ))}
           </div>
         </div>

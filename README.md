@@ -18,11 +18,39 @@ Current implementation focus:
    - [supabase/schema.sql](supabase/schema.sql) (solo si es un proyecto nuevo).
    - [supabase/migrate-v2.sql](supabase/migrate-v2.sql) (columnas de ownership — owner_id, seller_id, buyer_id, etc.).
    - [supabase/migrate-v3.sql](supabase/migrate-v3.sql) (catalogo Pokemon TCG, alertas, notificaciones, mystery packs).
+	- [supabase/migrate-v4.sql](supabase/migrate-v4.sql) (perfil de cobro del vendedor para flujo P2P).
+	- [supabase/migrate-v5.sql](supabase/migrate-v5.sql) (bucket `card-images` en Storage + columna `reserved_at` en publicaciones).
+	- [supabase/migrate-v6.sql](supabase/migrate-v6.sql) (envío / retiro + texto de ubicación en `market_listings`).
+	- [supabase/migrate-v7.sql](supabase/migrate-v7.sql) (chat P2P por `transaction_id` en `transaction_chat_messages`).
 3. Add env vars in local and production:
 	- NEXT_PUBLIC_SUPABASE_URL
 	- NEXT_PUBLIC_SUPABASE_ANON_KEY
 	- SUPABASE_SERVICE_ROLE_KEY
+	- MERCADO_PAGO_ACCESS_TOKEN (para validar pagos MP via API)
+	- STRIPE_SECRET_KEY (para validar payment intents via API)
+	- `CRON_SECRET` (opcional, string largo aleatorio): protege `GET /api/cron/release-stale-reservations` para liberar publicaciones `pending_payment` viejas (típico 24 h sin pago verificado).
 4. Start the app with npm run dev and verifica con `GET /api/health` que `backend.connected` sea `true`.
+
+## Fotos de cartas y storage gratuito
+
+Las subidas van a **Supabase Storage** (bucket `card-images`, ver `migrate-v5.sql`). El backend usa `SUPABASE_SERVICE_ROLE_KEY` y devuelve una URL pública.
+
+| Opción | Notas |
+|--------|--------|
+| **Supabase Storage** (elegida) | Incluido en el plan gratuito del mismo proyecto (~1 GB). Misma cuenta, políticas y URLs simples. Ideal para MVP. |
+| **Cloudflare R2** | Tier gratuito generoso, **egress gratis**; conviene si tenés muchísimo tráfico de descarga. Sumás otro proveedor y wiring. |
+| **Firebase Storage** | Tier gratuito razonable; otro panel y reglas. |
+| **Uploadthing / similar** | Muy rápido de integrar en front; capa extra y términos propios. |
+
+Para esta app, **Supabase es la mejor relación simplicidad + costo cero** porque ya dependés de Supabase para Auth y DB.
+
+## Tests
+
+```bash
+npm run test
+```
+
+Ejecuta Vitest sobre `tests/*.test.ts` (smoke de utilidades).
 
 ## Catalogo de cartas
 
@@ -48,6 +76,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 npm run dev
 npm run lint
 npm run build
+npm run test
 ```
 
 ## Key Routes
@@ -71,11 +100,15 @@ npm run build
 - `GET /api/auth/me`
 - `GET /api/health`
 - `GET,POST,PATCH,DELETE /api/inventory`
-- `GET,POST,PATCH /api/listings` (soporta `listingType: "mystery_pack"`)
+- `GET,POST,PATCH /api/listings` (PATCH: actualizar activa con `priceArs`/`quantity`/`imageUrl`, o cancelar solo con `{ id }`; soporta `listingType: "mystery_pack"` en POST)
 - `POST /api/listings/:id/reserve`
 - `POST /api/pricing/suggest`
-- `POST /api/payments/verify`
+- `POST /api/payments/verify` (consulta Mercado Pago/Stripe en server antes de marcar `verified`)
+- `POST /api/upload/card-image` (multipart campo `file`, max 5 MB)
+- `GET /api/cron/release-stale-reservations` (header `Authorization: Bearer CRON_SECRET`)
+- `GET,PATCH /api/profile/seller-payment`
 - `GET /api/transactions`
+- `GET,POST /api/transactions/:id/messages` (chat P2P por transacción; cuerpo POST `{ "body": "..." }`)
 - `PATCH /api/transactions/:id/fulfillment`
 - `GET,POST /api/disputes`
 - `GET /api/catalog/search?q=...&set=...` (proxy TCGdex)

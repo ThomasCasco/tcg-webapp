@@ -1,6 +1,10 @@
 import type { PaymentProvider } from "@/lib/domain/types";
-import { verifyTransaction } from "@/lib/server/repository";
+import {
+  getTransactionProvider,
+  verifyTransaction,
+} from "@/lib/server/repository";
 import { requireAuthenticatedUser } from "@/lib/server/auth";
+import { verifyPaymentWithProviderAPI } from "@/lib/server/payment-verifier";
 import { getRequestIp, rateLimit } from "@/lib/server/rate-limit";
 
 type VerifyPaymentPayload = {
@@ -15,8 +19,6 @@ const acceptedProviders: PaymentProvider[] = [
   "stripe",
   "external_link",
 ];
-
-const successStatuses = new Set(["approved", "accredited", "succeeded"]);
 
 function isProvider(value: unknown): value is PaymentProvider {
   return typeof value === "string" && acceptedProviders.includes(value as PaymentProvider);
@@ -60,13 +62,6 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isProvider(payload.provider)) {
-    return Response.json(
-      { error: "provider is required and must be a supported value." },
-      { status: 400 },
-    );
-  }
-
   if (!payload.providerPaymentId || payload.providerPaymentId.trim().length < 4) {
     return Response.json(
       { error: "providerPaymentId is required." },
@@ -74,27 +69,82 @@ export async function POST(request: Request) {
     );
   }
 
-  const normalizedStatus = (payload.providerStatus ?? "pending").toLowerCase();
-  const isVerified = successStatuses.has(normalizedStatus);
+  const transactionId = payload.transactionId.trim();
+  let transactionProvider: PaymentProvider;
+
+  try {
+    transactionProvider = await getTransactionProvider(transactionId);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to load transaction provider.";
+    const status = message.toLowerCase().includes("not found") ? 404 : 500;
+    return Response.json({ error: message }, { status });
+  }
+
+  if (payload.provider && !isProvider(payload.provider)) {
+    return Response.json(
+      { error: "provider must be a supported value when provided." },
+      { status: 400 },
+    );
+  }
+
+  if (payload.provider && payload.provider !== transactionProvider) {
+    return Response.json(
+      {
+        error: `Provider mismatch. Transaction expects ${transactionProvider}.`,
+      },
+      { status: 400 },
+    );
+  }
+
+  const providerPaymentId = payload.providerPaymentId.trim();
+  let normalizedStatus = "pending";
+  let providerStatusSource: "provider_api" | "manual_payload" = "manual_payload";
+
+  if (transactionProvider === "external_link") {
+    normalizedStatus = (payload.providerStatus ?? "pending").trim().toLowerCase() || "pending";
+  } else {
+    try {
+      const providerLookup = await verifyPaymentWithProviderAPI({
+        provider: transactionProvider,
+        providerPaymentId,
+      });
+      normalizedStatus = providerLookup.normalizedStatus;
+      providerStatusSource = "provider_api";
+    } catch (error) {
+      return Response.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to validate payment with provider API.",
+        },
+        { status: 502 },
+      );
+    }
+  }
 
   try {
     const result = await verifyTransaction({
-      transactionId: payload.transactionId,
+      transactionId,
       actorUserId: user?.id,
       bypassOwnership: isWebhookCall,
-      provider: payload.provider,
-      providerPaymentId: payload.providerPaymentId,
+      provider: transactionProvider,
+      providerPaymentId,
       providerStatus: normalizedStatus,
     });
 
     return Response.json({
-      transactionId: payload.transactionId,
-      provider: payload.provider,
-      providerPaymentId: payload.providerPaymentId,
+      transactionId,
+      provider: transactionProvider,
+      providerPaymentId,
+      providerStatus: normalizedStatus,
+      providerStatusSource,
       verificationStatus: result.payment.verificationStatus,
       requiresManualCheck: result.requiresManualCheck,
       checkedAt: result.payment.checkedAt,
-      listingStatusAfterVerification: isVerified ? "sold" : "pending_payment",
+      listingStatusAfterVerification:
+        result.payment.verificationStatus === "verified" ? "sold" : "pending_payment",
     });
   } catch (error) {
     return Response.json(

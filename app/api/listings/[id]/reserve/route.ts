@@ -29,10 +29,19 @@ export async function POST(
       buyerHandle: user.username,
     });
 
+    const hasSellerPaymentData = Boolean(
+      result.sellerPayment.paymentAlias ||
+        result.sellerPayment.whatsapp ||
+        result.sellerPayment.paymentInstructions,
+    );
+
     return Response.json({
       listing: result.listing,
       transactionId: result.transactionId,
-      message: "Listing reserved. Complete payment verification to mark as sold.",
+      sellerPayment: result.sellerPayment,
+      message: hasSellerPaymentData
+        ? "Reserva creada. Pagá al vendedor con los datos de abajo y después verificá el pago en Transacciones."
+        : "Reserva creada: el vendedor aún no cargó datos de cobro. Coordiná antes de transferir.",
     });
   } catch (error) {
     const message =

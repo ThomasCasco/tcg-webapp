@@ -31,6 +31,7 @@ type UpdateInventoryPayload = {
   id?: string;
   quantity?: number;
   askingPriceArs?: number;
+  imageUrl?: string | null;
 };
 
 type DeleteInventoryPayload = {
@@ -162,6 +163,7 @@ export async function PATCH(request: Request) {
       ownerId: user.id,
       quantity: payload.quantity,
       askingPriceArs: payload.askingPriceArs,
+      imageUrl: payload.imageUrl,
     });
 
     return Response.json({ item });

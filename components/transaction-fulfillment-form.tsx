@@ -4,12 +4,12 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FulfillmentStatus } from "@/lib/domain/types";
 
-const statuses: FulfillmentStatus[] = [
-  "seller_confirmed",
-  "shipped",
-  "delivered",
-  "disputed",
-  "closed",
+const statuses: { value: FulfillmentStatus; label: string }[] = [
+  { value: "seller_confirmed", label: "Pago OK — listo para enviar / retiro" },
+  { value: "shipped", label: "Enviado (con tracking si aplica)" },
+  { value: "delivered", label: "Entregado / recibido" },
+  { value: "disputed", label: "Disputa" },
+  { value: "closed", label: "Cerrado" },
 ];
 
 export function TransactionFulfillmentForm() {
@@ -55,7 +55,13 @@ export function TransactionFulfillmentForm() {
 
   return (
     <form onSubmit={onSubmit} className="surface-panel p-5 space-y-3">
-      <p className="text-xs uppercase tracking-[0.12em] text-black/55">Actualizar fulfillment</p>
+      <p className="text-xs uppercase tracking-[0.12em] text-black/55">
+        Actualizar entrega / post-venta
+      </p>
+      <p className="text-xs text-black/60">
+        Solo comprador y vendedor de esa operación. El envío lo marca el vendedor; &quot;Entregado&quot;
+        lo confirma el comprador.
+      </p>
       <div className="grid gap-3 md:grid-cols-2">
         <label className="text-sm text-black/75">
           Transaction ID
@@ -73,16 +79,16 @@ export function TransactionFulfillmentForm() {
             name="status"
             className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
           >
-            {statuses.map((status) => (
-              <option key={status} value={status}>
-                {status}
+            {statuses.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
               </option>
             ))}
           </select>
         </label>
 
         <label className="text-sm text-black/75 md:col-span-2">
-          Tracking (opcional)
+          Número de seguimiento (opcional)
           <input
             name="trackingNumber"
             className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
