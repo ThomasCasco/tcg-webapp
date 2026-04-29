@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'docs: master roadmap para llevar la app a producción *)",
+      "Bash(git commit -m 'docs: implementation plan for Phase 0 \\(foundations\\) *)",
+      "Bash(npm i *)",
+      "Bash(npm run *)",
+      "Bash(git commit *)",
+      "Bash(npx vitest *)"
+    ]
+  }
+}
