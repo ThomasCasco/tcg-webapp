@@ -178,24 +178,54 @@ Fase 0 (cimientos)
 
 ---
 
-## Fase 6 — Subastas (2 semanas)
+## Fase 6 — Listings programados: Subastas + Drops (2-3 semanas)
 
-**Goal:** vender cartas raras a precio de mercado real.
+**Goal:** dos formatos avanzados para vender — subastas (precio variable por puja) y drops (precio fijo con horario de apertura, first-come-first-served).
 
-### Scope IN
+Comparten infraestructura: timer, scheduled jobs, notificaciones por horario, vista de preview, transición automática de estado.
+
+### 6.A — Subastas
+
+**Scope IN:**
 - Nuevo tipo de listing: `auction` (vs `fixed_price` actual).
 - Tablas `auction_listings` (listing_id, starts_at, ends_at, min_bid, current_bid, current_bidder_id, bid_increment) y `bids` (auction_id, bidder_id, amount, created_at).
 - Anti-snipe: cualquier puja en los últimos 5 min extiende el remate 5 min.
-- Listado de subastas en `/market?type=auction` con timer en vivo (client-side countdown).
+- Listado en `/market?type=auction` con timer en vivo (client-side countdown).
 - Página de subasta con historial de pujas (solo amounts, no IDs), input de puja con validación (mínimo current_bid + increment).
 - Push/email cuando te superan o ganás.
 - Cron `close-auctions` cada minuto: cierra subastas vencidas, crea `payment_event` para el ganador, dispara flujo MP de Fase 1.
 - Política: no se puede cancelar puja. Vendedor no puede pujar en su propia subasta. Bloqueo si comprador no tiene reputación mínima (configurable).
 
-### Acceptance
+### 6.B — Drops
+
+**Goal:** un vendedor anuncia un lote de cartas que se libera a una hora pactada. Pre-drop hay preview pública. Al momento del drop, las cartas se vuelven comprables y es first-come-first-served (la primera reserva válida se queda con la carta).
+
+**Scope IN:**
+- Nuevo tipo de listing: `drop_item` (vs `fixed_price` y `auction`).
+- Tabla `drops` (id, seller_id, title, description, cover_image_url, scheduled_for, status `scheduled|live|ended|cancelled`, created_at).
+- Tabla `drop_items` que es un `market_listings` con `drop_id` FK + columna `drop_id` agregada a `market_listings` (nullable).
+- Status de items en un drop: `preview` (visible pero no comprable) → `active` (comprable, FCFS) → `sold` o `expired`.
+- Página `/drops` lista todos los drops futuros y en vivo, ordenados por `scheduled_for`.
+- Página `/drops/[id]` muestra preview del lote: imagen de portada, descripción, vendedor con reputación, countdown al `scheduled_for`, grid de items con precio pero **sin botón comprar** hasta `scheduled_for`.
+- Cron `release-drops` cada minuto: a `scheduled_for`, cambia drop a `live` y items a `active`.
+- Botón "Avisarme" en preview que crea notificación push/email 5 min antes y cuando abre.
+- Al abrir, los items se compran con el flujo normal de Fase 1 (reserva + MP). Stock = 1 por item, primera reserva válida gana, el resto ve "agotado".
+- Cron `end-drops` cierra drops 24h después de `scheduled_for` (items no vendidos quedan como listings normales o se archivan, decisión del vendedor en setup).
+- Botón en perfil del vendedor: "Programar drop" — wizard que permite seleccionar items del inventario, fijar precio por item, fecha/hora, descripción, imagen de portada.
+- Notificaciones: a quienes "siguen" al vendedor (Fase 5 reputación implica seguir), aviso del drop. A quien hizo "Avisarme", recordatorio.
+
+**Política:**
+- Drop no se puede cancelar después de los 30 min previos a `scheduled_for` (evita troleadas).
+- Vendedor no puede agregar/quitar items en los 30 min previos.
+- Si el vendedor cancela antes del límite, los suscriptos reciben aviso.
+
+### Acceptance combinada (Subastas + Drops)
 - Subasta termina puntual con extensión por anti-snipe correcta.
-- Ganador recibe email con link de pago MP.
-- Pujas concurrentes no causan condiciones de carrera (lock en DB).
+- Ganador de subasta recibe email con link de pago MP.
+- Drop pasa de `scheduled` → `live` exactamente a la hora pactada (margen ≤ 60s).
+- Items de drop son comprables solo después de `scheduled_for`.
+- Quien clickeó "Avisarme" recibe push/email 5 min antes.
+- Pujas/reservas concurrentes no causan condiciones de carrera (lock en DB).
 
 ---
 
@@ -246,11 +276,11 @@ Fase 0 (cimientos)
 6. Mientras Fase 0 termina, escribo spec de Fase 1.
 7. Loop: spec → plan → ejecución por fase. Donde es paralelizable, dispatch subagentes.
 
-## Decisiones abiertas (asumidas pendiente confirmación del usuario)
+## Decisiones confirmadas
 
-- "Claims" interpretado como **disputas/reclamos** (Fase 5). Si era otra cosa, ajustar.
-- Sin Stripe en v1.
-- Comisión fija 1%. Configurable por env var `PLATFORM_FEE_PERCENT` por las dudas.
-- Resend como email provider. Alternativa: Supabase email.
+- "Claims" = **drops programados** (Fase 6.B). Lote de cartas que se libera a una hora pactada con preview previa, first-come-first-served.
+- Sin Stripe en v1. Solo Mercado Pago.
+- Comisión fija 1%. Configurable por env var `PLATFORM_FEE_PERCENT`.
+- Resend como email provider.
 - Lucide-react como icon set.
-- Subastas IN para v1 (usuario dijo "todo terminado antes de lanzar").
+- Subastas + Drops IN para v1.
