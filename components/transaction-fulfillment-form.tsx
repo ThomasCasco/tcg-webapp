@@ -3,6 +3,11 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FulfillmentStatus } from "@/lib/domain/types";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 
 const statuses: { value: FulfillmentStatus; label: string }[] = [
   { value: "seller_confirmed", label: "Pago OK — listo para enviar / retiro" },
@@ -54,59 +59,58 @@ export function TransactionFulfillmentForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="surface-panel p-5 space-y-3">
-      <p className="text-xs uppercase tracking-[0.12em] text-black/55">
+    <Card padding="md">
+      <p className="text-overline text-[var(--color-ink-subtle)]">
         Actualizar entrega / post-venta
       </p>
-      <p className="text-xs text-black/60">
+      <p className="mt-1 text-caption text-[var(--color-ink-muted)]">
         Solo comprador y vendedor de esa operación. El envío lo marca el vendedor; &quot;Entregado&quot;
         lo confirma el comprador.
       </p>
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="text-sm text-black/75">
-          Transaction ID
-          <input
-            name="transactionId"
-            required
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-            placeholder="tx_..."
-          />
-        </label>
 
-        <label className="text-sm text-black/75">
-          Estado
-          <select
-            name="status"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          >
-            {statuses.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </label>
+      <form onSubmit={onSubmit} className="mt-4 space-y-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <FormField label="Transaction ID" htmlFor="transactionId" required>
+            <Input
+              id="transactionId"
+              name="transactionId"
+              required
+              placeholder="tx_..."
+            />
+          </FormField>
 
-        <label className="text-sm text-black/75 md:col-span-2">
-          Número de seguimiento (opcional)
-          <input
-            name="trackingNumber"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-            placeholder="AR123456789"
-          />
-        </label>
-      </div>
+          <FormField label="Estado" htmlFor="status">
+            <Select id="status" name="status">
+              {statuses.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
-      >
-        {loading ? "Actualizando..." : "Actualizar estado"}
-      </button>
+          <div className="md:col-span-2">
+            <FormField label="Número de seguimiento (opcional)" htmlFor="trackingNumber">
+              <Input
+                id="trackingNumber"
+                name="trackingNumber"
+                placeholder="AR123456789"
+              />
+            </FormField>
+          </div>
+        </div>
 
-      {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
-    </form>
+        <Button type="submit" loading={loading}>
+          Actualizar estado
+        </Button>
+
+        {message ? (
+          <p role="status" className="text-body-sm text-[var(--color-success)]">{message}</p>
+        ) : null}
+        {error ? (
+          <p role="alert" className="text-body-sm text-[var(--color-danger)]">{error}</p>
+        ) : null}
+      </form>
+    </Card>
   );
 }

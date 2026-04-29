@@ -1,7 +1,10 @@
 "use client";
-
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -28,18 +31,13 @@ export function RegisterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       const data = (await response.json()) as {
         error?: string;
         requiresEmailConfirmation?: boolean;
       };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "No se pudo crear la cuenta.");
-      }
-
+      if (!response.ok) throw new Error(data.error ?? "No se pudo crear la cuenta.");
       if (data.requiresEmailConfirmation) {
-        setSuccess("Cuenta creada. Revisa tu email para confirmar la cuenta.");
+        setSuccess("Cuenta creada. Revisá tu email para confirmar.");
       } else {
         router.push("/inventory");
         router.refresh();
@@ -52,68 +50,82 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 space-y-4">
-      <label className="block text-sm">
-        <span className="mb-1 block text-black/70">Nombre publico</span>
-        <input
-          type="text"
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <FormField
+        label="Nombre público"
+        htmlFor="username"
+        required
+        hint="Lo verán otros vendedores y compradores."
+      >
+        <Input
+          id="username"
           name="username"
           required
           minLength={3}
+          maxLength={24}
           placeholder="BinderBoss"
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
         />
-      </label>
-
-      <label className="block text-sm">
-        <span className="mb-1 block text-black/70">Email</span>
-        <input
+      </FormField>
+      <FormField label="Email" htmlFor="email" required>
+        <Input
+          id="email"
           type="email"
           name="email"
+          autoComplete="email"
           required
           placeholder="tu@email.com"
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
         />
-      </label>
-
-      <label className="block text-sm">
-        <span className="mb-1 block text-black/70">Password</span>
-        <input
+      </FormField>
+      <FormField label="Contraseña" htmlFor="password" required hint="Mínimo 8 caracteres.">
+        <Input
+          id="password"
           type="password"
           name="password"
+          autoComplete="new-password"
           required
           minLength={8}
-          placeholder="********"
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
+          placeholder="••••••••"
         />
-      </label>
-
-      <label className="flex items-start gap-2 text-xs text-black/70">
-        <input type="checkbox" required className="mt-0.5" />
+      </FormField>
+      <label className="flex items-start gap-2 text-[0.875rem] text-[var(--color-ink-muted)]">
+        <input
+          type="checkbox"
+          required
+          name="terms"
+          className="mt-1 h-4 w-4 accent-[var(--color-accent)]"
+        />
         <span>
-          Soy mayor de 18 anos y acepto los{" "}
-          <a
+          Soy mayor de 18 años y acepto los{" "}
+          <Link
             href="/terms"
             target="_blank"
             rel="noreferrer"
-            className="font-semibold text-[var(--color-accent)] underline"
+            className="text-[var(--color-accent-strong)] underline"
           >
-            Terminos y Condiciones
-          </a>
+            Términos y Condiciones
+          </Link>
           . Entiendo que la plataforma es un clasificado y NO custodia fondos.
         </span>
       </label>
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
-      >
-        {loading ? "Creando cuenta..." : "Crear cuenta"}
-      </button>
-
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
-      {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
+      {error && (
+        <p role="alert" className="text-[0.8125rem] text-[var(--color-danger)]">
+          {error}
+        </p>
+      )}
+      {success && (
+        <p role="status" className="text-[0.8125rem] text-[var(--color-success)]">
+          {success}
+        </p>
+      )}
+      <Button type="submit" loading={loading} fullWidth size="lg">
+        Crear cuenta
+      </Button>
+      <p className="text-center text-[0.8125rem] text-[var(--color-ink-muted)]">
+        ¿Ya tenés cuenta?{" "}
+        <Link href="/login" className="text-[var(--color-accent-strong)] hover:underline">
+          Iniciar sesión
+        </Link>
+      </p>
     </form>
   );
 }

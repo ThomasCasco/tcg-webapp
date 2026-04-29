@@ -2,6 +2,11 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export function DisputeCreateForm() {
   const router = useRouter();
@@ -45,50 +50,49 @@ export function DisputeCreateForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="surface-panel p-5 space-y-3">
-      <p className="text-xs uppercase tracking-[0.12em] text-black/55">Abrir disputa</p>
+    <Card padding="md">
+      <p className="text-overline text-[var(--color-ink-subtle)]">Abrir disputa</p>
+      <form onSubmit={onSubmit} className="mt-4 space-y-3">
+        <FormField label="Transaction ID" htmlFor="transactionId" required>
+          <Input
+            id="transactionId"
+            name="transactionId"
+            required
+            placeholder="tx_..."
+          />
+        </FormField>
 
-      <label className="block text-sm text-black/75">
-        Transaction ID
-        <input
-          name="transactionId"
-          required
-          placeholder="tx_..."
-          className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-        />
-      </label>
+        <FormField label="Motivo" htmlFor="reason" required>
+          <Input
+            id="reason"
+            name="reason"
+            required
+            placeholder="Carta no coincide con la descripción"
+          />
+        </FormField>
 
-      <label className="block text-sm text-black/75">
-        Motivo
-        <input
-          name="reason"
-          required
-          placeholder="Carta no coincide con la descripcion"
-          className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-        />
-      </label>
+        <FormField label="Detalles" htmlFor="details" required>
+          <Textarea
+            id="details"
+            name="details"
+            required
+            minLength={10}
+            rows={4}
+            placeholder="Describe el problema y adjunta evidencia en el siguiente paso operacional."
+          />
+        </FormField>
 
-      <label className="block text-sm text-black/75">
-        Detalles
-        <textarea
-          name="details"
-          required
-          minLength={10}
-          placeholder="Describe el problema y adjunta evidencia en el siguiente paso operacional."
-          className="mt-1 min-h-[120px] w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-        />
-      </label>
+        <Button type="submit" loading={loading}>
+          Crear disputa
+        </Button>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
-      >
-        {loading ? "Creando..." : "Crear disputa"}
-      </button>
-
-      {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
-    </form>
+        {message ? (
+          <p role="status" className="text-body-sm text-[var(--color-success)]">{message}</p>
+        ) : null}
+        {error ? (
+          <p role="alert" className="text-body-sm text-[var(--color-danger)]">{error}</p>
+        ) : null}
+      </form>
+    </Card>
   );
 }

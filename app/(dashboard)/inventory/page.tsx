@@ -4,6 +4,9 @@ import { listInventoryEntries, listListings } from "@/lib/server/repository";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { redirect } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Package } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 
@@ -34,62 +37,59 @@ export default async function InventoryPage() {
 
   return (
     <section className="space-y-5">
-      <header className="surface-panel p-5">
-        <p className="text-xs uppercase tracking-[0.12em] text-black/55">
+      <Card as="header" padding="lg">
+        <p className="text-overline text-[var(--color-ink-subtle)]">
           Paso 1 de 2 · Tu stock
         </p>
-        <h1 className="mt-1 text-3xl [font-family:var(--font-display)]">
+        <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
           Inventario
         </h1>
-        <p className="mt-2 text-sm text-black/70">
+        <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
           Cargá acá las cartas que tenés físicamente. Es tu stock privado.
           Cuando estés listo, poné un precio y tocá <strong>Publicar en Mercado</strong> para
           que otros usuarios puedan comprarla.
         </p>
-      </header>
+      </Card>
 
       {!isSupabaseConfigured() ? (
-        <article className="surface-panel border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          Configurá las variables de Supabase para guardar datos reales.
-        </article>
+        <Card as="article" padding="md" className="border-amber-300 bg-amber-50">
+          <p className="text-sm text-amber-900">
+            Configurá las variables de Supabase para guardar datos reales.
+          </p>
+        </Card>
       ) : null}
 
       {loadError ? (
-        <article className="surface-panel border-2 border-rose-300 bg-rose-50 p-4 text-sm text-rose-900">
-          Error de backend: {loadError}
-        </article>
+        <Card as="article" padding="md" className="border-rose-300 bg-rose-50">
+          <p className="text-sm text-rose-900">Error de backend: {loadError}</p>
+        </Card>
       ) : null}
 
       <InventoryCreateForm />
 
       <div className="grid gap-3 md:grid-cols-3">
-        <article className="surface-panel p-4">
-          <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-            Entradas
-          </p>
+        <Card as="article" padding="md">
+          <p className="text-overline text-[var(--color-ink-subtle)]">Entradas</p>
           <p className="mt-1 text-2xl font-semibold">{inventoryEntries.length}</p>
-        </article>
-        <article className="surface-panel p-4">
-          <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-            Cartas totales
-          </p>
+        </Card>
+        <Card as="article" padding="md">
+          <p className="text-overline text-[var(--color-ink-subtle)]">Cartas totales</p>
           <p className="mt-1 text-2xl font-semibold">{totalCards}</p>
-        </article>
-        <article className="surface-panel p-4">
-          <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-            Con precio cargado
-          </p>
+        </Card>
+        <Card as="article" padding="md">
+          <p className="text-overline text-[var(--color-ink-subtle)]">Con precio cargado</p>
           <p className="mt-1 text-2xl font-semibold">
             {withPrice} / {inventoryEntries.length}
           </p>
-        </article>
+        </Card>
       </div>
 
       {inventoryEntries.length === 0 ? (
-        <div className="surface-panel p-8 text-center text-sm text-black/60">
-          Todavía no cargaste ninguna carta. Usá el buscador de arriba para
-          agregar tu primera entrada.
-        </div>
+        <EmptyState
+          icon={<Package className="h-8 w-8" />}
+          title="Inventario vacío"
+          description="Usá el buscador de arriba para agregar tu primera carta."
+        />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {inventoryEntries.map((entry) => (

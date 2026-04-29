@@ -1,7 +1,8 @@
 "use client";
-
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Bell } from "@/components/ui/icon";
+import { Button } from "@/components/ui/button";
 
 export function NotificationsBell() {
   const [count, setCount] = useState<number>(0);
@@ -30,16 +31,15 @@ export function NotificationsBell() {
   }, []);
 
   return (
-    <Link
-      href="/alerts"
-      className="relative rounded-full border border-[var(--color-border)] px-4 py-2 text-sm hover:bg-white/70"
-    >
-      Alertas
-      {count > 0 ? (
-        <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--color-accent)] px-1 text-[10px] font-bold text-white">
-          {count > 99 ? "99+" : count}
-        </span>
-      ) : null}
-    </Link>
+    <Button asChild variant="ghost" size="sm" aria-label="Alertas y notificaciones" className="relative">
+      <Link href="/alerts">
+        <Bell className="h-5 w-5" aria-hidden />
+        {count > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[var(--color-danger)] px-1 text-[0.625rem] font-bold text-white">
+            {count > 9 ? "9+" : count}
+          </span>
+        )}
+      </Link>
+    </Button>
   );
 }

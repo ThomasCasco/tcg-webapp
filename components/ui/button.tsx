@@ -42,6 +42,17 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
+    // Slot (asChild) requires exactly one React element child — pass children through directly.
+    // Icons/loading are only injected when rendering a real <button>.
+    const inner = asChild ? (
+      children
+    ) : (
+      <>
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : leftIcon}
+        {children}
+        {!loading && rightIcon}
+      </>
+    );
     return (
       <Comp
         ref={ref}
@@ -50,9 +61,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         aria-busy={loading || undefined}
         {...props}
       >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : leftIcon}
-        {children}
-        {!loading && rightIcon}
+        {inner}
       </Comp>
     );
   }

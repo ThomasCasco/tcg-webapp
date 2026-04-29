@@ -1,7 +1,10 @@
 "use client";
-
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 
 export function LoginForm() {
   const router = useRouter();
@@ -25,12 +28,8 @@ export function LoginForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       const data = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        throw new Error(data.error ?? "No se pudo iniciar sesion.");
-      }
-
+      if (!response.ok) throw new Error(data.error ?? "No se pudo iniciar sesión.");
       router.push("/inventory");
       router.refresh();
     } catch (submitError) {
@@ -41,38 +40,42 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 space-y-4">
-      <label className="block text-sm">
-        <span className="mb-1 block text-black/70">Email</span>
-        <input
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <FormField label="Email" htmlFor="email" required>
+        <Input
+          id="email"
           type="email"
           name="email"
+          autoComplete="email"
           required
           placeholder="tu@email.com"
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
         />
-      </label>
-      <label className="block text-sm">
-        <span className="mb-1 block text-black/70">Password</span>
-        <input
+      </FormField>
+      <FormField label="Contraseña" htmlFor="password" required>
+        <Input
+          id="password"
           type="password"
           name="password"
+          autoComplete="current-password"
           required
           minLength={8}
-          placeholder="********"
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
+          placeholder="••••••••"
         />
-      </label>
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
-      >
-        {loading ? "Entrando..." : "Entrar"}
-      </button>
-
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
+      </FormField>
+      {error && (
+        <p role="alert" className="text-[0.8125rem] text-[var(--color-danger)]">
+          {error}
+        </p>
+      )}
+      <Button type="submit" loading={loading} fullWidth size="lg">
+        Entrar
+      </Button>
+      <p className="text-center text-[0.8125rem] text-[var(--color-ink-muted)]">
+        ¿No tenés cuenta?{" "}
+        <Link href="/register" className="text-[var(--color-accent-strong)] hover:underline">
+          Crear cuenta
+        </Link>
+      </p>
     </form>
   );
 }

@@ -5,6 +5,11 @@ import { FormEvent, useState } from "react";
 import type { CardCondition } from "@/lib/domain/types";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { CardPicker, type PickedCard } from "@/components/card-picker";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 
 const conditions: CardCondition[] = [
   "mint",
@@ -42,7 +47,7 @@ export function InventoryCreateForm() {
     };
 
     if (!payload.cardName || payload.cardName.length < 2) {
-      setError("Elegi una carta del buscador o escribi el nombre manualmente.");
+      setError("Elegí una carta del buscador o escribí el nombre manualmente.");
       setLoading(false);
       return;
     }
@@ -73,103 +78,95 @@ export function InventoryCreateForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="surface-panel p-5 space-y-3">
-      <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-        Nueva entrada
-      </p>
-
-      <div>
-        <CardPicker onPick={setPicked} />
-        <p className="mt-1 text-xs text-black/55">
-          Filtrá por set/expansión y buscá por nombre. Si no aparece la carta,
-          usá la carga manual de abajo.
-        </p>
-      </div>
-
-      <details className="rounded-xl border border-[var(--color-border)] bg-white/60 p-3 text-sm">
-        <summary className="cursor-pointer text-black/65">
-          Carga manual / Foto propia
-        </summary>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <label className="text-sm text-black/75">
-            Carta (si no aparece en el buscador)
-            <input
-              name="cardNameFallback"
-              placeholder="Pikachu ex"
-              className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-            />
-          </label>
-          <label className="text-sm text-black/75">
-            Set
-            <input
-              name="setNameFallback"
-              placeholder="Paradox Rift"
-              className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-            />
-          </label>
-          <label className="text-sm text-black/75 md:col-span-2">
-            URL de foto propia (opcional)
-            <input
-              name="imageUrlFallback"
-              placeholder="https://... (pegá el link si subiste la foto en otro lado)"
-              className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-            />
-            <span className="mt-1 block text-xs text-black/55">
-              Si dejás vacío usamos la imagen oficial del catálogo.
-            </span>
-          </label>
+    <Card padding="md">
+      <p className="text-overline text-[var(--color-ink-subtle)]">Nueva entrada</p>
+      <form onSubmit={onSubmit} className="mt-4 space-y-4">
+        <div>
+          <CardPicker onPick={setPicked} />
+          <p className="mt-1 text-caption text-[var(--color-ink-subtle)]">
+            Filtrá por set/expansión y buscá por nombre. Si no aparece la carta,
+            usá la carga manual de abajo.
+          </p>
         </div>
-      </details>
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <label className="text-sm text-black/75">
-          Condicion
-          <select
-            name="condition"
-            defaultValue="near_mint"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          >
-            {conditions.map((condition) => (
-              <option key={condition} value={condition}>
-                {formatConditionEs(condition)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <details className="rounded-xl border border-[var(--color-border)] bg-white/60 p-3 text-body-sm">
+          <summary className="cursor-pointer text-[var(--color-ink-muted)]">
+            Carga manual / Foto propia
+          </summary>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <FormField label="Carta (si no aparece en el buscador)" htmlFor="cardNameFallback">
+              <Input
+                id="cardNameFallback"
+                name="cardNameFallback"
+                placeholder="Pikachu ex"
+              />
+            </FormField>
+            <FormField label="Set" htmlFor="setNameFallback">
+              <Input
+                id="setNameFallback"
+                name="setNameFallback"
+                placeholder="Paradox Rift"
+              />
+            </FormField>
+            <div className="md:col-span-2">
+              <FormField
+                label="URL de foto propia (opcional)"
+                htmlFor="imageUrlFallback"
+                hint="Si dejás vacío usamos la imagen oficial del catálogo."
+              >
+                <Input
+                  id="imageUrlFallback"
+                  name="imageUrlFallback"
+                  placeholder="https://... (pegá el link si subiste la foto en otro lado)"
+                />
+              </FormField>
+            </div>
+          </div>
+        </details>
 
-        <label className="text-sm text-black/75">
-          Cantidad
-          <input
-            name="quantity"
-            type="number"
-            min={1}
-            defaultValue={1}
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
+        <div className="grid gap-3 md:grid-cols-3">
+          <FormField label="Condición" htmlFor="condition">
+            <Select id="condition" name="condition" defaultValue="near_mint">
+              {conditions.map((condition) => (
+                <option key={condition} value={condition}>
+                  {formatConditionEs(condition)}
+                </option>
+              ))}
+            </Select>
+          </FormField>
 
-        <label className="text-sm text-black/75">
-          Precio ARS
-          <input
-            name="askingPriceArs"
-            type="number"
-            min={1}
-            placeholder="12000"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
-      </div>
+          <FormField label="Cantidad" htmlFor="quantity">
+            <Input
+              id="quantity"
+              name="quantity"
+              type="number"
+              min={1}
+              defaultValue={1}
+            />
+          </FormField>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
-      >
-        {loading ? "Guardando..." : "Agregar al inventario"}
-      </button>
+          <FormField label="Precio ARS" htmlFor="askingPriceArs">
+            <Input
+              id="askingPriceArs"
+              name="askingPriceArs"
+              type="number"
+              min={1}
+              placeholder="12000"
+            />
+          </FormField>
+        </div>
 
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
-      {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
-    </form>
+        <Button type="submit" loading={loading}>
+          Agregar al inventario
+        </Button>
+
+        {error ? (
+          <p role="alert" className="text-body-sm text-[var(--color-danger)]">{error}</p>
+        ) : null}
+        {success ? (
+          <p role="status" className="text-body-sm text-[var(--color-success)]">{success}</p>
+        ) : null}
+      </form>
+    </Card>
   );
 }

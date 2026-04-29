@@ -5,14 +5,17 @@ import { useState } from "react";
 import type { InventoryEntry } from "@/lib/domain/types";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { assertListingLogisticsValid } from "@/lib/shared/listing-logistics";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
 
-const conditionBadge: Record<string, string> = {
-  mint: "bg-emerald-100 text-emerald-800",
-  near_mint: "bg-green-100 text-green-800",
-  lightly_played: "bg-yellow-100 text-yellow-800",
-  moderately_played: "bg-orange-100 text-orange-800",
-  heavily_played: "bg-amber-100 text-amber-800",
-  damaged: "bg-rose-100 text-rose-800",
+const conditionVariant: Record<string, "success" | "warning" | "danger" | "default"> = {
+  mint: "success",
+  near_mint: "success",
+  lightly_played: "warning",
+  moderately_played: "warning",
+  heavily_played: "danger",
+  damaged: "danger",
 };
 
 type Props = {
@@ -173,7 +176,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
   const preview = imageUrl.trim() || entry.imageUrl;
 
   return (
-    <article className="surface-panel flex gap-4 p-4">
+    <Card as="article" variant="default" padding="none" className="flex gap-4 p-4">
       <div className="flex-shrink-0">
         {preview ? (
           /* eslint-disable-next-line @next/next/no-img-element */
@@ -183,7 +186,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
             className="h-32 w-24 rounded-lg object-cover"
           />
         ) : (
-          <div className="flex h-32 w-24 items-center justify-center rounded-lg bg-black/10 text-center text-[10px] text-black/50">
+          <div className="flex h-32 w-24 items-center justify-center rounded-lg bg-black/10 text-center text-caption text-[var(--color-ink-subtle)]">
             Sin foto
           </div>
         )}
@@ -193,36 +196,34 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <h3 className="truncate text-base font-semibold">{entry.cardName}</h3>
-            <p className="truncate text-xs text-black/60">
+            <p className="truncate text-caption text-[var(--color-ink-muted)]">
               {entry.setName || "Set sin especificar"}
             </p>
           </div>
-          <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${conditionBadge[entry.condition]}`}
-          >
+          <Chip variant={conditionVariant[entry.condition] ?? "default"} size="sm">
             {formatConditionEs(entry.condition)}
-          </span>
+          </Chip>
         </div>
 
-        <label className="text-xs text-black/60">
+        <label className="text-caption text-[var(--color-ink-muted)]">
           URL de imagen (opcional)
           <input
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
             placeholder="https://... o subí una foto abajo"
-            className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/75 px-2 py-1 text-sm outline-none focus:border-[var(--color-accent)]"
+            className="mt-0.5 w-full rounded-[var(--radius-input)] border border-[var(--color-border)] bg-white/75 px-2 py-1 text-body-sm outline-none focus:border-[var(--color-accent)]"
           />
         </label>
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp,image/gif"
           disabled={savingField !== null}
-          className="block w-full text-[11px] text-black/60 file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--color-accent)] file:px-2 file:py-1 file:text-xs file:font-semibold file:text-white"
+          className="block w-full text-caption text-[var(--color-ink-muted)] file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--color-accent)] file:px-2 file:py-1 file:text-xs file:font-semibold file:text-white"
           onChange={(e) => uploadFile(e.target.files?.[0] ?? null)}
         />
 
-        <div className="rounded-lg border border-[var(--color-border)] bg-white/50 p-2 text-xs text-black/70">
-          <p className="font-semibold text-black/80">Entrega (visible en el Mercado)</p>
+        <div className="rounded-lg border border-[var(--color-border)] bg-white/50 p-2 text-caption text-[var(--color-ink-muted)]">
+          <p className="font-semibold text-[var(--color-ink)]">Entrega (visible en el Mercado)</p>
           <label className="mt-2 flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
@@ -239,20 +240,20 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
             />
             Envío postal / courier
           </label>
-          <label className="mt-2 block text-black/60">
+          <label className="mt-2 block">
             Dónde y cómo (zona, horarios, costo de envío)
             <textarea
               value={deliveryNotes}
               onChange={(e) => setDeliveryNotes(e.target.value)}
               rows={2}
               placeholder="Ej.: Retiro Caballito CABA lun–vie 18–21 h. Envío Andreani a todo el país, a cargo del comprador."
-              className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/80 px-2 py-1 text-sm outline-none focus:border-[var(--color-accent)]"
+              className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/80 px-2 py-1 text-body-sm outline-none focus:border-[var(--color-accent)]"
             />
           </label>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <label className="text-xs text-black/60">
+          <label className="text-caption text-[var(--color-ink-muted)]">
             Precio ARS
             <input
               type="number"
@@ -260,10 +261,10 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               placeholder="Cargá un precio"
-              className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/75 px-2 py-1 text-sm outline-none focus:border-[var(--color-accent)]"
+              className="mt-0.5 w-full rounded-[var(--radius-input)] border border-[var(--color-border)] bg-white/75 px-2 py-1 text-body-sm outline-none focus:border-[var(--color-accent)]"
             />
           </label>
-          <label className="text-xs text-black/60">
+          <label className="text-caption text-[var(--color-ink-muted)]">
             Cantidad
             <input
               type="number"
@@ -271,57 +272,62 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
               max={100}
               value={quantity}
               onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-              className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/75 px-2 py-1 text-sm outline-none focus:border-[var(--color-accent)]"
+              className="mt-0.5 w-full rounded-[var(--radius-input)] border border-[var(--color-border)] bg-white/75 px-2 py-1 text-body-sm outline-none focus:border-[var(--color-accent)]"
             />
           </label>
         </div>
 
         <div className="mt-1 flex flex-wrap gap-2">
-          <button
+          <Button
             type="button"
+            size="sm"
             onClick={save}
             disabled={!dirty || savingField !== null}
-            className="rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-50"
+            loading={savingField === "edit"}
           >
-            {savingField === "edit" ? "Guardando..." : "Guardar"}
-          </button>
-          <button
+            Guardar
+          </Button>
+          <Button
             type="button"
+            size="sm"
+            variant="secondary"
             onClick={publish}
             disabled={savingField !== null || alreadyListed}
+            loading={savingField === "publish"}
             title={
               alreadyListed
                 ? "Ya tenés una publicación activa con esta carta"
                 : "Publicar en el Mercado con el precio cargado"
             }
-            className="rounded-lg border border-emerald-600 bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
           >
-            {alreadyListed
-              ? "Ya publicada"
-              : savingField === "publish"
-                ? "Publicando..."
-                : "Publicar en Mercado"}
-          </button>
-          <button
+            {alreadyListed ? "Ya publicada" : "Publicar en Mercado"}
+          </Button>
+          <Button
             type="button"
+            size="sm"
+            variant="ghost"
             onClick={remove}
             disabled={savingField !== null}
-            className="ml-auto rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs text-black/65 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+            loading={savingField === "delete"}
+            className="ml-auto hover:text-[var(--color-danger)]"
           >
-            {savingField === "delete" ? "Eliminando..." : "Eliminar"}
-          </button>
+            Eliminar
+          </Button>
         </div>
 
         {message ? (
           <p
-            className={`text-xs ${
-              message.kind === "ok" ? "text-emerald-700" : "text-rose-700"
+            role={message.kind === "err" ? "alert" : "status"}
+            className={`text-caption ${
+              message.kind === "ok"
+                ? "text-[var(--color-success)]"
+                : "text-[var(--color-danger)]"
             }`}
           >
             {message.text}
           </p>
         ) : null}
       </div>
-    </article>
+    </Card>
   );
 }

@@ -4,6 +4,9 @@ import type { PokemonTypeChip } from "@/lib/server/pokeapi";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { ReserveListingButton } from "@/components/reserve-listing-button";
 import { WatchFromListingButton } from "@/components/watch-from-listing-button";
+import { Card } from "@/components/ui/card";
+import { Chip } from "@/components/ui/chip";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   listing: Listing;
@@ -15,7 +18,7 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
   const isPack = listing.listingType === "mystery_pack";
 
   return (
-    <article className="surface-panel p-5">
+    <Card as="article" variant="interactive" padding="md">
       <div className="flex gap-4">
         {listing.imageUrl && !isPack ? (
           /* eslint-disable-next-line @next/next/no-img-element */
@@ -34,7 +37,7 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-xs uppercase tracking-[0.12em] text-black/55">
+          <p className="text-overline text-[var(--color-ink-subtle)]">
             {isPack
               ? `Pack sorpresa · ${listing.packCardCount ?? "?"} cartas`
               : listing.setName}
@@ -53,7 +56,7 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
               ))}
             </div>
           ) : null}
-          <p className="mt-2 text-sm text-black/65">
+          <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
             {isPack
               ? `Rareza mín.: ${listing.packRarityFloor ?? "n/d"} · Tema: ${listing.packTheme ?? "mix"}`
               : `Condición: ${formatConditionEs(listing.condition)}`}
@@ -65,10 +68,10 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-        <span className="rounded-full bg-[#fff1da] px-3 py-1 font-semibold">
+        <Chip variant="warning" size="md">
           ARS {listing.priceArs.toLocaleString("es-AR")}
-        </span>
-        <span className="text-black/65">Vendedor: {listing.sellerHandle}</span>
+        </Chip>
+        <span className="text-body-sm text-[var(--color-ink-muted)]">Vendedor: {listing.sellerHandle}</span>
       </div>
 
       <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-white/60 p-3 text-xs text-black/75">
@@ -123,6 +126,6 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
           />
         ) : null}
       </div>
-    </article>
+    </Card>
   );
 }

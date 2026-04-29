@@ -13,6 +13,7 @@
   --color-ink-inverse: #fffaf0;
 
   /* Borders */
+  --color-border: #d9cbb0;
   --color-border-default: #d9cbb0;
   --color-border-strong: #b8a986;
   --color-border-subtle: #ece1c8;
@@ -78,10 +79,3 @@
 @utility text-caption { font-size: 0.75rem; line-height: 1.4; }
 @utility text-overline { font-size: 0.6875rem; line-height: 1.2; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
 
-/* TEMPORARY shim — remove after migration (Task 27) */
-.surface-panel {
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-card);
-  background: var(--color-surface-elevated);
-  box-shadow: var(--shadow-card-lg);
-}

@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Listing } from "@/lib/domain/types";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
 
 const statusLabel: Record<string, string> = {
   active: "Activa",
@@ -12,11 +15,11 @@ const statusLabel: Record<string, string> = {
   cancelled: "Cancelada",
 };
 
-const statusColor: Record<string, string> = {
-  active: "bg-emerald-100 text-emerald-800",
-  pending_payment: "bg-sky-100 text-sky-800",
-  sold: "bg-blue-100 text-blue-800",
-  cancelled: "bg-zinc-200 text-zinc-700",
+const statusVariant: Record<string, "success" | "warning" | "default"> = {
+  active: "success",
+  pending_payment: "warning",
+  sold: "default",
+  cancelled: "default",
 };
 
 export function ListingRow({ listing }: { listing: Listing }) {
@@ -123,7 +126,7 @@ export function ListingRow({ listing }: { listing: Listing }) {
   }
 
   return (
-    <article className="surface-panel flex gap-4 p-4">
+    <Card as="article" variant="default" padding="none" className="flex gap-4 p-4">
       <div className="flex-shrink-0">
         {isPack ? (
           <div className="grid h-32 w-24 place-items-center rounded-lg bg-gradient-to-br from-[var(--color-accent)] to-rose-500 p-2 text-center text-[10px] font-bold uppercase tracking-widest text-white">
@@ -137,7 +140,7 @@ export function ListingRow({ listing }: { listing: Listing }) {
             className="h-32 w-24 rounded-lg object-cover"
           />
         ) : (
-          <div className="flex h-32 w-24 items-center justify-center rounded-lg bg-black/10 text-center text-[10px] text-black/50">
+          <div className="flex h-32 w-24 items-center justify-center rounded-lg bg-black/10 text-center text-caption text-[var(--color-ink-subtle)]">
             Sin foto
           </div>
         )}
@@ -147,37 +150,35 @@ export function ListingRow({ listing }: { listing: Listing }) {
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <h3 className="truncate text-base font-semibold">{listing.cardName}</h3>
-            <p className="truncate text-xs text-black/60">
+            <p className="truncate text-caption text-[var(--color-ink-muted)]">
               {isPack
                 ? `Pack · ${listing.packCardCount ?? "?"} cartas · ${listing.packTheme ?? "mix"}`
                 : listing.setName}
             </p>
             {!isPack ? (
-              <p className="mt-1 text-[11px] text-black/55">
+              <p className="mt-1 text-caption text-[var(--color-ink-subtle)]">
                 Condición: {formatConditionEs(listing.condition)}
               </p>
             ) : null}
           </div>
-          <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${statusColor[listing.status]}`}
-          >
+          <Chip variant={statusVariant[listing.status] ?? "default"} size="sm">
             {statusLabel[listing.status] ?? listing.status}
-          </span>
+          </Chip>
         </div>
 
         {listing.status === "active" ? (
           <div className="grid gap-2 sm:grid-cols-2">
-            <label className="text-xs text-black/60">
+            <label className="text-caption text-[var(--color-ink-muted)]">
               Precio ARS
               <input
                 type="number"
                 min={1}
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/75 px-2 py-1 text-sm outline-none focus:border-[var(--color-accent)]"
+                className="mt-0.5 w-full rounded-[var(--radius-input)] border border-[var(--color-border)] bg-white/75 px-2 py-1 text-body-sm outline-none focus:border-[var(--color-accent)]"
               />
             </label>
-            <label className="text-xs text-black/60">
+            <label className="text-caption text-[var(--color-ink-muted)]">
               Stock
               <input
                 type="number"
@@ -185,29 +186,29 @@ export function ListingRow({ listing }: { listing: Listing }) {
                 max={100}
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-                className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/75 px-2 py-1 text-sm outline-none focus:border-[var(--color-accent)]"
+                className="mt-0.5 w-full rounded-[var(--radius-input)] border border-[var(--color-border)] bg-white/75 px-2 py-1 text-body-sm outline-none focus:border-[var(--color-accent)]"
               />
             </label>
             {!isPack ? (
-              <label className="text-xs text-black/60 sm:col-span-2">
+              <label className="text-caption text-[var(--color-ink-muted)] sm:col-span-2">
                 URL de imagen (o subí una foto)
                 <input
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="https://..."
-                  className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/75 px-2 py-1 text-sm outline-none focus:border-[var(--color-accent)]"
+                  className="mt-0.5 w-full rounded-[var(--radius-input)] border border-[var(--color-border)] bg-white/75 px-2 py-1 text-body-sm outline-none focus:border-[var(--color-accent)]"
                 />
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/gif"
-                  className="mt-1 block w-full text-[11px] text-black/60 file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--color-accent)] file:px-2 file:py-1 file:text-xs file:font-semibold file:text-white"
+                  className="mt-1 block w-full text-caption text-[var(--color-ink-muted)] file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--color-accent)] file:px-2 file:py-1 file:text-xs file:font-semibold file:text-white"
                   disabled={busy}
                   onChange={(e) => uploadFile(e.target.files?.[0] ?? null)}
                 />
               </label>
             ) : null}
-            <div className="sm:col-span-2 rounded-lg border border-[var(--color-border)] bg-white/50 p-2 text-xs text-black/70">
-              <p className="font-semibold text-black/80">Entrega</p>
+            <div className="sm:col-span-2 rounded-lg border border-[var(--color-border)] bg-white/50 p-2 text-caption text-[var(--color-ink-muted)]">
+              <p className="font-semibold text-[var(--color-ink)]">Entrega</p>
               <label className="mt-1 flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
@@ -224,32 +225,30 @@ export function ListingRow({ listing }: { listing: Listing }) {
                 />
                 Envío postal / courier
               </label>
-              <label className="mt-2 block text-black/60">
+              <label className="mt-2 block">
                 Dónde y cómo
                 <textarea
                   value={deliveryNotes}
                   onChange={(e) => setDeliveryNotes(e.target.value)}
                   rows={2}
-                  className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/80 px-2 py-1 text-sm outline-none focus:border-[var(--color-accent)]"
+                  className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/80 px-2 py-1 text-body-sm outline-none focus:border-[var(--color-accent)]"
                 />
               </label>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="grid grid-cols-2 gap-2 text-body-sm">
             <div className="rounded-lg border border-[var(--color-border)] bg-white/70 p-2">
-              <p className="text-[10px] uppercase tracking-wide text-black/55">Precio</p>
+              <p className="text-overline text-[var(--color-ink-subtle)]">Precio</p>
               <p className="font-semibold">ARS {listing.priceArs.toLocaleString("es-AR")}</p>
             </div>
             <div className="rounded-lg border border-[var(--color-border)] bg-white/70 p-2">
-              <p className="text-[10px] uppercase tracking-wide text-black/55">Stock</p>
+              <p className="text-overline text-[var(--color-ink-subtle)]">Stock</p>
               <p className="font-semibold">{listing.quantity}</p>
             </div>
-            {(listing.offersShipping ||
-              listing.offersPickup ||
-              listing.deliveryAreaNotes) ? (
-              <div className="col-span-2 rounded-lg border border-[var(--color-border)] bg-amber-50/80 p-2 text-xs text-black/75">
-                <p className="font-semibold text-black/80">Entrega acordada</p>
+            {(listing.offersShipping || listing.offersPickup || listing.deliveryAreaNotes) ? (
+              <div className="col-span-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-warning-soft)] p-2 text-caption text-[var(--color-ink-muted)]">
+                <p className="font-semibold text-[var(--color-ink)]">Entrega acordada</p>
                 <p className="mt-1">
                   {listing.offersPickup ? "· Retiro " : ""}
                   {listing.offersShipping ? "· Envío " : ""}
@@ -265,37 +264,44 @@ export function ListingRow({ listing }: { listing: Listing }) {
         <div className="mt-1 flex flex-wrap gap-2">
           {listing.status === "active" ? (
             <>
-              <button
+              <Button
                 type="button"
+                size="sm"
                 onClick={saveEdits}
                 disabled={busy || !dirtyActive}
-                className="rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-50"
+                loading={busy && dirtyActive}
               >
-                {busy ? "Guardando..." : "Guardar cambios"}
-              </button>
-              <button
+                Guardar cambios
+              </Button>
+              <Button
                 type="button"
+                size="sm"
+                variant="ghost"
                 onClick={cancel}
                 disabled={busy}
-                className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs text-black/65 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+                className="hover:text-[var(--color-danger)]"
               >
                 {busy ? "..." : "Cancelar publicación"}
-              </button>
+              </Button>
             </>
           ) : null}
         </div>
 
         {listing.status === "pending_payment" && listing.reservedAt ? (
-          <p className="text-[11px] text-amber-800">
+          <p className="text-caption text-[var(--color-warning)]">
             Reserva iniciada el{" "}
             {new Date(listing.reservedAt).toLocaleString("es-AR")}. Si no se verifica el pago,
             la publicación puede volver a activa (cron de liberación, típicamente 24 h).
           </p>
         ) : null}
 
-        {ok ? <p className="text-xs text-emerald-700">{ok}</p> : null}
-        {error ? <p className="text-xs text-rose-700">{error}</p> : null}
+        {ok ? (
+          <p role="status" className="text-caption text-[var(--color-success)]">{ok}</p>
+        ) : null}
+        {error ? (
+          <p role="alert" className="text-caption text-[var(--color-danger)]">{error}</p>
+        ) : null}
       </div>
-    </article>
+    </Card>
   );
 }

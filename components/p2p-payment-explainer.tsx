@@ -1,13 +1,15 @@
+import { Card } from "@/components/ui/card";
+
 export function P2pPaymentExplainer() {
   return (
-    <article className="surface-panel border border-[var(--color-border)] bg-white/70 p-5 text-sm text-black/75">
-      <p className="text-xs uppercase tracking-[0.12em] text-black/55">
+    <Card as="article" padding="md">
+      <p className="text-overline text-[var(--color-ink-subtle)]">
         Cómo funciona el pago entre personas
       </p>
-      <h2 className="mt-1 text-lg font-semibold text-black/90">
+      <h2 className="mt-1 text-h3">
         No retenemos el dinero (no somos billetera)
       </h2>
-      <ul className="mt-3 list-disc space-y-2 pl-5">
+      <ul className="mt-3 list-disc space-y-2 pl-5 text-body-sm text-[var(--color-ink-muted)]">
         <li>
           El comprador paga <strong>directo al vendedor</strong> (Mercado Pago, transferencia, etc.)
           usando los datos que figuran en la reserva.
@@ -28,11 +30,11 @@ export function P2pPaymentExplainer() {
           <em>pendiente de revisión</em>: ahí conviene subir comprobante y acordar por chat.
         </li>
       </ul>
-      <p className="mt-3 text-xs text-black/60">
+      <p className="mt-3 text-caption text-[var(--color-ink-subtle)]">
         Para custodia real (plata retenida hasta que llegue el paquete) necesitás integración tipo{" "}
         <strong>Mercado Pago Marketplace</strong> u otro escrow regulado: es otro producto y
         requisitos legales distintos.
       </p>
-    </article>
+    </Card>
   );
 }

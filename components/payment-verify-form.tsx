@@ -2,6 +2,11 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 
 type VerifyResponse = {
   error?: string;
@@ -68,65 +73,61 @@ export function PaymentVerifyForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="surface-panel p-5 space-y-3">
-      <div>
-        <p className="text-xs uppercase tracking-[0.12em] text-black/55">Validar pago</p>
-        <h2 className="mt-1 text-xl font-semibold">Paso rapido para confirmar cobro</h2>
-        <p className="mt-1 text-sm text-black/70">
-          Pegá el <strong>transaction ID</strong> que te dio la app al reservar y el{" "}
-          <strong>ID de pago de Mercado Pago</strong> (o el identificador que corresponda). Si el
-          proveedor es Mercado Pago o Stripe, validamos contra su API: eso no mueve dinero, solo
-          confirma que el cobro existe y está aprobado.
-        </p>
-      </div>
+    <Card padding="md">
+      <p className="text-overline text-[var(--color-ink-subtle)]">Validar pago</p>
+      <h2 className="mt-1 text-h3">Paso rápido para confirmar cobro</h2>
+      <p className="mt-1 text-body-sm text-[var(--color-ink-muted)]">
+        Pegá el <strong>transaction ID</strong> que te dio la app al reservar y el{" "}
+        <strong>ID de pago de Mercado Pago</strong> (o el identificador que corresponda). Si el
+        proveedor es Mercado Pago o Stripe, validamos contra su API: eso no mueve dinero, solo
+        confirma que el cobro existe y está aprobado.
+      </p>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="text-sm text-black/75">
-          Transaction ID
-          <input
-            name="transactionId"
-            required
-            placeholder="tx_..."
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
+      <form onSubmit={onSubmit} className="mt-4 space-y-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <FormField label="Transaction ID" htmlFor="transactionId" required>
+            <Input
+              id="transactionId"
+              name="transactionId"
+              required
+              placeholder="tx_..."
+            />
+          </FormField>
 
-        <label className="text-sm text-black/75">
-          ID de pago (MP o Stripe)
-          <input
-            name="providerPaymentId"
-            required
-            placeholder="123456789"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
+          <FormField label="ID de pago (MP o Stripe)" htmlFor="providerPaymentId" required>
+            <Input
+              id="providerPaymentId"
+              name="providerPaymentId"
+              required
+              placeholder="123456789"
+            />
+          </FormField>
 
-        <label className="text-sm text-black/75 md:col-span-2">
-          Estado manual (solo si la transaccion es external_link)
-          <select
-            name="providerStatus"
-            defaultValue="pending"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          >
-            {manualStatuses.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+          <div className="md:col-span-2">
+            <FormField
+              label="Estado manual (solo si la transacción es external_link)"
+              htmlFor="providerStatus"
+            >
+              <Select id="providerStatus" name="providerStatus" defaultValue="pending">
+                {manualStatuses.map((status) => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </Select>
+            </FormField>
+          </div>
+        </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
-      >
-        {loading ? "Validando..." : "Validar pago"}
-      </button>
+        <Button type="submit" loading={loading}>
+          Validar pago
+        </Button>
 
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
-      {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
-    </form>
+        {error ? (
+          <p role="alert" className="text-body-sm text-[var(--color-danger)]">{error}</p>
+        ) : null}
+        {success ? (
+          <p role="status" className="text-body-sm text-[var(--color-success)]">{success}</p>
+        ) : null}
+      </form>
+    </Card>
   );
 }

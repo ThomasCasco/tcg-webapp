@@ -5,6 +5,12 @@ import type {
   SellerPaymentProfile,
   SellerPaymentProvider,
 } from "@/lib/domain/types";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 type SellerPaymentProfileFormProps = {
   initialProfile: SellerPaymentProfile;
@@ -48,7 +54,7 @@ export function SellerPaymentProfileForm({ initialProfile }: SellerPaymentProfil
         throw new Error(data.error ?? "No se pudo guardar el perfil de cobro.");
       }
 
-      setSuccess("Perfil de cobro guardado. Los compradores lo veran al reservar.");
+      setSuccess("Perfil de cobro guardado. Los compradores lo verán al reservar.");
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Error desconocido.");
     } finally {
@@ -57,73 +63,74 @@ export function SellerPaymentProfileForm({ initialProfile }: SellerPaymentProfil
   }
 
   return (
-    <form onSubmit={onSubmit} className="surface-panel p-5 space-y-3">
-      <div>
-        <p className="text-xs uppercase tracking-[0.12em] text-black/55">Perfil de cobro</p>
-        <h2 className="mt-1 text-xl font-semibold">Recibir pagos de otros usuarios</h2>
-        <p className="mt-1 text-sm text-black/70">
-          Estos datos se muestran al comprador cuando reserva tu publicacion.
-        </p>
-      </div>
+    <Card padding="md">
+      <p className="text-overline text-[var(--color-ink-subtle)]">Perfil de cobro</p>
+      <h2 className="mt-1 text-h3">Recibir pagos de otros usuarios</h2>
+      <p className="mt-1 text-body-sm text-[var(--color-ink-muted)]">
+        Estos datos se muestran al comprador cuando reserva tu publicación.
+      </p>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="text-sm text-black/75">
-          Metodo de cobro
-          <select
-            name="paymentProvider"
-            defaultValue={initialProfile.paymentProvider}
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          >
-            {providers.map((provider) => (
-              <option key={provider.value} value={provider.value}>
-                {provider.label}
-              </option>
-            ))}
-          </select>
-        </label>
+      <form onSubmit={onSubmit} className="mt-4 space-y-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <FormField label="Método de cobro" htmlFor="paymentProvider">
+            <Select
+              id="paymentProvider"
+              name="paymentProvider"
+              defaultValue={initialProfile.paymentProvider}
+            >
+              {providers.map((provider) => (
+                <option key={provider.value} value={provider.value}>
+                  {provider.label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
 
-        <label className="text-sm text-black/75">
-          Alias / CBU / link de cobro
-          <input
-            name="paymentAlias"
-            defaultValue={initialProfile.paymentAlias ?? ""}
-            placeholder="tu.alias.mp o CBU"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
+          <FormField label="Alias / CBU / link de cobro" htmlFor="paymentAlias">
+            <Input
+              id="paymentAlias"
+              name="paymentAlias"
+              defaultValue={initialProfile.paymentAlias ?? ""}
+              placeholder="tu.alias.mp o CBU"
+            />
+          </FormField>
 
-        <label className="text-sm text-black/75 md:col-span-2">
-          WhatsApp de contacto (opcional)
-          <input
-            name="whatsapp"
-            defaultValue={initialProfile.whatsapp ?? ""}
-            placeholder="+54 11 5555 4444"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
+          <div className="md:col-span-2">
+            <FormField label="WhatsApp de contacto (opcional)" htmlFor="whatsapp">
+              <Input
+                id="whatsapp"
+                name="whatsapp"
+                defaultValue={initialProfile.whatsapp ?? ""}
+                placeholder="+54 11 5555 4444"
+              />
+            </FormField>
+          </div>
 
-        <label className="text-sm text-black/75 md:col-span-2">
-          Instrucciones de pago (opcional)
-          <textarea
-            name="paymentInstructions"
-            defaultValue={initialProfile.paymentInstructions ?? ""}
-            maxLength={280}
-            className="mt-1 min-h-[90px] w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-            placeholder="Ej: transferi y manda comprobante en menos de 30 min."
-          />
-        </label>
-      </div>
+          <div className="md:col-span-2">
+            <FormField label="Instrucciones de pago (opcional)" htmlFor="paymentInstructions">
+              <Textarea
+                id="paymentInstructions"
+                name="paymentInstructions"
+                defaultValue={initialProfile.paymentInstructions ?? ""}
+                maxLength={280}
+                rows={3}
+                placeholder="Ej: transferí y mandá comprobante en menos de 30 min."
+              />
+            </FormField>
+          </div>
+        </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
-      >
-        {loading ? "Guardando..." : "Guardar datos de cobro"}
-      </button>
+        <Button type="submit" loading={loading}>
+          Guardar datos de cobro
+        </Button>
 
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
-      {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
-    </form>
+        {error ? (
+          <p role="alert" className="text-body-sm text-[var(--color-danger)]">{error}</p>
+        ) : null}
+        {success ? (
+          <p role="status" className="text-body-sm text-[var(--color-success)]">{success}</p>
+        ) : null}
+      </form>
+    </Card>
   );
 }

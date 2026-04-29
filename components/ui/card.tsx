@@ -25,13 +25,15 @@ const cardVariants = cva(
 );
 
 export interface CardProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends React.HTMLAttributes<HTMLElement>,
     VariantProps<typeof cardVariants> {
-  as?: "div" | "article" | "section";
+  as?: "div" | "article" | "section" | "header" | "main";
 }
 
 export function Card({ as: Tag = "div", className, variant, padding, ...props }: CardProps) {
-  return <Tag className={cn(cardVariants({ variant, padding }), className)} {...props} />;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const T = Tag as any;
+  return <T className={cn(cardVariants({ variant, padding }), className)} {...props} />;
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {

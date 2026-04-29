@@ -4,6 +4,11 @@ import { listListings } from "@/lib/server/repository";
 import { getPokemonTypesForCardTitle } from "@/lib/server/pokeapi";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ShoppingBag } from "@/components/ui/icon";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -51,49 +56,46 @@ export default async function MarketPage({
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6 md:py-8">
       {!isSupabaseConfigured() ? (
-        <section className="surface-panel border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          Falta configurar Supabase en producción para abrir el marketplace a usuarios.
-        </section>
+        <Card as="section" padding="md" className="border-amber-300 bg-amber-50">
+          <p className="text-sm text-amber-900">
+            Falta configurar Supabase en producción para abrir el marketplace a usuarios.
+          </p>
+        </Card>
       ) : null}
 
       {loadError ? (
-        <section className="surface-panel border-2 border-rose-300 bg-rose-50 p-4 text-sm text-rose-900">
-          Error de backend: {loadError}
-        </section>
+        <Card as="section" padding="md" className="border-rose-300 bg-rose-50">
+          <p className="text-sm text-rose-900">Error de backend: {loadError}</p>
+        </Card>
       ) : null}
 
-      <section className="surface-panel p-6">
-        <p className="text-xs uppercase tracking-[0.15em] text-black/55">
+      <Card as="section" padding="lg">
+        <p className="text-overline text-[var(--color-ink-subtle)]">
           Marketplace público
         </p>
-        <h1 className="mt-1 text-4xl [font-family:var(--font-display)]">
+        <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
           Comprar cartas y packs
         </h1>
-        <p className="mt-2 max-w-2xl text-sm text-black/70">
+        <p className="mt-2 max-w-2xl text-body-sm text-[var(--color-ink-muted)]">
           Acá ves <strong>publicaciones activas</strong> de otros vendedores. Cuando reservás,
           la publicación pasa a <em>pago pendiente</em>: pagás directo al vendedor (Mercado Pago,
           transferencia, etc.) y después pegás el comprobante en{" "}
           <Link href="/transactions" className="underline">
             Transacciones
-          </Link>
-          . Si nadie paga a tiempo, la publicación vuelve sola a activa (revisá el cron de liberación
-          en el README).
+          </Link>.
         </p>
 
         <form method="GET" className="mt-4 flex flex-wrap items-center gap-2">
           <input type="hidden" name="tab" value={tab} />
-          <input
+          <Input
             name="q"
             defaultValue={q}
             placeholder="Buscar Charizard, Mew, Paradox Rift..."
-            className="min-w-[260px] flex-1 rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
+            className="min-w-[220px] flex-1"
           />
-          <button
-            type="submit"
-            className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)]"
-          >
+          <Button type="submit" size="sm">
             Buscar
-          </button>
+          </Button>
           <div className="flex rounded-full border border-[var(--color-border)] p-1 text-xs">
             {[
               { key: "all", label: "Todo" },
@@ -103,10 +105,10 @@ export default async function MarketPage({
               <Link
                 key={t.key}
                 href={`/market?tab=${t.key}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
-                className={`rounded-full px-3 py-1 ${
+                className={`rounded-full px-3 py-1 transition-colors ${
                   tab === t.key
                     ? "bg-[var(--color-accent)] text-white"
-                    : "text-black/60"
+                    : "text-[var(--color-ink-muted)] hover:bg-black/5"
                 }`}
               >
                 {t.label}
@@ -114,23 +116,23 @@ export default async function MarketPage({
             ))}
           </div>
         </form>
-      </section>
+      </Card>
 
       {enriched.length === 0 ? (
-        <section className="surface-panel p-8 text-center text-sm text-black/65">
-          <p className="font-medium text-black/80">Todavía no hay publicaciones que coincidan.</p>
-          <p className="mt-2">
-            Si vendés, cargá cartas en{" "}
-            <Link href="/inventory" className="underline">
-              Inventario
-            </Link>{" "}
-            y tocá <strong>Publicar en Mercado</strong>, o publicá un pack en{" "}
-            <Link href="/listings" className="underline">
-              Publicaciones
-            </Link>
-            .
-          </p>
-        </section>
+        <EmptyState
+          icon={<ShoppingBag className="h-8 w-8" />}
+          title="Sin publicaciones"
+          description={
+            <>
+              <p>Todavía no hay publicaciones que coincidan.</p>
+              <p className="mt-1">
+                Si vendés, cargá cartas en{" "}
+                <Link href="/inventory" className="underline">Inventario</Link>{" "}
+                y tocá <strong>Publicar en Mercado</strong>.
+              </p>
+            </>
+          }
+        />
       ) : (
         <section className="grid gap-4 md:grid-cols-2">
           {enriched.map(({ listing, pokemonTypes }) => (
