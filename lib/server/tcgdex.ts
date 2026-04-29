@@ -23,6 +23,7 @@ export type CatalogCardSummary = {
   imageSmall: string | null;
   imageLarge: string | null;
   marketPriceUsd: number | null;
+  marketPriceUsdEstimate: number | null;
   marketPriceEur: number | null;
 };
 
@@ -102,11 +103,13 @@ function briefToSummary(brief: CardBrief): CatalogCardSummary {
     rarity: null,
     ...buildImages(brief.image),
     marketPriceUsd: null,
+    marketPriceUsdEstimate: null,
     marketPriceEur: null,
   };
 }
 
 function fullToSummary(card: CardFull): CatalogCardSummary {
+  const marketPriceEur = pickCardmarketPrice(card);
   return {
     id: card.id,
     name: card.name,
@@ -116,7 +119,9 @@ function fullToSummary(card: CardFull): CatalogCardSummary {
     rarity: card.rarity ?? null,
     ...buildImages(card.image),
     marketPriceUsd: null,
-    marketPriceEur: pickCardmarketPrice(card),
+    marketPriceUsdEstimate:
+      typeof marketPriceEur === "number" ? Number((marketPriceEur * 1.08).toFixed(2)) : null,
+    marketPriceEur,
   };
 }
 

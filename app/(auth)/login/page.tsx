@@ -10,21 +10,18 @@ export default async function LoginPage() {
   }
 
   return (
-    <section className="surface-panel mx-auto w-full max-w-xl p-6 md:p-8">
-      <p className="text-xs uppercase tracking-[0.15em] text-black/55">
-        Acceso vendedor/comprador
-      </p>
-      <h1 className="mt-2 text-4xl [font-family:var(--font-display)]">Login</h1>
-      <p className="mt-2 text-sm text-black/70">
-        Inicia sesion para gestionar inventario, listings y transacciones.
+    <section className="card mx-auto w-full max-w-md p-7 md:p-8">
+      <h1 className="text-3xl font-bold tracking-tight">Ingresar</h1>
+      <p className="mt-2 text-sm muted">
+        Accedé a tu inventario, publicaciones y operaciones.
       </p>
 
       <LoginForm />
 
-      <p className="mt-5 text-sm text-black/70">
-        No tenes cuenta?{" "}
-        <Link href="/register" className="font-semibold text-[var(--color-accent)]">
-          Registrate
+      <p className="mt-6 text-sm muted">
+        ¿Todavía no tenés cuenta?{" "}
+        <Link href="/register" className="font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-strong)]">
+          Crear cuenta
         </Link>
       </p>
     </section>

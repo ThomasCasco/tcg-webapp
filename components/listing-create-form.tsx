@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import type { CardCondition } from "@/lib/domain/types";
@@ -28,6 +29,7 @@ export function ListingCreateForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,7 +56,7 @@ export function ListingCreateForm() {
     };
 
     if (!payload.cardName || payload.cardName.length < 2) {
-      setError("Faltá el título del pack.");
+      setError("Falta el título del pack.");
       setLoading(false);
       return;
     }
@@ -69,12 +71,13 @@ export function ListingCreateForm() {
       if (!response.ok) {
         throw new Error(data.error ?? "No se pudo crear la publicación.");
       }
-      setSuccess("Pack publicado.");
+      setSuccess("Pack publicado ✓");
       formEl.reset();
+      setOpen(false);
       router.refresh();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Error desconocido.",
+        submitError instanceof Error ? submitError.message : "Ocurrió un error. Probá de nuevo.",
       );
     } finally {
       setLoading(false);
@@ -82,149 +85,170 @@ export function ListingCreateForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="surface-panel p-5 space-y-3">
-      <div>
-        <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-          Nuevo Mystery Pack
-        </p>
-        <p className="mt-1 text-sm text-black/70">
-          Un pack sorpresa con varias cartas a un precio fijo. Para publicar una{" "}
-          <strong>carta individual</strong>, cargala primero en{" "}
-          <a href="/inventory" className="underline">Inventario</a> y tocá{" "}
-          &quot;Publicar en Mercado&quot;.
-        </p>
+    <div className="card p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="eyebrow">Mystery Pack</p>
+          <h2 className="mt-0.5 text-lg font-bold tracking-tight">Publicar un pack sorpresa</h2>
+          <p className="mt-1 text-xs muted">
+            Para publicar una carta individual, hacelo desde{" "}
+            <Link href="/inventory" className="font-semibold text-[var(--color-accent)] hover:underline">
+              Inventario
+            </Link>
+            .
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className={open ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"}
+        >
+          {open ? "Cerrar" : "+ Nuevo pack"}
+        </button>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="text-sm text-black/75 md:col-span-2">
-          Título del pack
-          <input
-            name="packTitle"
-            required
-            placeholder="Pack Charizard vibes 5 cartas"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
-        <label className="text-sm text-black/75">
-          Temática (opcional)
-          <input
-            name="packTheme"
-            placeholder="Fire types, Trainers, Base Set..."
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
-        <label className="text-sm text-black/75">
-          Cartas por pack
-          <input
-            name="packCardCount"
-            type="number"
-            min={1}
-            max={50}
-            defaultValue={5}
-            required
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
-        <label className="text-sm text-black/75">
-          Rareza piso garantizada
-          <select
-            name="packRarityFloor"
-            defaultValue="rare"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          >
-            {rarityFloors.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-sm text-black/75 md:col-span-2">
-          Descripción (mín. 20 caracteres)
-          <textarea
-            name="packDescription"
-            required
-            minLength={20}
-            className="mt-1 min-h-[90px] w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-            placeholder="5 cartas random tipo fuego + 1 holo garantizada near_mint o mejor."
-          />
-        </label>
-      </div>
+      {open ? (
+        <form onSubmit={onSubmit} className="mt-4 space-y-3 border-t border-[var(--color-border)] pt-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="text-xs font-medium md:col-span-2">
+              Título del pack
+              <input
+                name="packTitle"
+                required
+                placeholder="Ej: Pack fuego 5 cartas + 1 holo"
+                className="input mt-1"
+              />
+            </label>
+            <label className="text-xs font-medium">
+              Temática (opcional)
+              <input
+                name="packTheme"
+                placeholder="Fire types, Trainers, Base Set..."
+                className="input mt-1"
+              />
+            </label>
+            <label className="text-xs font-medium">
+              Cartas por pack
+              <input
+                name="packCardCount"
+                type="number"
+                min={1}
+                max={50}
+                defaultValue={5}
+                required
+                className="input mt-1"
+              />
+            </label>
+            <label className="text-xs font-medium">
+              Rareza mínima garantizada
+              <select name="packRarityFloor" defaultValue="rare" className="input mt-1">
+                {rarityFloors.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium">
+              Condición mínima
+              <select name="condition" defaultValue="near_mint" className="input mt-1">
+                {conditions.map((condition) => (
+                  <option key={condition} value={condition}>
+                    {formatConditionEs(condition)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium md:col-span-2">
+              Descripción (mín. 20 caracteres)
+              <textarea
+                name="packDescription"
+                required
+                minLength={20}
+                rows={3}
+                placeholder="Ej: 5 cartas random tipo fuego + 1 holo garantizada near_mint o mejor."
+                className="input mt-1"
+              />
+            </label>
+          </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <label className="text-sm text-black/75">
-          Condición mínima
-          <select
-            name="condition"
-            defaultValue="near_mint"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          >
-            {conditions.map((condition) => (
-              <option key={condition} value={condition}>
-                {formatConditionEs(condition)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-sm text-black/75">
-          Precio ARS
-          <input
-            name="priceArs"
-            required
-            type="number"
-            min={1}
-            placeholder="25000"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
-        <label className="text-sm text-black/75">
-          Stock
-          <input
-            name="quantity"
-            type="number"
-            min={1}
-            defaultValue={1}
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
-      </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="text-xs font-medium">
+              Precio ARS
+              <input
+                name="priceArs"
+                required
+                type="number"
+                min={1}
+                placeholder="25000"
+                className="input mt-1"
+              />
+            </label>
+            <label className="text-xs font-medium">
+              Stock
+              <input
+                name="quantity"
+                type="number"
+                min={1}
+                defaultValue={1}
+                className="input mt-1"
+              />
+            </label>
+          </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-white/50 p-3 text-sm text-black/75">
-        <p className="font-semibold text-black/85">Entrega del pack</p>
-        <p className="mt-1 text-xs text-black/60">
-          El comprador ve esto en el Mercado. Marcá al menos una opción y detallá dónde / cómo.
-        </p>
-        <label className="mt-2 flex cursor-pointer items-center gap-2">
-          <input type="checkbox" name="offersPickup" value="on" defaultChecked />
-          Retiro en persona
-        </label>
-        <label className="mt-1 flex cursor-pointer items-center gap-2">
-          <input type="checkbox" name="offersShipping" value="on" />
-          Envío postal / courier
-        </label>
-        <label className="mt-2 block text-sm text-black/75">
-          Detalle (mín. 8 caracteres)
-          <textarea
-            name="deliveryAreaNotes"
-            required
-            minLength={8}
-            rows={2}
-            placeholder="Ej.: Retiro en Rosario centro / envío OCA a todo el país a cargo del comprador."
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
-      </div>
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-3 text-sm">
+            <p className="text-xs font-semibold">Entrega</p>
+            <p className="mt-0.5 text-[11px] subtle">
+              El comprador lo ve al reservar. Marcá al menos una opción.
+            </p>
+            <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                name="offersPickup"
+                value="on"
+                defaultChecked
+                className="h-4 w-4 accent-[var(--color-accent)]"
+              />
+              Retiro en persona
+            </label>
+            <label className="mt-1.5 flex cursor-pointer items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                name="offersShipping"
+                value="on"
+                className="h-4 w-4 accent-[var(--color-accent)]"
+              />
+              Envío postal / courier
+            </label>
+            <label className="mt-2 block text-xs font-medium">
+              Detalle (mín. 8 caracteres)
+              <textarea
+                name="deliveryAreaNotes"
+                required
+                minLength={8}
+                rows={2}
+                placeholder="Ej: Retiro en Rosario centro / envío OCA a todo el país."
+                className="input mt-1"
+              />
+            </label>
+          </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
-      >
-        {loading ? "Publicando..." : "Publicar pack"}
-      </button>
+          <button type="submit" disabled={loading} className="btn btn-primary">
+            {loading ? "Publicando..." : "Publicar pack"}
+          </button>
 
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
-      {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
-    </form>
+          {error ? (
+            <p className="rounded-lg bg-[var(--color-danger-soft)] px-3 py-2 text-sm text-[var(--color-danger)]">
+              {error}
+            </p>
+          ) : null}
+          {success ? (
+            <p className="rounded-lg bg-[var(--color-success-soft)] px-3 py-2 text-sm text-[var(--color-success)]">
+              {success}
+            </p>
+          ) : null}
+        </form>
+      ) : null}
+    </div>
   );
 }

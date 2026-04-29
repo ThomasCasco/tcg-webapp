@@ -1,45 +1,235 @@
 @import "tailwindcss";
 
 :root {
-  --color-surface: #f5efdf;
-  --color-ink: #1f1b15;
-  --color-card: #fffaf0;
-  --color-border: #d9cbb0;
-  --color-accent: #0f7a66;
-  --color-accent-strong: #0a5f50;
-  --color-warning: #ffaf45;
+  --color-bg: #f7f7fb;
+  --color-bg-elevated: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f3f4f9;
+  --color-ink: #0f172a;
+  --color-ink-muted: #475569;
+  --color-ink-subtle: #64748b;
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+  --color-accent: #6d28d9;
+  --color-accent-strong: #5b21b6;
+  --color-accent-soft: #ede9fe;
+  --color-accent-ink: #4c1d95;
+  --color-success: #059669;
+  --color-success-soft: #d1fae5;
+  --color-warning: #d97706;
+  --color-warning-soft: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+  --color-info: #0284c7;
+  --color-info-soft: #e0f2fe;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.08);
 }
 
 @theme inline {
-  --color-background: var(--color-surface);
+  --color-background: var(--color-bg);
   --color-foreground: var(--color-ink);
   --font-sans: var(--font-body);
 }
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at 14% 8%, #ffdca5 0%, transparent 30%),
-    radial-gradient(circle at 86% 0%, #b6e7dc 0%, transparent 26%),
-    linear-gradient(180deg, #f5efdf 0%, #efe4ce 100%);
+  background: var(--color-bg);
   color: var(--color-ink);
-  font-family: var(--font-body), "Segoe UI", sans-serif;
+  font-family: var(--font-body), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
   color: inherit;
 }
 
+/* Backwards-compatible aliases used across components */
 .surface-panel {
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 1.5rem;
-  background: color-mix(in srgb, var(--color-card) 90%, #ffffff 10%);
-  box-shadow: 0 16px 36px rgba(77, 55, 19, 0.1);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .grid-overlay {
   background-image:
-    linear-gradient(rgba(31, 27, 21, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(31, 27, 21, 0.05) 1px, transparent 1px);
-  background-size: 16px 16px;
+    linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Semantic utilities */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-hover {
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+.card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-border-strong);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 0.625rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+  white-space: nowrap;
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--color-accent);
+  color: #ffffff;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.15) inset, 0 6px 16px rgba(109, 40, 217, 0.22);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-strong);
+}
+.btn-ghost {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border-color: var(--color-border);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border-strong);
+}
+.btn-soft {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-ink);
+}
+.btn-soft:hover:not(:disabled) {
+  background: #e0d4fe;
+}
+.btn-danger {
+  background: var(--color-surface);
+  color: var(--color-danger);
+  border-color: var(--color-border);
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger);
+}
+.btn-sm {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+}
+.btn-lg {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9375rem;
+}
+
+.input {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.625rem;
+  padding: 0.55rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--color-ink);
+  outline: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.input::placeholder {
+  color: var(--color-ink-subtle);
+}
+.input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.15);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--color-surface-muted);
+  color: var(--color-ink-muted);
+}
+.chip-accent {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-ink);
+}
+.chip-success {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+.chip-warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+.chip-danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+.chip-info {
+  background: var(--color-info-soft);
+  color: var(--color-info);
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+}
+
+.muted {
+  color: var(--color-ink-muted);
+}
+.subtle {
+  color: var(--color-ink-subtle);
+}
+
+.eyebrow {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-subtle);
+}
+
+.price-tag {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.price-tag .currency {
+  font-size: 0.75rem;
+  color: var(--color-ink-muted);
+  font-weight: 600;
+}
+.price-tag .amount {
+  font-size: 1.125rem;
+  letter-spacing: -0.02em;
+}
+
+/* Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }

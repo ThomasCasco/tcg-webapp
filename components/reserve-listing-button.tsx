@@ -46,7 +46,7 @@ export function ReserveListingButton({ listingId }: ReserveListingButtonProps) {
       setMessage(
         data.message ??
           (data.transactionId
-            ? `Reserva creada. Tu ID interno de operación es: ${data.transactionId} (guardalo para verificar el pago).`
+            ? `Reserva creada. Guardá tu ID de operación: ${data.transactionId}.`
             : "Reserva creada."),
       );
       setSellerPayment(data.sellerPayment ?? null);
@@ -54,7 +54,7 @@ export function ReserveListingButton({ listingId }: ReserveListingButtonProps) {
       router.refresh();
     } catch (reserveError) {
       setError(
-        reserveError instanceof Error ? reserveError.message : "Error desconocido.",
+        reserveError instanceof Error ? reserveError.message : "No se pudo completar la reserva.",
       );
     } finally {
       setLoading(false);
@@ -63,58 +63,81 @@ export function ReserveListingButton({ listingId }: ReserveListingButtonProps) {
 
   return (
     <div className="space-y-3">
-      <ol className="list-decimal space-y-1 pl-4 text-xs text-black/65">
-        <li>Tocá <strong>Reservar compra</strong> (la publicación queda en pago pendiente).</li>
-        <li>Pagá al vendedor con los datos que aparecen abajo.</li>
-        <li>
-          En{" "}
-          <Link href="/transactions" className="underline font-semibold text-[var(--color-accent-strong)]">
-            Transacciones
-          </Link>{" "}
-          pegá el ID de pago (Mercado Pago / comprobante) para verificar.
-        </li>
-      </ol>
       <button
         type="button"
         onClick={reserve}
         disabled={loading}
-        className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
+        className="btn btn-primary"
       >
         {loading ? "Reservando..." : "Reservar compra"}
       </button>
-      {message ? <p className="text-xs text-emerald-700">{message}</p> : null}
+      {message ? (
+        <div className="rounded-lg bg-[var(--color-success-soft)] px-3 py-2 text-xs text-[var(--color-success)]">
+          {message}
+          <p className="mt-1 text-[var(--color-ink-muted)]">
+            Después del pago, cargá el comprobante desde{" "}
+            <Link href="/transactions" className="font-semibold text-[var(--color-accent)] underline">
+              Operaciones
+            </Link>
+            .
+          </p>
+        </div>
+      ) : null}
       {reservedListing ? (
-        <div className="rounded-xl border border-[var(--color-border)] bg-sky-50/90 p-3 text-xs text-black/80">
-          <p className="font-semibold text-black/85">Entrega acordada en la publicación</p>
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-info-soft)] p-3 text-xs">
+          <p className="font-semibold">Entrega acordada</p>
           <p className="mt-1">
-            {reservedListing.offersPickup ? "· Retiro en persona " : ""}
-            {reservedListing.offersShipping ? "· Envío " : ""}
+            {reservedListing.offersPickup ? "Retiro en persona" : ""}
+            {reservedListing.offersPickup && reservedListing.offersShipping ? " · " : ""}
+            {reservedListing.offersShipping ? "Envío" : ""}
           </p>
           {reservedListing.deliveryAreaNotes ? (
-            <p className="mt-2 whitespace-pre-wrap">{reservedListing.deliveryAreaNotes}</p>
+            <p className="mt-2 whitespace-pre-wrap muted">{reservedListing.deliveryAreaNotes}</p>
           ) : (
-            <p className="mt-2 text-black/60">
-              Coordiná el detalle con el vendedor por WhatsApp o mensaje antes de enviar dinero.
+            <p className="mt-2 subtle">
+              Coordiná el detalle con el vendedor antes de transferir.
             </p>
           )}
         </div>
       ) : null}
       {sellerPayment ? (
-        <div className="rounded-xl border border-[var(--color-border)] bg-[#fff6e8] p-3 text-xs text-black/75">
-          <p className="font-semibold text-black/80">
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-warning-soft)] p-3 text-xs">
+          <p className="font-semibold">
             Datos de cobro de {sellerPayment.sellerHandle}
           </p>
-          <p>Método: {sellerPayment.paymentProvider ?? "no informado"}</p>
-          {sellerPayment.paymentAlias ? (
-            <p>Alias / CBU / link: {sellerPayment.paymentAlias}</p>
-          ) : null}
-          {sellerPayment.whatsapp ? <p>WhatsApp: {sellerPayment.whatsapp}</p> : null}
-          {sellerPayment.paymentInstructions ? (
-            <p>Instrucciones: {sellerPayment.paymentInstructions}</p>
-          ) : null}
+          <dl className="mt-1 space-y-0.5">
+            {sellerPayment.paymentProvider ? (
+              <div className="flex gap-2">
+                <dt className="subtle">Método:</dt>
+                <dd className="font-medium">{sellerPayment.paymentProvider}</dd>
+              </div>
+            ) : null}
+            {sellerPayment.paymentAlias ? (
+              <div className="flex gap-2">
+                <dt className="subtle">Alias/CBU:</dt>
+                <dd className="font-medium">{sellerPayment.paymentAlias}</dd>
+              </div>
+            ) : null}
+            {sellerPayment.whatsapp ? (
+              <div className="flex gap-2">
+                <dt className="subtle">WhatsApp:</dt>
+                <dd className="font-medium">{sellerPayment.whatsapp}</dd>
+              </div>
+            ) : null}
+            {sellerPayment.paymentInstructions ? (
+              <div className="mt-1">
+                <dt className="subtle">Instrucciones:</dt>
+                <dd className="mt-0.5">{sellerPayment.paymentInstructions}</dd>
+              </div>
+            ) : null}
+          </dl>
         </div>
       ) : null}
-      {error ? <p className="text-xs text-rose-700">{error}</p> : null}
+      {error ? (
+        <p className="rounded-lg bg-[var(--color-danger-soft)] px-3 py-2 text-xs text-[var(--color-danger)]">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

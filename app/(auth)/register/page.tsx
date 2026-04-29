@@ -10,23 +10,18 @@ export default async function RegisterPage() {
   }
 
   return (
-    <section className="surface-panel mx-auto w-full max-w-xl p-6 md:p-8">
-      <p className="text-xs uppercase tracking-[0.15em] text-black/55">
-        Onboarding vendedor
-      </p>
-      <h1 className="mt-2 text-4xl [font-family:var(--font-display)]">
-        Crear cuenta
-      </h1>
-      <p className="mt-2 text-sm text-black/70">
-        Registro real para empezar a cargar inventario y publicar cartas.
+    <section className="card mx-auto w-full max-w-md p-7 md:p-8">
+      <h1 className="text-3xl font-bold tracking-tight">Crear cuenta</h1>
+      <p className="mt-2 text-sm muted">
+        Registrate gratis para cargar tu inventario y empezar a publicar.
       </p>
 
       <RegisterForm />
 
-      <p className="mt-5 text-sm text-black/70">
-        Ya tenes cuenta?{" "}
-        <Link href="/login" className="font-semibold text-[var(--color-accent)]">
-          Iniciar sesion
+      <p className="mt-6 text-sm muted">
+        ¿Ya tenés cuenta?{" "}
+        <Link href="/login" className="font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-strong)]">
+          Iniciar sesión
         </Link>
       </p>
     </section>

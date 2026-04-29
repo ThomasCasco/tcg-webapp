@@ -42,7 +42,7 @@ function loadSets(): Promise<SetOption[]> {
 export function CardPicker({
   onPick,
   initial = null,
-  placeholder = "Busca: Pikachu, Charizard...",
+  placeholder = "Buscá: Pikachu, Charizard...",
 }: CardPickerProps) {
   const [query, setQuery] = useState(initial?.name ?? "");
   const [results, setResults] = useState<PickedCard[]>([]);
@@ -142,10 +142,10 @@ export function CardPicker({
   return (
     <div className="space-y-3">
       <div ref={setsRef} className="relative">
-        <label className="mb-1 block text-xs uppercase tracking-[0.1em] text-black/55">
+        <label className="mb-1 block text-xs font-medium subtle">
           Set / Expansión (opcional)
         </label>
-        <div className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 focus-within:border-[var(--color-accent)]">
+        <div className="input flex items-center gap-2 px-3 py-2 focus-within:border-[var(--color-accent)]">
           {selectedSet?.logo ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
@@ -165,13 +165,13 @@ export function CardPicker({
               setSetsOpen(true);
             }}
             onFocus={() => setSetsOpen(true)}
-            className="flex-1 bg-transparent outline-none"
+            className="flex-1 border-0 bg-transparent p-0 text-sm outline-none focus:ring-0"
           />
           {selectedSet || setsFilter ? (
             <button
               type="button"
               onClick={() => pickSet(null)}
-              className="rounded-full px-2 py-0.5 text-xs text-black/50 hover:bg-black/5"
+              className="rounded-full px-2 py-0.5 text-xs subtle hover:bg-[var(--color-surface-muted)]"
               aria-label="Limpiar set"
             >
               ×
@@ -180,25 +180,23 @@ export function CardPicker({
         </div>
 
         {setsOpen ? (
-          <div className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-[var(--color-border)] bg-white shadow-lg">
+          <div className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg">
             <button
               type="button"
               onClick={() => pickSet(null)}
-              className="flex w-full items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 text-left text-sm hover:bg-[var(--color-card)]"
+              className="flex w-full items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 text-left text-sm hover:bg-[var(--color-surface-muted)]"
             >
-              <span className="text-black/60">Todos los sets</span>
+              <span className="muted">Todos los sets</span>
             </button>
             {filteredSets.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-black/60">
-                Sin sets que coincidan.
-              </div>
+              <div className="px-3 py-2 text-sm muted">Sin sets que coincidan.</div>
             ) : (
               filteredSets.map((option) => (
                 <button
                   key={option.id}
                   type="button"
                   onClick={() => pickSet(option)}
-                  className="flex w-full items-center gap-3 border-b border-[var(--color-border)] px-3 py-2 text-left text-sm last:border-b-0 hover:bg-[var(--color-card)]"
+                  className="flex w-full items-center gap-3 border-b border-[var(--color-border)] px-3 py-2 text-left text-sm last:border-b-0 hover:bg-[var(--color-surface-muted)]"
                 >
                   {option.logo ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
@@ -208,11 +206,11 @@ export function CardPicker({
                       className="h-6 w-auto max-w-[72px] object-contain"
                     />
                   ) : (
-                    <div className="h-6 w-6 rounded bg-black/10" />
+                    <div className="h-6 w-6 rounded bg-[var(--color-surface-muted)]" />
                   )}
                   <div className="flex-1">
                     <p className="font-medium">{option.name}</p>
-                    <p className="text-xs text-black/50">
+                    <p className="text-xs subtle">
                       {option.cardCount} cartas · {option.id}
                     </p>
                   </div>
@@ -224,9 +222,7 @@ export function CardPicker({
       </div>
 
       <div ref={containerRef} className="relative">
-        <label className="mb-1 block text-xs uppercase tracking-[0.1em] text-black/55">
-          Carta
-        </label>
+        <label className="mb-1 block text-xs font-medium subtle">Carta</label>
         <input
           type="text"
           value={query}
@@ -242,11 +238,11 @@ export function CardPicker({
           onFocus={() => {
             if (results.length > 0) setOpen(true);
           }}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
+          className="input"
         />
 
         {picked ? (
-          <div className="mt-2 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-white/80 p-2 text-sm">
+          <div className="mt-2 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-2 text-sm">
             {picked.imageSmall ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
@@ -255,40 +251,34 @@ export function CardPicker({
                 className="h-16 w-12 rounded object-cover"
               />
             ) : (
-              <div className="h-16 w-12 rounded bg-black/10" />
+              <div className="h-16 w-12 rounded bg-[var(--color-surface)]" />
             )}
             <div className="flex-1">
               <p className="font-semibold">{picked.name}</p>
-              <p className="text-xs text-black/60">
+              <p className="text-xs muted">
                 {picked.setName || picked.setId} · #{picked.number}
                 {picked.rarity ? ` · ${picked.rarity}` : ""}
               </p>
               {picked.marketPriceEur ? (
-                <p className="text-xs text-black/60">
-                  Ref Cardmarket: EUR {picked.marketPriceEur.toFixed(2)}
+                <p className="text-xs muted">
+                  Ref: EUR {picked.marketPriceEur.toFixed(2)}
                 </p>
               ) : null}
             </div>
-            <button
-              type="button"
-              onClick={clearPick}
-              className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs hover:bg-white"
-            >
+            <button type="button" onClick={clearPick} className="btn btn-ghost btn-sm">
               Cambiar
             </button>
           </div>
         ) : null}
 
         {open && !picked ? (
-          <div className="absolute z-20 mt-1 max-h-96 w-full overflow-auto rounded-xl border border-[var(--color-border)] bg-white shadow-lg">
+          <div className="absolute z-20 mt-1 max-h-96 w-full overflow-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg">
             {loading ? (
-              <div className="px-3 py-2 text-sm text-black/60">Buscando...</div>
+              <div className="px-3 py-2 text-sm muted">Buscando...</div>
             ) : results.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-black/60">
+              <div className="px-3 py-2 text-sm muted">
                 Sin resultados.{" "}
-                {selectedSet
-                  ? "Probá sacar el filtro de set."
-                  : "Probá con otro nombre."}
+                {selectedSet ? "Probá sacar el filtro de set." : "Probá con otro nombre."}
               </div>
             ) : (
               results.map((card) => (
@@ -296,7 +286,7 @@ export function CardPicker({
                   key={card.id}
                   type="button"
                   onClick={() => choose(card)}
-                  className="flex w-full items-center gap-3 border-b border-[var(--color-border)] px-3 py-2 text-left text-sm last:border-b-0 hover:bg-[var(--color-card)]"
+                  className="flex w-full items-center gap-3 border-b border-[var(--color-border)] px-3 py-2 text-left text-sm last:border-b-0 hover:bg-[var(--color-surface-muted)]"
                 >
                   {card.imageSmall ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
@@ -306,17 +296,17 @@ export function CardPicker({
                       className="h-16 w-12 rounded object-cover"
                     />
                   ) : (
-                    <div className="h-16 w-12 rounded bg-black/10" />
+                    <div className="h-16 w-12 rounded bg-[var(--color-surface-muted)]" />
                   )}
                   <div className="flex-1">
                     <p className="font-semibold">{card.name}</p>
-                    <p className="text-xs text-black/60">
+                    <p className="text-xs muted">
                       {card.setName || card.setId} · #{card.number}
                       {card.rarity ? ` · ${card.rarity}` : ""}
                     </p>
                   </div>
                   {card.marketPriceEur ? (
-                    <span className="rounded-full bg-[#fff1da] px-2 py-0.5 text-xs font-semibold">
+                    <span className="chip chip-accent">
                       EUR {card.marketPriceEur.toFixed(2)}
                     </span>
                   ) : null}

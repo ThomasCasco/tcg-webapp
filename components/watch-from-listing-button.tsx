@@ -8,9 +8,7 @@ type Props = {
 };
 
 export function WatchFromListingButton({ query, label = "Seguir" }: Props) {
-  const [state, setState] = useState<"idle" | "saving" | "done" | "error">(
-    "idle",
-  );
+  const [state, setState] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
 
   async function subscribe() {
@@ -23,7 +21,7 @@ export function WatchFromListingButton({ query, label = "Seguir" }: Props) {
         body: JSON.stringify({ query }),
       });
       const data = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(data.error ?? "Failed");
+      if (!response.ok) throw new Error(data.error ?? "No se pudo crear la alerta.");
       setState("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
@@ -32,11 +30,7 @@ export function WatchFromListingButton({ query, label = "Seguir" }: Props) {
   }
 
   if (state === "done") {
-    return (
-      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
-        Alerta creada
-      </span>
-    );
+    return <span className="chip chip-success">Alerta creada</span>;
   }
 
   return (
@@ -44,10 +38,10 @@ export function WatchFromListingButton({ query, label = "Seguir" }: Props) {
       type="button"
       onClick={subscribe}
       disabled={state === "saving"}
-      className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs hover:bg-white/70 disabled:opacity-60"
+      className="btn btn-ghost btn-sm"
       title={error ?? undefined}
     >
-      {state === "saving" ? "..." : label}
+      {state === "saving" ? "..." : `☆ ${label}`}
     </button>
   );
 }

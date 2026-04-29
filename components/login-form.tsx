@@ -28,13 +28,13 @@ export function LoginForm() {
 
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
-        throw new Error(data.error ?? "No se pudo iniciar sesion.");
+        throw new Error(data.error ?? "No se pudo iniciar sesión.");
       }
 
       router.push("/inventory");
       router.refresh();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Error desconocido.");
+      setError(submitError instanceof Error ? submitError.message : "Ocurrió un error. Probá de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -43,36 +43,36 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-4">
       <label className="block text-sm">
-        <span className="mb-1 block text-black/70">Email</span>
+        <span className="mb-1.5 block font-medium">Email</span>
         <input
           type="email"
           name="email"
           required
           placeholder="tu@email.com"
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
+          className="input"
         />
       </label>
       <label className="block text-sm">
-        <span className="mb-1 block text-black/70">Password</span>
+        <span className="mb-1.5 block font-medium">Contraseña</span>
         <input
           type="password"
           name="password"
           required
           minLength={8}
-          placeholder="********"
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
+          placeholder="Mínimo 8 caracteres"
+          className="input"
         />
       </label>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
-      >
-        {loading ? "Entrando..." : "Entrar"}
+      <button type="submit" disabled={loading} className="btn btn-primary w-full">
+        {loading ? "Ingresando..." : "Ingresar"}
       </button>
 
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
+      {error ? (
+        <p className="rounded-lg bg-[var(--color-danger-soft)] px-3 py-2 text-sm text-[var(--color-danger)]">
+          {error}
+        </p>
+      ) : null}
     </form>
   );
 }

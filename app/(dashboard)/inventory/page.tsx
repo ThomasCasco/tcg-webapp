@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { InventoryCreateForm } from "@/components/inventory-create-form";
 import { InventoryEntryCard } from "@/components/inventory-entry-card";
 import { listInventoryEntries, listListings } from "@/lib/server/repository";
@@ -15,7 +16,7 @@ export default async function InventoryPage() {
 
   let inventoryEntries = [] as Awaited<ReturnType<typeof listInventoryEntries>>;
   let activeListingsByInventoryId = new Set<string>();
-  let loadError: string | null = null;
+  let loadError = false;
 
   try {
     inventoryEntries = await listInventoryEntries({ ownerId: user.id });
@@ -26,79 +27,75 @@ export default async function InventoryPage() {
         .map((l) => l.inventoryId!),
     );
   } catch (error) {
-    loadError = error instanceof Error ? error.message : "Failed to load inventory.";
+    loadError = true;
+    console.error("[inventory] load failed", error);
   }
 
   const totalCards = inventoryEntries.reduce((acc, item) => acc + item.quantity, 0);
   const withPrice = inventoryEntries.filter((i) => i.askingPriceArs && i.askingPriceArs > 0).length;
+  const configError = !isSupabaseConfigured() || loadError;
 
   return (
-    <section className="space-y-5">
-      <header className="surface-panel p-5">
-        <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-          Paso 1 de 2 · Tu stock
-        </p>
-        <h1 className="mt-1 text-3xl [font-family:var(--font-display)]">
-          Inventario
-        </h1>
-        <p className="mt-2 text-sm text-black/70">
-          Cargá acá las cartas que tenés físicamente. Es tu stock privado.
-          Cuando estés listo, poné un precio y tocá <strong>Publicar en Mercado</strong> para
-          que otros usuarios puedan comprarla.
+    <section className="space-y-6">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight">Inventario</h1>
+        <p className="mt-1.5 text-sm muted">
+          Cargá las cartas que tenés físicamente. Cuando estén listas, publicalas al{" "}
+          <Link href="/market" className="font-semibold text-[var(--color-accent)] hover:underline">
+            Mercado
+          </Link>
+          .
         </p>
       </header>
 
-      {!isSupabaseConfigured() ? (
-        <article className="surface-panel border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          Configurá las variables de Supabase para guardar datos reales.
-        </article>
+      {configError ? (
+        <div className="rounded-lg bg-[var(--color-warning-soft)] px-4 py-3 text-sm text-[var(--color-warning)]">
+          No pudimos cargar tu inventario. Probá refrescar en unos minutos.
+        </div>
       ) : null}
 
-      {loadError ? (
-        <article className="surface-panel border-2 border-rose-300 bg-rose-50 p-4 text-sm text-rose-900">
-          Error de backend: {loadError}
-        </article>
+      {inventoryEntries.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="card p-4">
+            <p className="eyebrow">Entradas</p>
+            <p className="mt-1 text-2xl font-bold">{inventoryEntries.length}</p>
+          </div>
+          <div className="card p-4">
+            <p className="eyebrow">Cartas totales</p>
+            <p className="mt-1 text-2xl font-bold">{totalCards}</p>
+          </div>
+          <div className="card p-4">
+            <p className="eyebrow">Con precio</p>
+            <p className="mt-1 text-2xl font-bold">
+              {withPrice}
+              <span className="text-base font-medium muted"> / {inventoryEntries.length}</span>
+            </p>
+          </div>
+        </div>
       ) : null}
 
       <InventoryCreateForm />
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <article className="surface-panel p-4">
-          <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-            Entradas
-          </p>
-          <p className="mt-1 text-2xl font-semibold">{inventoryEntries.length}</p>
-        </article>
-        <article className="surface-panel p-4">
-          <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-            Cartas totales
-          </p>
-          <p className="mt-1 text-2xl font-semibold">{totalCards}</p>
-        </article>
-        <article className="surface-panel p-4">
-          <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-            Con precio cargado
-          </p>
-          <p className="mt-1 text-2xl font-semibold">
-            {withPrice} / {inventoryEntries.length}
-          </p>
-        </article>
-      </div>
-
       {inventoryEntries.length === 0 ? (
-        <div className="surface-panel p-8 text-center text-sm text-black/60">
-          Todavía no cargaste ninguna carta. Usá el buscador de arriba para
-          agregar tu primera entrada.
+        <div className="card p-10 text-center">
+          <p className="text-4xl">📇</p>
+          <p className="mt-3 font-semibold">Tu inventario está vacío</p>
+          <p className="mt-1 text-sm muted">
+            Usá el buscador de arriba para agregar tu primera carta.
+          </p>
         </div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {inventoryEntries.map((entry) => (
-            <InventoryEntryCard
-              key={`${entry.id}:${entry.askingPriceArs ?? 0}:${entry.quantity}:${entry.imageUrl ?? ""}:${activeListingsByInventoryId.has(entry.id)}`}
-              entry={entry}
-              alreadyListed={activeListingsByInventoryId.has(entry.id)}
-            />
-          ))}
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wide subtle">Tus cartas</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {inventoryEntries.map((entry) => (
+              <InventoryEntryCard
+                key={`${entry.id}:${entry.askingPriceArs ?? 0}:${entry.quantity}:${entry.imageUrl ?? ""}:${activeListingsByInventoryId.has(entry.id)}`}
+                entry={entry}
+                alreadyListed={activeListingsByInventoryId.has(entry.id)}
+              />
+            ))}
+          </div>
         </div>
       )}
     </section>

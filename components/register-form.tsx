@@ -39,13 +39,13 @@ export function RegisterForm() {
       }
 
       if (data.requiresEmailConfirmation) {
-        setSuccess("Cuenta creada. Revisa tu email para confirmar la cuenta.");
+        setSuccess("Cuenta creada. Revisá tu email para confirmarla.");
       } else {
         router.push("/inventory");
         router.refresh();
       }
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Error desconocido.");
+      setError(submitError instanceof Error ? submitError.message : "Ocurrió un error. Probá de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -54,66 +54,70 @@ export function RegisterForm() {
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-4">
       <label className="block text-sm">
-        <span className="mb-1 block text-black/70">Nombre publico</span>
+        <span className="mb-1.5 block font-medium">Nombre público</span>
         <input
           type="text"
           name="username"
           required
           minLength={3}
-          placeholder="BinderBoss"
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
+          placeholder="Ej: binderboss"
+          className="input"
         />
       </label>
 
       <label className="block text-sm">
-        <span className="mb-1 block text-black/70">Email</span>
+        <span className="mb-1.5 block font-medium">Email</span>
         <input
           type="email"
           name="email"
           required
           placeholder="tu@email.com"
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
+          className="input"
         />
       </label>
 
       <label className="block text-sm">
-        <span className="mb-1 block text-black/70">Password</span>
+        <span className="mb-1.5 block font-medium">Contraseña</span>
         <input
           type="password"
           name="password"
           required
           minLength={8}
-          placeholder="********"
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
+          placeholder="Mínimo 8 caracteres"
+          className="input"
         />
       </label>
 
-      <label className="flex items-start gap-2 text-xs text-black/70">
+      <label className="flex items-start gap-2 text-xs muted">
         <input type="checkbox" required className="mt-0.5" />
         <span>
-          Soy mayor de 18 anos y acepto los{" "}
+          Soy mayor de 18 años y acepto los{" "}
           <a
             href="/terms"
             target="_blank"
             rel="noreferrer"
             className="font-semibold text-[var(--color-accent)] underline"
           >
-            Terminos y Condiciones
+            Términos y Condiciones
           </a>
-          . Entiendo que la plataforma es un clasificado y NO custodia fondos.
+          .
         </span>
       </label>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
-      >
+      <button type="submit" disabled={loading} className="btn btn-primary w-full">
         {loading ? "Creando cuenta..." : "Crear cuenta"}
       </button>
 
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
-      {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
+      {error ? (
+        <p className="rounded-lg bg-[var(--color-danger-soft)] px-3 py-2 text-sm text-[var(--color-danger)]">
+          {error}
+        </p>
+      ) : null}
+      {success ? (
+        <p className="rounded-lg bg-[var(--color-success-soft)] px-3 py-2 text-sm text-[var(--color-success)]">
+          {success}
+        </p>
+      ) : null}
     </form>
   );
 }

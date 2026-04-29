@@ -42,7 +42,7 @@ export function InventoryCreateForm() {
     };
 
     if (!payload.cardName || payload.cardName.length < 2) {
-      setError("Elegi una carta del buscador o escribi el nombre manualmente.");
+      setError("Elegí una carta del buscador o escribí el nombre manualmente.");
       setLoading(false);
       return;
     }
@@ -56,16 +56,16 @@ export function InventoryCreateForm() {
 
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
-        throw new Error(data.error ?? "No se pudo crear la entrada de inventario.");
+        throw new Error(data.error ?? "No se pudo agregar la carta.");
       }
 
-      setSuccess("Carta agregada a tu inventario.");
+      setSuccess("Carta agregada a tu inventario ✓");
       formEl.reset();
       setPicked(null);
       router.refresh();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Error desconocido.",
+        submitError instanceof Error ? submitError.message : "Ocurrió un error. Probá de nuevo.",
       );
     } finally {
       setLoading(false);
@@ -73,62 +73,60 @@ export function InventoryCreateForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="surface-panel p-5 space-y-3">
-      <p className="text-xs uppercase tracking-[0.12em] text-black/55">
-        Nueva entrada
-      </p>
+    <form onSubmit={onSubmit} className="card p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="eyebrow">Agregar carta</p>
+          <h2 className="mt-0.5 text-lg font-bold tracking-tight">Nueva entrada</h2>
+        </div>
+      </div>
 
       <div>
         <CardPicker onPick={setPicked} />
-        <p className="mt-1 text-xs text-black/55">
-          Filtrá por set/expansión y buscá por nombre. Si no aparece la carta,
-          usá la carga manual de abajo.
+        <p className="mt-1.5 text-xs subtle">
+          Filtrá por set y buscá por nombre. Si no aparece, usá la carga manual.
         </p>
       </div>
 
-      <details className="rounded-xl border border-[var(--color-border)] bg-white/60 p-3 text-sm">
-        <summary className="cursor-pointer text-black/65">
+      <details className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-3 text-sm">
+        <summary className="cursor-pointer font-medium muted">
           Carga manual / Foto propia
         </summary>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <label className="text-sm text-black/75">
-            Carta (si no aparece en el buscador)
+          <label className="text-xs font-medium">
+            Nombre de la carta
             <input
               name="cardNameFallback"
-              placeholder="Pikachu ex"
-              className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
+              placeholder="Ej: Pikachu ex"
+              className="input mt-1"
             />
           </label>
-          <label className="text-sm text-black/75">
-            Set
+          <label className="text-xs font-medium">
+            Set / Expansión
             <input
               name="setNameFallback"
-              placeholder="Paradox Rift"
-              className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
+              placeholder="Ej: Paradox Rift"
+              className="input mt-1"
             />
           </label>
-          <label className="text-sm text-black/75 md:col-span-2">
+          <label className="text-xs font-medium md:col-span-2">
             URL de foto propia (opcional)
             <input
               name="imageUrlFallback"
-              placeholder="https://... (pegá el link si subiste la foto en otro lado)"
-              className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
+              placeholder="https://..."
+              className="input mt-1"
             />
-            <span className="mt-1 block text-xs text-black/55">
-              Si dejás vacío usamos la imagen oficial del catálogo.
+            <span className="mt-1 block text-[11px] subtle">
+              Si lo dejás vacío usamos la imagen oficial del catálogo.
             </span>
           </label>
         </div>
       </details>
 
       <div className="grid gap-3 md:grid-cols-3">
-        <label className="text-sm text-black/75">
-          Condicion
-          <select
-            name="condition"
-            defaultValue="near_mint"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
-          >
+        <label className="text-xs font-medium">
+          Condición
+          <select name="condition" defaultValue="near_mint" className="input mt-1">
             {conditions.map((condition) => (
               <option key={condition} value={condition}>
                 {formatConditionEs(condition)}
@@ -137,39 +135,43 @@ export function InventoryCreateForm() {
           </select>
         </label>
 
-        <label className="text-sm text-black/75">
+        <label className="text-xs font-medium">
           Cantidad
           <input
             name="quantity"
             type="number"
             min={1}
             defaultValue={1}
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
+            className="input mt-1"
           />
         </label>
 
-        <label className="text-sm text-black/75">
-          Precio ARS
+        <label className="text-xs font-medium">
+          Precio ARS (opcional)
           <input
             name="askingPriceArs"
             type="number"
             min={1}
             placeholder="12000"
-            className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white/75 px-3 py-2 outline-none focus:border-[var(--color-accent)]"
+            className="input mt-1"
           />
         </label>
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
-      >
-        {loading ? "Guardando..." : "Agregar al inventario"}
+      <button type="submit" disabled={loading} className="btn btn-primary">
+        {loading ? "Guardando..." : "+ Agregar al inventario"}
       </button>
 
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
-      {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
+      {error ? (
+        <p className="rounded-lg bg-[var(--color-danger-soft)] px-3 py-2 text-sm text-[var(--color-danger)]">
+          {error}
+        </p>
+      ) : null}
+      {success ? (
+        <p className="rounded-lg bg-[var(--color-success-soft)] px-3 py-2 text-sm text-[var(--color-success)]">
+          {success}
+        </p>
+      ) : null}
     </form>
   );
 }
