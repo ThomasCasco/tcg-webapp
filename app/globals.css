@@ -1,45 +1,87 @@
 @import "tailwindcss";
 
-:root {
+@theme {
+  /* Surfaces */
   --color-surface: #f5efdf;
+  --color-surface-elevated: #fffaf0;
+  --color-surface-overlay: rgba(255, 250, 240, 0.98);
+
+  /* Ink (text) */
   --color-ink: #1f1b15;
-  --color-card: #fffaf0;
-  --color-border: #d9cbb0;
+  --color-ink-muted: #5b5347;
+  --color-ink-subtle: #8a8174;
+  --color-ink-inverse: #fffaf0;
+
+  /* Borders */
+  --color-border-default: #d9cbb0;
+  --color-border-strong: #b8a986;
+  --color-border-subtle: #ece1c8;
+
+  /* Accent */
   --color-accent: #0f7a66;
   --color-accent-strong: #0a5f50;
-  --color-warning: #ffaf45;
-}
+  --color-accent-soft: #d4ede5;
 
-@theme inline {
-  --color-background: var(--color-surface);
-  --color-foreground: var(--color-ink);
+  /* Status */
+  --color-success: #157a4d;
+  --color-success-soft: #d3eddf;
+  --color-warning: #b06d10;
+  --color-warning-soft: #fbe6c4;
+  --color-danger: #b3261e;
+  --color-danger-soft: #f4d8d6;
+  --color-info: #1d5e9c;
+  --color-info-soft: #d4e3f3;
+
+  /* Typography */
+  --font-display: var(--font-display);
   --font-sans: var(--font-body);
+
+  /* Radius */
+  --radius-input: 0.5rem;
+  --radius-card: 1rem;
+  --radius-modal: 1.25rem;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-card-sm: 0 1px 2px rgba(31, 27, 21, 0.06), 0 1px 3px rgba(31, 27, 21, 0.04);
+  --shadow-card: 0 4px 12px rgba(31, 27, 21, 0.08), 0 2px 4px rgba(31, 27, 21, 0.04);
+  --shadow-card-lg: 0 16px 36px rgba(77, 55, 19, 0.1);
+  --shadow-overlay: 0 24px 60px rgba(31, 27, 21, 0.25);
 }
 
-body {
-  margin: 0;
-  background:
-    radial-gradient(circle at 14% 8%, #ffdca5 0%, transparent 30%),
-    radial-gradient(circle at 86% 0%, #b6e7dc 0%, transparent 26%),
-    linear-gradient(180deg, #f5efdf 0%, #efe4ce 100%);
-  color: var(--color-ink);
-  font-family: var(--font-body), "Segoe UI", sans-serif;
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(circle at 14% 8%, #ffdca5 0%, transparent 30%),
+      radial-gradient(circle at 86% 0%, #b6e7dc 0%, transparent 26%),
+      linear-gradient(180deg, #f5efdf 0%, #efe4ce 100%);
+    color: var(--color-ink);
+    font-family: var(--font-body), "Segoe UI", sans-serif;
+  }
+  a { color: inherit; }
+  .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
 }
 
-a {
-  color: inherit;
-}
+@utility text-display-lg { font-family: var(--font-display); font-size: 3rem; line-height: 1.05; letter-spacing: 0.01em; }
+@utility text-display-md { font-family: var(--font-display); font-size: 2.25rem; line-height: 1.1; }
+@utility text-h1 { font-size: 1.875rem; line-height: 1.2; font-weight: 700; }
+@utility text-h2 { font-size: 1.5rem; line-height: 1.25; font-weight: 700; }
+@utility text-h3 { font-size: 1.25rem; line-height: 1.3; font-weight: 600; }
+@utility text-h4 { font-size: 1.125rem; line-height: 1.35; font-weight: 600; }
+@utility text-body-lg { font-size: 1.0625rem; line-height: 1.55; }
+@utility text-body { font-size: 0.9375rem; line-height: 1.5; }
+@utility text-body-sm { font-size: 0.8125rem; line-height: 1.45; }
+@utility text-caption { font-size: 0.75rem; line-height: 1.4; }
+@utility text-overline { font-size: 0.6875rem; line-height: 1.2; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
 
+/* TEMPORARY shim — remove after migration (Task 27) */
 .surface-panel {
-  border: 1px solid var(--color-border);
-  border-radius: 1.5rem;
-  background: color-mix(in srgb, var(--color-card) 90%, #ffffff 10%);
-  box-shadow: 0 16px 36px rgba(77, 55, 19, 0.1);
-}
-
-.grid-overlay {
-  background-image:
-    linear-gradient(rgba(31, 27, 21, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(31, 27, 21, 0.05) 1px, transparent 1px);
-  background-size: 16px 16px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-elevated);
+  box-shadow: var(--shadow-card-lg);
 }
