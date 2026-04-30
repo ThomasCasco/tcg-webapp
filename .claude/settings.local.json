@@ -19,7 +19,12 @@
       "mcp__4b8ea82d-7e62-456d-a6c8-a8d784ea1c85__list_migrations",
       "mcp__4b8ea82d-7e62-456d-a6c8-a8d784ea1c85__apply_migration",
       "mcp__4b8ea82d-7e62-456d-a6c8-a8d784ea1c85__execute_sql",
-      "mcp__4b8ea82d-7e62-456d-a6c8-a8d784ea1c85__get_publishable_keys"
+      "mcp__4b8ea82d-7e62-456d-a6c8-a8d784ea1c85__get_publishable_keys",
+      "Bash(git push *)",
+      "Bash(gh pr *)",
+      "Bash(where gh *)",
+      "Bash(cmd //c \"where gh\")",
+      "Bash(git fetch *)"
     ]
   }
 }

@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { LogoutButton } from "@/components/logout-button";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 
@@ -10,10 +9,7 @@ export default async function DashboardLayout({
   if (!user) redirect("/login");
 
   return (
-    <DashboardShell
-      username={user.username ?? user.email ?? "Vendedor"}
-      logoutSlot={<LogoutButton />}
-    >
+    <DashboardShell user={{ username: user.username, email: user.email }}>
       {children}
     </DashboardShell>
   );
