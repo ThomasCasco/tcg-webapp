@@ -34,7 +34,7 @@ export default async function ListingDetailPage({
 }) {
   const user = await getAuthenticatedUser();
   const { listingId } = await params;
-  const listing = await getListingById(listingId, { onlyPublic: true });
+  const listing = await getListingById(listingId);
   if (!listing) notFound();
   const catalog = listing.catalogCardId
     ? await fetchCatalogCardById(listing.catalogCardId).catch(() => null)
@@ -124,15 +124,10 @@ export default async function ListingDetailPage({
               <p className="mt-1 text-3xl font-bold tracking-tight">
                 ARS {listing.priceArs.toLocaleString("es-AR")}
               </p>
-              {catalog?.marketPriceEur || catalog?.marketPriceUsdEstimate ? (
+              {catalog?.marketPriceEur ? (
                 <div className="mt-2 space-y-0.5 text-xs muted">
                   <p className="font-medium">Referencia internacional:</p>
-                  {catalog?.marketPriceEur ? (
-                    <p>EUR {catalog.marketPriceEur.toFixed(2)} · Cardmarket</p>
-                  ) : null}
-                  {catalog?.marketPriceUsdEstimate ? (
-                    <p>USD {catalog.marketPriceUsdEstimate.toFixed(2)} · estimado</p>
-                  ) : null}
+                  <p>EUR {catalog.marketPriceEur.toFixed(2)} · Cardmarket</p>
                 </div>
               ) : null}
             </div>

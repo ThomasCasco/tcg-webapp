@@ -62,23 +62,6 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const scope = url.searchParams.get("scope");
-  const tab = url.searchParams.get("tab");
-  const listingType = tab === "cards" ? "single" : tab === "packs" ? "mystery_pack" : undefined;
-  const searchQuery = url.searchParams.get("q")?.trim() ?? "";
-  const conditionRaw = url.searchParams.get("condition");
-  const condition = isValidCondition(conditionRaw) ? conditionRaw : undefined;
-  const minPriceArs = Number(url.searchParams.get("min") ?? "");
-  const maxPriceArs = Number(url.searchParams.get("max") ?? "");
-  const page = Math.max(1, Number(url.searchParams.get("page") ?? 1) || 1);
-  const limitRaw = Number(url.searchParams.get("limit") ?? 24);
-  const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 100) : 24;
-  const sortRaw = url.searchParams.get("sort");
-  const sort =
-    sortRaw === "price_asc" || sortRaw === "price_desc" || sortRaw === "created_desc"
-      ? sortRaw
-      : "created_desc";
-  const shipping = url.searchParams.get("shipping") === "1" ? true : undefined;
-  const pickup = url.searchParams.get("pickup") === "1" ? true : undefined;
 
   try {
     if (scope === "mine") {
@@ -94,19 +77,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const items = await listListings({
-      onlyPublic: true,
-      listingType,
-      searchQuery: searchQuery || undefined,
-      condition,
-      minPriceArs: Number.isFinite(minPriceArs) && minPriceArs > 0 ? minPriceArs : undefined,
-      maxPriceArs: Number.isFinite(maxPriceArs) && maxPriceArs > 0 ? maxPriceArs : undefined,
-      offersShipping: shipping,
-      offersPickup: pickup,
-      offset: (page - 1) * limit,
-      limit,
-      sort,
-    });
+    const items = await listListings({ onlyPublic: true });
     return Response.json({
       items,
       total: items.length,

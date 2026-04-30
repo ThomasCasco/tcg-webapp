@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const features = [
+const pillars = [
   {
     title: "Inventario sin caos",
     body: "Subí cartas por foto, ordenalas por condición y activalas para venta en segundos.",
@@ -49,21 +49,6 @@ export default function Home() {
                 </Button>
               </div>
             </div>
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs subtle">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
-                Envíos y retiro en persona
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
-                Reputación por vendedor
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
-                Precios sugeridos
-              </span>
-            </div>
-          </div>
 
             <Card variant="muted" padding="md">
               <p className="text-overline text-[var(--color-ink-subtle)]">
@@ -110,20 +95,6 @@ export default function Home() {
           </ol>
         </Card>
       </main>
-
-      <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-xs subtle">
-          <p>© {new Date().getFullYear()} TCG Market · Cartas Pokémon en Argentina.</p>
-          <div className="flex gap-4">
-            <Link href="/terms" className="hover:text-[var(--color-ink)]">
-              Términos y Condiciones
-            </Link>
-            <Link href="/market" className="hover:text-[var(--color-ink)]">
-              Mercado
-            </Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

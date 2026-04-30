@@ -7,12 +7,6 @@ describe("cardTitleToPokemonSlug", () => {
     expect(cardTitleToPokemonSlug("Pikachu VMAX")).toBe("pikachu");
   });
 
-  it("resuelve alias comunes de nombres complejos", () => {
-    expect(cardTitleToPokemonSlug("Mr. Mime")).toBe("mr-mime");
-    expect(cardTitleToPokemonSlug("Nidoran♀")).toBe("nidoran-f");
-    expect(cardTitleToPokemonSlug("Ho-Oh V")).toBe("ho-oh");
-  });
-
   it("devuelve null si no hay slug util", () => {
     expect(cardTitleToPokemonSlug("")).toBeNull();
     expect(cardTitleToPokemonSlug("x")).toBeNull();

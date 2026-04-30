@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import type { CardCondition } from "@/lib/domain/types";
@@ -35,7 +34,6 @@ export function ListingCreateForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -62,7 +60,7 @@ export function ListingCreateForm() {
     };
 
     if (!payload.cardName || payload.cardName.length < 2) {
-      setError("Falta el título del pack.");
+      setError("Faltá el título del pack.");
       setLoading(false);
       return;
     }
@@ -77,13 +75,12 @@ export function ListingCreateForm() {
       if (!response.ok) {
         throw new Error(data.error ?? "No se pudo crear la publicación.");
       }
-      setSuccess("Pack publicado ✓");
+      setSuccess("Pack publicado.");
       formEl.reset();
-      setOpen(false);
       router.refresh();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Ocurrió un error. Probá de nuevo.",
+        submitError instanceof Error ? submitError.message : "Error desconocido.",
       );
     } finally {
       setLoading(false);

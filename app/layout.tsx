@@ -3,24 +3,29 @@ import { Bebas_Neue, Manrope } from "next/font/google";
 import { Toaster } from "@/components/ui/toast";
 import "./globals.css";
 
-const bodyFont = Inter({
+const displayFont = Bebas_Neue({
+  variable: "--font-display",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const bodyFont = Manrope({
   variable: "--font-body",
   subsets: ["latin"],
-  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "TCG Market — Cartas Pokémon",
-    template: "%s · TCG Market",
+    default: "TCG Marketplace AR",
+    template: "%s | TCG Marketplace AR",
   },
   description:
-    "Comprá y vendé cartas de Pokémon con precios sugeridos, reputación y seguimiento de cada operación.",
-  applicationName: "TCG Market",
+    "Pokemon-first marketplace para semi-vendedores de TCG en Argentina.",
+  applicationName: "TCG Marketplace AR",
   openGraph: {
-    title: "TCG Market — Cartas Pokémon",
+    title: "TCG Marketplace AR",
     description:
-      "Comprá y vendé cartas de Pokémon con confianza: inventario, publicaciones y seguimiento de pagos.",
+      "Inventario, listings y pagos verificados para vender cartas con confianza.",
     type: "website",
   },
 };

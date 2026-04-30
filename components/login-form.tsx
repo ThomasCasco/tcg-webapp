@@ -33,7 +33,7 @@ export function LoginForm() {
       router.push("/inventory");
       router.refresh();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Ocurrió un error. Probá de nuevo.");
+      setError(submitError instanceof Error ? submitError.message : "Error desconocido.");
     } finally {
       setLoading(false);
     }

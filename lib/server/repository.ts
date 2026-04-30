@@ -587,29 +587,16 @@ export async function listListings(options?: {
   statuses?: ListingStatus[];
   sellerId?: string;
   onlyPublic?: boolean;
-  listingId?: string;
-  listingType?: ListingType;
-  condition?: CardCondition;
-  searchQuery?: string;
-  minPriceArs?: number;
-  maxPriceArs?: number;
-  offersShipping?: boolean;
-  offersPickup?: boolean;
-  offset?: number;
-  limit?: number;
-  sort?: "created_desc" | "price_asc" | "price_desc";
 }): Promise<Listing[]> {
   assertSupabaseReady();
 
   const client = getSupabaseAdminClient();
-  let query = client.from(LISTINGS_TABLE).select("*");
+  let query = client.from(LISTINGS_TABLE).select("*").order("created_at", {
+    ascending: false,
+  });
 
   if (options?.statuses && options.statuses.length > 0) {
     query = query.in("status", options.statuses);
-  }
-
-  if (options?.listingId) {
-    query = query.eq("id", options.listingId);
   }
 
   if (options?.sellerId) {
@@ -620,54 +607,6 @@ export async function listListings(options?: {
     query = query.in("status", ["active", "pending_payment", "sold"]);
   }
 
-  if (options?.listingType) {
-    query = query.eq("listing_type", options.listingType);
-  }
-
-  if (options?.condition) {
-    query = query.eq("condition", options.condition);
-  }
-
-  if (options?.searchQuery && options.searchQuery.trim().length >= 2) {
-    const cleaned = options.searchQuery.replace(/[,()]/g, " ").trim();
-    query = query.or(
-      `card_name.ilike.%${cleaned}%,set_name.ilike.%${cleaned}%,pack_theme.ilike.%${cleaned}%`,
-    );
-  }
-
-  if (typeof options?.minPriceArs === "number" && Number.isFinite(options.minPriceArs)) {
-    query = query.gte("price_ars", Math.max(0, Math.round(options.minPriceArs)));
-  }
-  if (typeof options?.maxPriceArs === "number" && Number.isFinite(options.maxPriceArs)) {
-    query = query.lte("price_ars", Math.max(0, Math.round(options.maxPriceArs)));
-  }
-
-  if (typeof options?.offersShipping === "boolean") {
-    query = query.eq("offers_shipping", options.offersShipping);
-  }
-  if (typeof options?.offersPickup === "boolean") {
-    query = query.eq("offers_pickup", options.offersPickup);
-  }
-
-  const sort = options?.sort ?? "created_desc";
-  if (sort === "price_asc") {
-    query = query.order("price_ars", { ascending: true }).order("created_at", {
-      ascending: false,
-    });
-  } else if (sort === "price_desc") {
-    query = query.order("price_ars", { ascending: false }).order("created_at", {
-      ascending: false,
-    });
-  } else {
-    query = query.order("created_at", { ascending: false });
-  }
-
-  if (typeof options?.offset === "number" || typeof options?.limit === "number") {
-    const offset = Math.max(0, options?.offset ?? 0);
-    const limit = Math.min(Math.max(1, options?.limit ?? 24), 100);
-    query = query.range(offset, offset + limit - 1);
-  }
-
   const { data, error } = await query;
 
   if (error) {
@@ -675,20 +614,6 @@ export async function listListings(options?: {
   }
 
   return ((data ?? []) as ListingRow[]).map(mapListingRow);
-}
-
-export async function getListingById(
-  listingId: string,
-  options?: { onlyPublic?: boolean },
-): Promise<Listing | null> {
-  const id = listingId.trim();
-  if (!id) return null;
-  const items = await listListings({
-    listingId: id,
-    onlyPublic: options?.onlyPublic,
-    limit: 1,
-  });
-  return items[0] ?? null;
 }
 
 export async function createListing(input: CreateListingInput): Promise<Listing> {

@@ -48,15 +48,10 @@ export default async function CatalogCardPage({
               <p className="mt-1 text-sm text-black/65">Rareza: {card.rarity}</p>
             ) : null}
 
-            {(card.marketPriceEur || card.marketPriceUsdEstimate) ? (
+            {card.marketPriceEur ? (
               <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-white/70 p-3 text-sm text-black/75">
                 <p className="font-semibold text-black/85">Referencia internacional</p>
-                {card.marketPriceEur ? (
-                  <p className="mt-1">EUR {card.marketPriceEur.toFixed(2)} (Cardmarket)</p>
-                ) : null}
-                {card.marketPriceUsdEstimate ? (
-                  <p>USD {card.marketPriceUsdEstimate.toFixed(2)} (estimado)</p>
-                ) : null}
+                <p className="mt-1">EUR {card.marketPriceEur.toFixed(2)} (Cardmarket)</p>
               </div>
             ) : null}
           </div>

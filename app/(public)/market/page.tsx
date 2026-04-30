@@ -22,92 +22,43 @@ const TABS = [
 export default async function MarketPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    tab?: string;
-    q?: string;
-    condition?: CardCondition;
-    min?: string;
-    max?: string;
-    sort?: "created_desc" | "price_asc" | "price_desc";
-    shipping?: "1";
-    pickup?: "1";
-    page?: string;
-  }>;
+  searchParams: Promise<{ tab?: string; q?: string }>;
 }) {
   const user = await getAuthenticatedUser();
-  const {
-    tab = "all",
-    q = "",
-    condition,
-    min = "",
-    max = "",
-    sort = "created_desc",
-    shipping,
-    pickup,
-    page = "1",
-  } = await searchParams;
+  const { tab = "all", q = "" } = await searchParams;
   let listings: Awaited<ReturnType<typeof listListings>> = [];
-  let loadError = false;
-
-  const pageNumber = Math.max(1, Number(page) || 1);
-  const minPrice = Number(min);
-  const maxPrice = Number(max);
-  const params = new URLSearchParams();
-  params.set("tab", tab);
-  if (q.trim()) params.set("q", q.trim());
-  if (condition && conditions.includes(condition)) params.set("condition", condition);
-  if (Number.isFinite(minPrice) && minPrice > 0) params.set("min", String(Math.round(minPrice)));
-  if (Number.isFinite(maxPrice) && maxPrice > 0) params.set("max", String(Math.round(maxPrice)));
-  if (sort !== "created_desc") params.set("sort", sort);
-  if (shipping === "1") params.set("shipping", "1");
-  if (pickup === "1") params.set("pickup", "1");
+  let loadError: string | null = null;
 
   try {
-    listings = await listListings({
-      onlyPublic: true,
-      listingType: tab === "cards" ? "single" : tab === "packs" ? "mystery_pack" : undefined,
-      searchQuery: q.trim() || undefined,
-      condition: condition && conditions.includes(condition) ? condition : undefined,
-      minPriceArs: Number.isFinite(minPrice) && minPrice > 0 ? minPrice : undefined,
-      maxPriceArs: Number.isFinite(maxPrice) && maxPrice > 0 ? maxPrice : undefined,
-      offersShipping: shipping === "1" ? true : undefined,
-      offersPickup: pickup === "1" ? true : undefined,
-      sort,
-      offset: (pageNumber - 1) * PAGE_SIZE,
-      limit: PAGE_SIZE + 1,
-    });
+    listings = await listListings({ onlyPublic: true });
   } catch (error) {
-    loadError = true;
-    console.error("[market] listing load failed", error);
+    loadError = error instanceof Error ? error.message : "Failed to load market listings.";
   }
 
-  const hasNextPage = listings.length > PAGE_SIZE;
-  const currentItems = hasNextPage ? listings.slice(0, PAGE_SIZE) : listings;
-  const hasPrevPage = pageNumber > 1;
+  const query = q.trim().toLowerCase();
+  if (query) {
+    listings = listings.filter((listing) =>
+      `${listing.cardName} ${listing.setName} ${listing.packTheme ?? ""}`
+        .toLowerCase()
+        .includes(query),
+    );
+  }
+
+  if (tab === "packs") {
+    listings = listings.filter((l) => l.listingType === "mystery_pack");
+  } else if (tab === "cards") {
+    listings = listings.filter((l) => l.listingType !== "mystery_pack");
+  }
 
   const enriched = await Promise.all(
-    currentItems.map(async (listing) => {
+    listings.map(async (listing, index) => {
       const pokemonTypes =
-        listing.listingType === "mystery_pack"
+        listing.listingType === "mystery_pack" || index >= 24
           ? null
           : await getPokemonTypesForCardTitle(listing.cardName);
       return { listing, pokemonTypes };
     }),
   );
-
-  const tabs = [
-    { key: "all", label: "Todo" },
-    { key: "cards", label: "Cartas" },
-    { key: "packs", label: "Mystery Packs" },
-  ];
-
-  const activeFilters =
-    (q ? 1 : 0) +
-    (condition ? 1 : 0) +
-    (minPrice > 0 ? 1 : 0) +
-    (maxPrice > 0 ? 1 : 0) +
-    (shipping === "1" ? 1 : 0) +
-    (pickup === "1" ? 1 : 0);
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">

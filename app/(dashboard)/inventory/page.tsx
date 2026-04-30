@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { InventoryCreateForm } from "@/components/inventory-create-form";
 import { InventoryEntryCard } from "@/components/inventory-entry-card";
 import { listInventoryEntries, listListings } from "@/lib/server/repository";
@@ -19,7 +18,7 @@ export default async function InventoryPage() {
 
   let inventoryEntries = [] as Awaited<ReturnType<typeof listInventoryEntries>>;
   let activeListingsByInventoryId = new Set<string>();
-  let loadError = false;
+  let loadError: string | null = null;
 
   try {
     inventoryEntries = await listInventoryEntries({ ownerId: user.id });
@@ -30,13 +29,11 @@ export default async function InventoryPage() {
         .map((l) => l.inventoryId!),
     );
   } catch (error) {
-    loadError = true;
-    console.error("[inventory] load failed", error);
+    loadError = error instanceof Error ? error.message : "Failed to load inventory.";
   }
 
   const totalCards = inventoryEntries.reduce((acc, item) => acc + item.quantity, 0);
   const withPrice = inventoryEntries.filter((i) => i.askingPriceArs && i.askingPriceArs > 0).length;
-  const configError = !isSupabaseConfigured() || loadError;
 
   return (
     <section className="space-y-5">
@@ -94,17 +91,14 @@ export default async function InventoryPage() {
           description="Usá el buscador de arriba para agregar tu primera carta."
         />
       ) : (
-        <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide subtle">Tus cartas</h2>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            {inventoryEntries.map((entry) => (
-              <InventoryEntryCard
-                key={`${entry.id}:${entry.askingPriceArs ?? 0}:${entry.quantity}:${entry.imageUrl ?? ""}:${activeListingsByInventoryId.has(entry.id)}`}
-                entry={entry}
-                alreadyListed={activeListingsByInventoryId.has(entry.id)}
-              />
-            ))}
-          </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {inventoryEntries.map((entry) => (
+            <InventoryEntryCard
+              key={`${entry.id}:${entry.askingPriceArs ?? 0}:${entry.quantity}:${entry.imageUrl ?? ""}:${activeListingsByInventoryId.has(entry.id)}`}
+              entry={entry}
+              alreadyListed={activeListingsByInventoryId.has(entry.id)}
+            />
+          ))}
         </div>
       )}
     </section>
