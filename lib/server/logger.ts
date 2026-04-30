@@ -17,3 +17,6 @@ export const logger = {
   warn: (message: string, context?: Context) => emit("warn", message, context),
   error: (message: string, context?: Context) => emit("error", message, context),
 };
+
+/** Convenience alias */
+export const log = logger;

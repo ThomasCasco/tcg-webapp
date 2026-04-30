@@ -6,11 +6,18 @@ import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ShoppingBag } from "@/components/ui/icon";
+import { ShoppingBag, Search } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/ui/cn";
 
 export const dynamic = "force-dynamic";
+
+const TABS = [
+  { key: "all", label: "Todo" },
+  { key: "cards", label: "Cartas" },
+  { key: "packs", label: "Packs" },
+] as const;
 
 export default async function MarketPage({
   searchParams,
@@ -54,70 +61,71 @@ export default async function MarketPage({
   );
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6 md:py-8">
-      {!isSupabaseConfigured() ? (
-        <Card as="section" padding="md" className="border-amber-300 bg-amber-50">
-          <p className="text-sm text-amber-900">
-            Falta configurar Supabase en producción para abrir el marketplace a usuarios.
+    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
+      {!isSupabaseConfigured() && (
+        <Card padding="md" className="border-[var(--color-warning)] bg-[var(--color-warning-soft)]">
+          <p className="text-body-sm text-[var(--color-warning)]">
+            Configurá Supabase en producción para abrir el marketplace.
           </p>
         </Card>
-      ) : null}
+      )}
 
-      {loadError ? (
-        <Card as="section" padding="md" className="border-rose-300 bg-rose-50">
-          <p className="text-sm text-rose-900">Error de backend: {loadError}</p>
+      {loadError && (
+        <Card padding="md" className="border-[var(--color-danger)] bg-[var(--color-danger-soft)]">
+          <p className="text-body-sm text-[var(--color-danger)]">Error: {loadError}</p>
         </Card>
-      ) : null}
+      )}
 
-      <Card as="section" padding="lg">
-        <p className="text-overline text-[var(--color-ink-subtle)]">
-          Marketplace público
-        </p>
-        <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
-          Comprar cartas y packs
+      {/* ── Search header — sticky on mobile for thumb access ── */}
+      <header className="sticky top-0 z-10 -mx-3 bg-[var(--color-surface)]/95 px-3 py-3 backdrop-blur md:relative md:mx-0 md:rounded-[var(--radius-card)] md:bg-[var(--color-surface-elevated)] md:p-5 md:shadow-sm">
+        <h1 className="hidden text-h2 [font-family:var(--font-display)] md:block">
+          Mercado
         </h1>
-        <p className="mt-2 max-w-2xl text-body-sm text-[var(--color-ink-muted)]">
-          Acá ves <strong>publicaciones activas</strong> de otros vendedores. Cuando reservás,
-          la publicación pasa a <em>pago pendiente</em>: pagás directo al vendedor (Mercado Pago,
-          transferencia, etc.) y después pegás el comprobante en{" "}
-          <Link href="/transactions" className="underline">
-            Transacciones
-          </Link>.
+        <p className="mt-1 hidden text-body-sm text-[var(--color-ink-muted)] md:block">
+          Cartas y packs publicados por la comunidad. Pago seguro vía Mercado Pago.
         </p>
 
-        <form method="GET" className="mt-4 flex flex-wrap items-center gap-2">
+        <form method="GET" className="mt-0 flex gap-2 md:mt-4">
           <input type="hidden" name="tab" value={tab} />
-          <Input
-            name="q"
-            defaultValue={q}
-            placeholder="Buscar Charizard, Mew, Paradox Rift..."
-            className="min-w-[220px] flex-1"
-          />
-          <Button type="submit" size="sm">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-subtle)]" />
+            <Input
+              name="q"
+              defaultValue={q}
+              placeholder="Buscar Charizard, Mew, Paradox Rift..."
+              className="pl-9"
+            />
+          </div>
+          <Button type="submit" size="md">
             Buscar
           </Button>
-          <div className="flex rounded-full border border-[var(--color-border)] p-1 text-xs">
-            {[
-              { key: "all", label: "Todo" },
-              { key: "cards", label: "Cartas" },
-              { key: "packs", label: "Packs" },
-            ].map((t) => (
-              <Link
-                key={t.key}
-                href={`/market?tab=${t.key}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
-                className={`rounded-full px-3 py-1 transition-colors ${
-                  tab === t.key
-                    ? "bg-[var(--color-accent)] text-white"
-                    : "text-[var(--color-ink-muted)] hover:bg-black/5"
-                }`}
-              >
-                {t.label}
-              </Link>
-            ))}
-          </div>
         </form>
-      </Card>
 
+        <div className="mt-3 flex gap-1 overflow-x-auto">
+          {TABS.map((t) => (
+            <Link
+              key={t.key}
+              href={`/market?tab=${t.key}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+              className={cn(
+                "shrink-0 rounded-full px-4 py-1.5 text-[0.8125rem] font-medium transition-colors",
+                tab === t.key
+                  ? "bg-[var(--color-accent)] text-white"
+                  : "bg-[var(--color-surface-elevated)] text-[var(--color-ink-muted)] hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent-strong)]",
+              )}
+            >
+              {t.label}
+            </Link>
+          ))}
+        </div>
+      </header>
+
+      {/* ── Results count ── */}
+      <p className="text-caption text-[var(--color-ink-muted)]">
+        {enriched.length} {enriched.length === 1 ? "publicación" : "publicaciones"}
+        {query && ` para "${q}"`}
+      </p>
+
+      {/* ── Grid ── */}
       {enriched.length === 0 ? (
         <EmptyState
           icon={<ShoppingBag className="h-8 w-8" />}
@@ -125,16 +133,18 @@ export default async function MarketPage({
           description={
             <>
               <p>Todavía no hay publicaciones que coincidan.</p>
-              <p className="mt-1">
-                Si vendés, cargá cartas en{" "}
-                <Link href="/inventory" className="underline">Inventario</Link>{" "}
-                y tocá <strong>Publicar en Mercado</strong>.
+              <p className="mt-1 text-caption">
+                ¿Vendés cartas? Cargalas en{" "}
+                <Link href="/inventory" className="font-semibold underline">
+                  Inventario
+                </Link>{" "}
+                y publicalas en un toque.
               </p>
             </>
           }
         />
       ) : (
-        <section className="grid gap-4 md:grid-cols-2">
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
           {enriched.map(({ listing, pokemonTypes }) => (
             <MarketListingCard
               key={listing.id}

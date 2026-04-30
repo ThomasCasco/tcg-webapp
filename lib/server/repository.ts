@@ -321,6 +321,7 @@ function mapPaymentRow(row: PaymentRow): PaymentEvent {
     providerStatus: row.provider_status,
     verificationStatus: row.verification_status,
     fulfillmentStatus: row.fulfillment_status,
+    shippingTracking: row.shipping_tracking ?? undefined,
     checkedAt: row.checked_at,
     createdAt: row.created_at,
   };
@@ -1500,4 +1501,167 @@ async function fanoutListingToWatchers(listing: Listing): Promise<void> {
   }));
 
   await client.from(NOTIFICATIONS_TABLE).insert(rows);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mercado Pago automatic-payment helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Stamp a payment_event with the MP preference details right after
+ * the preference is created (before the buyer redirects to MP).
+ */
+export async function updatePaymentMpCheckout(input: {
+  transactionId: string;
+  mpPreferenceId: string;
+  mpCheckoutUrl: string;
+  platformFeeArs: number;
+}): Promise<void> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { error } = await client
+    .from(PAYMENTS_TABLE)
+    .update({
+      mp_preference_id: input.mpPreferenceId,
+      mp_checkout_url: input.mpCheckoutUrl,
+      platform_fee_ars: input.platformFeeArs,
+    })
+    .eq("transaction_id", input.transactionId);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Stamp a payment_event with the MP payment_id after the webhook fires.
+ */
+export async function setPaymentMpPaymentId(input: {
+  transactionId: string;
+  mpPaymentId: string;
+}): Promise<void> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { error } = await client
+    .from(PAYMENTS_TABLE)
+    .update({ mp_payment_id: input.mpPaymentId })
+    .eq("transaction_id", input.transactionId);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Find a payment_event by its external_reference (which is the transactionId).
+ * Used in webhook processing.
+ */
+export async function getPaymentEventByExternalRef(
+  externalRef: string,
+): Promise<PaymentEvent | null> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  // external_reference is stored as transactionId in existing rows.
+  // In the new flow we also use it literally.
+  const { data, error } = await client
+    .from(PAYMENTS_TABLE)
+    .select("*")
+    .eq("transaction_id", externalRef.trim())
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return mapPaymentRow(data as PaymentRow);
+}
+
+/**
+ * Get a payment_event by mp_payment_id (set after webhook fires).
+ */
+export async function getPaymentEventByMpPaymentId(
+  mpPaymentId: string,
+): Promise<PaymentEvent | null> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(PAYMENTS_TABLE)
+    .select("*")
+    .eq("mp_payment_id", mpPaymentId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return mapPaymentRow(data as PaymentRow);
+}
+
+/**
+ * Fetch a single listing by ID (for checkout validation).
+ */
+export async function getListingById(listingId: string): Promise<Listing | null> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(LISTINGS_TABLE)
+    .select("*")
+    .eq("id", listingId.trim())
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return mapListingRow(data as ListingRow);
+}
+
+/**
+ * Get the user's MP connection status from the profiles table.
+ */
+export async function getMpConnectionStatus(
+  userId: string,
+): Promise<{ mpConnected: boolean; mpUserId: string | null }> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(PROFILES_TABLE)
+    .select("mp_connected, mp_user_id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  const row = data as { mp_connected: boolean | null; mp_user_id: string | null } | null;
+  return {
+    mpConnected: Boolean(row?.mp_connected),
+    mpUserId: row?.mp_user_id ?? null,
+  };
+}
+
+/**
+ * Get a user's email address from auth.users (service role only).
+ */
+export async function getUserEmail(userId: string): Promise<string | null> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client.auth.admin.getUserById(userId);
+  if (error || !data.user) return null;
+  return data.user.email ?? null;
+}
+
+/**
+ * Get a user's email and username by ID.
+ */
+export async function getUserProfile(
+  userId: string,
+): Promise<{ email: string | null; username: string } | null> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  const [emailResult, profileResult] = await Promise.all([
+    client.auth.admin.getUserById(userId),
+    client
+      .from(PROFILES_TABLE)
+      .select("username")
+      .eq("id", userId)
+      .maybeSingle(),
+  ]);
+
+  if (emailResult.error || !emailResult.data.user) return null;
+  const username =
+    (profileResult.data as { username: string } | null)?.username ?? "usuario";
+
+  return {
+    email: emailResult.data.user.email ?? null,
+    username,
+  };
 }
