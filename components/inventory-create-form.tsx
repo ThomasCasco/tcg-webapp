@@ -5,6 +5,13 @@ import { FormEvent, useState } from "react";
 import type { CardCondition } from "@/lib/domain/types";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { CardPicker, type PickedCard } from "@/components/card-picker";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { ImageUploader } from "@/components/ui/image-uploader";
+import { Plus } from "@/components/ui/icon";
 
 const conditions: CardCondition[] = [
   "mint",
@@ -21,6 +28,9 @@ export function InventoryCreateForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [picked, setPicked] = useState<PickedCard | null>(null);
+  const [customName, setCustomName] = useState("");
+  const [customSet, setCustomSet] = useState("");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,22 +40,24 @@ export function InventoryCreateForm() {
     setSuccess(null);
 
     const form = new FormData(formEl);
-    const manualImageUrl = String(form.get("imageUrlFallback") ?? "").trim();
-    const payload = {
-      cardName: picked?.name ?? String(form.get("cardNameFallback") ?? ""),
-      setName: picked?.setName ?? String(form.get("setNameFallback") ?? ""),
-      catalogCardId: picked?.id,
-      imageUrl: manualImageUrl || picked?.imageSmall || undefined,
-      condition: String(form.get("condition") ?? "near_mint"),
-      quantity: Number(form.get("quantity") ?? 1),
-      askingPriceArs: Number(form.get("askingPriceArs") ?? 0) || undefined,
-    };
+    const cardName = picked?.name ?? customName.trim();
+    const setName = picked?.setName ?? customSet.trim();
 
-    if (!payload.cardName || payload.cardName.length < 2) {
+    if (!cardName || cardName.length < 2) {
       setError("Elegí una carta del buscador o escribí el nombre manualmente.");
       setLoading(false);
       return;
     }
+
+    const payload = {
+      cardName,
+      setName: setName || undefined,
+      catalogCardId: picked?.id,
+      imageUrl: photoUrl ?? picked?.imageSmall ?? undefined,
+      condition: String(form.get("condition") ?? "near_mint"),
+      quantity: Number(form.get("quantity") ?? 1),
+      askingPriceArs: Number(form.get("askingPriceArs") ?? 0) || undefined,
+    };
 
     try {
       const response = await fetch("/api/inventory", {
@@ -59,9 +71,12 @@ export function InventoryCreateForm() {
         throw new Error(data.error ?? "No se pudo agregar la carta.");
       }
 
-      setSuccess("Carta agregada a tu inventario ✓");
+      setSuccess("Carta agregada al inventario.");
       formEl.reset();
       setPicked(null);
+      setCustomName("");
+      setCustomSet("");
+      setPhotoUrl(null);
       router.refresh();
     } catch (submitError) {
       setError(
@@ -73,105 +88,101 @@ export function InventoryCreateForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="card p-5 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="eyebrow">Agregar carta</p>
-          <h2 className="mt-0.5 text-lg font-bold tracking-tight">Nueva entrada</h2>
+    <Card padding="lg">
+      <div className="flex items-center gap-2">
+        <Plus className="h-5 w-5 text-[var(--color-accent-strong)]" />
+        <h2 className="text-h3">Agregar carta al inventario</h2>
+      </div>
+
+      <form onSubmit={onSubmit} className="mt-5 space-y-5">
+        {/* ── Card identity (catalog picker + manual fallback) ── */}
+        <div className="space-y-2">
+          <FormField label="Carta" htmlFor="card-picker">
+            <CardPicker onPick={(p) => { setPicked(p); }} />
+          </FormField>
+
+          {!picked && (
+            <details className="group rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-3 py-2">
+              <summary className="cursor-pointer text-caption text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]">
+                ¿No la encontrás? Cargala manualmente
+              </summary>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <FormField label="Nombre de la carta" htmlFor="customName">
+                  <Input
+                    id="customName"
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                    placeholder="Pikachu ex"
+                  />
+                </FormField>
+                <FormField label="Set / expansión" htmlFor="customSet">
+                  <Input
+                    id="customSet"
+                    value={customSet}
+                    onChange={(e) => setCustomSet(e.target.value)}
+                    placeholder="Paradox Rift"
+                  />
+                </FormField>
+              </div>
+            </details>
+          )}
         </div>
-      </div>
 
-      <div>
-        <CardPicker onPick={setPicked} />
-        <p className="mt-1.5 text-xs subtle">
-          Filtrá por set y buscá por nombre. Si no aparece, usá la carga manual.
-        </p>
-      </div>
+        {/* ── Photo + condition + qty + price (mobile-first single col, desktop split) ── */}
+        <div className="grid gap-5 md:grid-cols-[auto,1fr]">
+          <div>
+            <p className="mb-2 text-caption font-medium text-[var(--color-ink)]">Foto</p>
+            <ImageUploader
+              value={photoUrl ?? picked?.imageSmall ?? null}
+              onChange={setPhotoUrl}
+              variant="card"
+              emptyLabel="Subir foto de la carta"
+            />
+          </div>
 
-      <details className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-3 text-sm">
-        <summary className="cursor-pointer font-medium muted">
-          Carga manual / Foto propia
-        </summary>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <label className="text-xs font-medium">
-            Nombre de la carta
-            <input
-              name="cardNameFallback"
-              placeholder="Ej: Pikachu ex"
-              className="input mt-1"
-            />
-          </label>
-          <label className="text-xs font-medium">
-            Set / Expansión
-            <input
-              name="setNameFallback"
-              placeholder="Ej: Paradox Rift"
-              className="input mt-1"
-            />
-          </label>
-          <label className="text-xs font-medium md:col-span-2">
-            URL de foto propia (opcional)
-            <input
-              name="imageUrlFallback"
-              placeholder="https://..."
-              className="input mt-1"
-            />
-            <span className="mt-1 block text-[11px] subtle">
-              Si lo dejás vacío usamos la imagen oficial del catálogo.
-            </span>
-          </label>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <FormField label="Condición" htmlFor="condition">
+              <Select id="condition" name="condition" defaultValue="near_mint">
+                {conditions.map((condition) => (
+                  <option key={condition} value={condition}>
+                    {formatConditionEs(condition)}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+
+            <FormField label="Cantidad" htmlFor="quantity">
+              <Input id="quantity" name="quantity" type="number" min={1} defaultValue={1} />
+            </FormField>
+
+            <FormField label="Precio ARS" htmlFor="askingPriceArs" hint="Opcional. Lo podés cargar después.">
+              <Input
+                id="askingPriceArs"
+                name="askingPriceArs"
+                type="number"
+                min={1}
+                placeholder="12000"
+              />
+            </FormField>
+          </div>
         </div>
-      </details>
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <label className="text-xs font-medium">
-          Condición
-          <select name="condition" defaultValue="near_mint" className="input mt-1">
-            {conditions.map((condition) => (
-              <option key={condition} value={condition}>
-                {formatConditionEs(condition)}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="text-xs font-medium">
-          Cantidad
-          <input
-            name="quantity"
-            type="number"
-            min={1}
-            defaultValue={1}
-            className="input mt-1"
-          />
-        </label>
-
-        <label className="text-xs font-medium">
-          Precio ARS (opcional)
-          <input
-            name="askingPriceArs"
-            type="number"
-            min={1}
-            placeholder="12000"
-            className="input mt-1"
-          />
-        </label>
-      </div>
-
-      <button type="submit" disabled={loading} className="btn btn-primary">
-        {loading ? "Guardando..." : "+ Agregar al inventario"}
-      </button>
-
-      {error ? (
-        <p className="rounded-lg bg-[var(--color-danger-soft)] px-3 py-2 text-sm text-[var(--color-danger)]">
-          {error}
-        </p>
-      ) : null}
-      {success ? (
-        <p className="rounded-lg bg-[var(--color-success-soft)] px-3 py-2 text-sm text-[var(--color-success)]">
-          {success}
-        </p>
-      ) : null}
-    </form>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" loading={loading} size="md">
+            Agregar al inventario
+          </Button>
+          {error && (
+            <p role="alert" className="text-body-sm text-[var(--color-danger)]">
+              {error}
+            </p>
+          )}
+          {success && (
+            <p role="status" className="text-body-sm text-[var(--color-success)]">
+              {success}
+            </p>
+          )}
+        </div>
+      </form>
+    </Card>
   );
 }

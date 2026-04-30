@@ -4,39 +4,20 @@ import { listListings } from "@/lib/server/repository";
 import { getPokemonTypesForCardTitle } from "@/lib/server/pokeapi";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
-import type { CardCondition } from "@/lib/domain/types";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ShoppingBag, Search } from "@/components/ui/icon";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/ui/cn";
 
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 12;
-const conditions: CardCondition[] = [
-  "mint",
-  "near_mint",
-  "lightly_played",
-  "moderately_played",
-  "heavily_played",
-  "damaged",
-];
-const conditionLabel: Record<CardCondition, string> = {
-  mint: "Mint",
-  near_mint: "Near mint",
-  lightly_played: "Lightly played",
-  moderately_played: "Moderately played",
-  heavily_played: "Heavily played",
-  damaged: "Damaged",
-};
-
-function withParams(
-  params: URLSearchParams,
-  updates: Record<string, string | number | null | undefined>,
-): string {
-  const next = new URLSearchParams(params);
-  for (const [key, value] of Object.entries(updates)) {
-    if (value === null || value === undefined || value === "") next.delete(key);
-    else next.set(key, String(value));
-  }
-  return `/market?${next.toString()}`;
-}
+const TABS = [
+  { key: "all", label: "Todo" },
+  { key: "cards", label: "Cartas" },
+  { key: "packs", label: "Packs" },
+] as const;
 
 export default async function MarketPage({
   searchParams,
@@ -129,211 +110,98 @@ export default async function MarketPage({
     (pickup === "1" ? 1 : 0);
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 md:py-10">
-      <header className="flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--color-accent)] text-lg font-bold text-white shadow-sm">
-            T
-          </div>
-          <div className="leading-tight">
-            <p className="text-sm font-bold tracking-tight">TCG Market</p>
-            <p className="text-[10px] uppercase tracking-[0.15em] subtle">Mercado público</p>
-          </div>
-        </Link>
-        <nav className="flex items-center gap-2 text-sm">
-          {user ? (
-            <Link href="/inventory" className="btn btn-ghost btn-sm">
-              Mi panel
-            </Link>
-          ) : (
-            <>
-              <Link href="/login" className="btn btn-ghost btn-sm">
-                Ingresar
-              </Link>
-              <Link href="/register" className="btn btn-primary btn-sm">
-                Crear cuenta
-              </Link>
-            </>
-          )}
-        </nav>
-      </header>
+    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
+      {!isSupabaseConfigured() && (
+        <Card padding="md" className="border-[var(--color-warning)] bg-[var(--color-warning-soft)]">
+          <p className="text-body-sm text-[var(--color-warning)]">
+            Configurá Supabase en producción para abrir el marketplace.
+          </p>
+        </Card>
+      )}
 
-      {!isSupabaseConfigured() || loadError ? (
-        <div className="rounded-lg bg-[var(--color-warning-soft)] px-4 py-3 text-sm text-[var(--color-warning)]">
-          Estamos teniendo problemas para cargar las publicaciones. Probá refrescar en unos minutos.
-        </div>
-      ) : null}
+      {loadError && (
+        <Card padding="md" className="border-[var(--color-danger)] bg-[var(--color-danger-soft)]">
+          <p className="text-body-sm text-[var(--color-danger)]">Error: {loadError}</p>
+        </Card>
+      )}
 
-      <section>
-        <span className="eyebrow">Marketplace</span>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight md:text-4xl">
-          Cartas y packs en venta
+      {/* ── Search header — sticky on mobile for thumb access ── */}
+      <header className="sticky top-0 z-10 -mx-3 bg-[var(--color-surface)]/95 px-3 py-3 backdrop-blur md:relative md:mx-0 md:rounded-[var(--radius-card)] md:bg-[var(--color-surface-elevated)] md:p-5 md:shadow-sm">
+        <h1 className="hidden text-h2 [font-family:var(--font-display)] md:block">
+          Mercado
         </h1>
-        <p className="mt-2 max-w-2xl text-sm muted">
-          Publicaciones activas de la comunidad. Reservá, pagá directo al vendedor
-          (Mercado Pago, transferencia) y cargá el comprobante en Operaciones.
+        <p className="mt-1 hidden text-body-sm text-[var(--color-ink-muted)] md:block">
+          Cartas y packs publicados por la comunidad. Pago seguro vía Mercado Pago.
         </p>
-      </section>
 
-      <div className="flex gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-1 text-sm">
-        {tabs.map((t) => (
-          <Link
-            key={t.key}
-            href={withParams(params, { tab: t.key, page: 1 })}
-            className={`flex-1 rounded-lg px-4 py-2 text-center font-medium transition-colors ${
-              tab === t.key
-                ? "bg-[var(--color-accent)] text-white shadow-sm"
-                : "text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-muted)]"
-            }`}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </div>
-
-      <form method="GET" className="card p-4 md:p-5">
-        <input type="hidden" name="tab" value={tab} />
-        <div className="grid gap-3 md:grid-cols-12">
-          <div className="md:col-span-5">
-            <label className="block text-xs font-medium subtle">Buscar</label>
-            <input
+        <form method="GET" className="mt-0 flex gap-2 md:mt-4">
+          <input type="hidden" name="tab" value={tab} />
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-subtle)]" />
+            <Input
               name="q"
               defaultValue={q}
-              placeholder="Charizard, Mew, Paradox Rift..."
-              className="input mt-1"
+              placeholder="Buscar Charizard, Mew, Paradox Rift..."
+              className="pl-9"
             />
           </div>
-          <div className="md:col-span-3">
-            <label className="block text-xs font-medium subtle">Condición</label>
-            <select
-              name="condition"
-              defaultValue={condition ?? ""}
-              className="input mt-1"
-            >
-              <option value="">Todas</option>
-              {conditions.map((value) => (
-                <option key={value} value={value}>
-                  {conditionLabel[value]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-xs font-medium subtle">Precio mín.</label>
-            <input
-              name="min"
-              type="number"
-              min={1}
-              defaultValue={min}
-              placeholder="ARS"
-              className="input mt-1"
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-xs font-medium subtle">Precio máx.</label>
-            <input
-              name="max"
-              type="number"
-              min={1}
-              defaultValue={max}
-              placeholder="ARS"
-              className="input mt-1"
-            />
-          </div>
-          <div className="md:col-span-4">
-            <label className="block text-xs font-medium subtle">Ordenar</label>
-            <select name="sort" defaultValue={sort} className="input mt-1">
-              <option value="created_desc">Más recientes</option>
-              <option value="price_asc">Precio: menor a mayor</option>
-              <option value="price_desc">Precio: mayor a menor</option>
-            </select>
-          </div>
-          <div className="md:col-span-5 flex flex-wrap items-end gap-4 text-sm">
-            <label className="inline-flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                name="shipping"
-                value="1"
-                defaultChecked={shipping === "1"}
-                className="h-4 w-4 accent-[var(--color-accent)]"
-              />
-              Con envío
-            </label>
-            <label className="inline-flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                name="pickup"
-                value="1"
-                defaultChecked={pickup === "1"}
-                className="h-4 w-4 accent-[var(--color-accent)]"
-              />
-              Con retiro
-            </label>
-          </div>
-          <div className="md:col-span-3 flex items-end gap-2">
-            {activeFilters > 0 ? (
-              <Link href={`/market?tab=${tab}`} className="btn btn-ghost btn-sm flex-1">
-                Limpiar
-              </Link>
-            ) : null}
-            <button type="submit" className="btn btn-primary btn-sm flex-1">
-              Aplicar
-            </button>
-          </div>
-        </div>
-      </form>
+          <Button type="submit" size="md">
+            Buscar
+          </Button>
+        </form>
 
-      {enriched.length === 0 ? (
-        <section className="card p-10 text-center">
-          <p className="text-4xl">🃏</p>
-          <p className="mt-3 font-semibold">No encontramos publicaciones</p>
-          <p className="mt-1 text-sm muted">
-            Probá con otro filtro o{" "}
-            <Link href="/market" className="font-semibold text-[var(--color-accent)] underline">
-              limpiá la búsqueda
+        <div className="mt-3 flex gap-1 overflow-x-auto">
+          {TABS.map((t) => (
+            <Link
+              key={t.key}
+              href={`/market?tab=${t.key}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+              className={cn(
+                "shrink-0 rounded-full px-4 py-1.5 text-[0.8125rem] font-medium transition-colors",
+                tab === t.key
+                  ? "bg-[var(--color-accent)] text-white"
+                  : "bg-[var(--color-surface-elevated)] text-[var(--color-ink-muted)] hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent-strong)]",
+              )}
+            >
+              {t.label}
             </Link>
-            .
-          </p>
-        </section>
+          ))}
+        </div>
+      </header>
+
+      {/* ── Results count ── */}
+      <p className="text-caption text-[var(--color-ink-muted)]">
+        {enriched.length} {enriched.length === 1 ? "publicación" : "publicaciones"}
+        {query && ` para "${q}"`}
+      </p>
+
+      {/* ── Grid ── */}
+      {enriched.length === 0 ? (
+        <EmptyState
+          icon={<ShoppingBag className="h-8 w-8" />}
+          title="Sin publicaciones"
+          description={
+            <>
+              <p>Todavía no hay publicaciones que coincidan.</p>
+              <p className="mt-1 text-caption">
+                ¿Vendés cartas? Cargalas en{" "}
+                <Link href="/inventory" className="font-semibold underline">
+                  Inventario
+                </Link>{" "}
+                y publicalas en un toque.
+              </p>
+            </>
+          }
+        />
       ) : (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between text-xs subtle">
-            <span>
-              {currentItems.length} {currentItems.length === 1 ? "resultado" : "resultados"}
-              {pageNumber > 1 ? ` · página ${pageNumber}` : ""}
-            </span>
-            {hasNextPage ? <span>hay más resultados</span> : null}
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {enriched.map(({ listing, pokemonTypes }) => (
-              <MarketListingCard
-                key={listing.id}
-                listing={listing}
-                pokemonTypes={pokemonTypes}
-                isLoggedIn={Boolean(user)}
-              />
-            ))}
-          </div>
-          <div className="flex items-center justify-between">
-            {hasPrevPage ? (
-              <Link
-                href={withParams(params, { page: pageNumber - 1 })}
-                className="btn btn-ghost btn-sm"
-              >
-                ← Anterior
-              </Link>
-            ) : (
-              <span />
-            )}
-            {hasNextPage ? (
-              <Link
-                href={withParams(params, { page: pageNumber + 1 })}
-                className="btn btn-primary btn-sm"
-              >
-                Siguiente →
-              </Link>
-            ) : null}
-          </div>
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+          {enriched.map(({ listing, pokemonTypes }) => (
+            <MarketListingCard
+              key={listing.id}
+              listing={listing}
+              pokemonTypes={pokemonTypes}
+              isLoggedIn={Boolean(user)}
+            />
+          ))}
         </section>
       )}
     </main>

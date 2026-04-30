@@ -5,6 +5,9 @@ import { listInventoryEntries, listListings } from "@/lib/server/repository";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { redirect } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Package } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 
@@ -36,54 +39,60 @@ export default async function InventoryPage() {
   const configError = !isSupabaseConfigured() || loadError;
 
   return (
-    <section className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight">Inventario</h1>
-        <p className="mt-1.5 text-sm muted">
-          Cargá las cartas que tenés físicamente. Cuando estén listas, publicalas al{" "}
-          <Link href="/market" className="font-semibold text-[var(--color-accent)] hover:underline">
-            Mercado
-          </Link>
-          .
+    <section className="space-y-5">
+      <Card as="header" padding="lg">
+        <p className="text-overline text-[var(--color-ink-subtle)]">
+          Paso 1 de 2 · Tu stock
         </p>
-      </header>
+        <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
+          Inventario
+        </h1>
+        <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
+          Cargá acá las cartas que tenés físicamente. Es tu stock privado.
+          Cuando estés listo, poné un precio y tocá <strong>Publicar en Mercado</strong> para
+          que otros usuarios puedan comprarla.
+        </p>
+      </Card>
 
-      {configError ? (
-        <div className="rounded-lg bg-[var(--color-warning-soft)] px-4 py-3 text-sm text-[var(--color-warning)]">
-          No pudimos cargar tu inventario. Probá refrescar en unos minutos.
-        </div>
+      {!isSupabaseConfigured() ? (
+        <Card as="article" padding="md" className="border-amber-300 bg-amber-50">
+          <p className="text-sm text-amber-900">
+            Configurá las variables de Supabase para guardar datos reales.
+          </p>
+        </Card>
       ) : null}
 
-      {inventoryEntries.length > 0 ? (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="card p-4">
-            <p className="eyebrow">Entradas</p>
-            <p className="mt-1 text-2xl font-bold">{inventoryEntries.length}</p>
-          </div>
-          <div className="card p-4">
-            <p className="eyebrow">Cartas totales</p>
-            <p className="mt-1 text-2xl font-bold">{totalCards}</p>
-          </div>
-          <div className="card p-4">
-            <p className="eyebrow">Con precio</p>
-            <p className="mt-1 text-2xl font-bold">
-              {withPrice}
-              <span className="text-base font-medium muted"> / {inventoryEntries.length}</span>
-            </p>
-          </div>
-        </div>
+      {loadError ? (
+        <Card as="article" padding="md" className="border-rose-300 bg-rose-50">
+          <p className="text-sm text-rose-900">Error de backend: {loadError}</p>
+        </Card>
       ) : null}
 
       <InventoryCreateForm />
 
-      {inventoryEntries.length === 0 ? (
-        <div className="card p-10 text-center">
-          <p className="text-4xl">📇</p>
-          <p className="mt-3 font-semibold">Tu inventario está vacío</p>
-          <p className="mt-1 text-sm muted">
-            Usá el buscador de arriba para agregar tu primera carta.
+      <div className="grid gap-3 md:grid-cols-3">
+        <Card as="article" padding="md">
+          <p className="text-overline text-[var(--color-ink-subtle)]">Entradas</p>
+          <p className="mt-1 text-2xl font-semibold">{inventoryEntries.length}</p>
+        </Card>
+        <Card as="article" padding="md">
+          <p className="text-overline text-[var(--color-ink-subtle)]">Cartas totales</p>
+          <p className="mt-1 text-2xl font-semibold">{totalCards}</p>
+        </Card>
+        <Card as="article" padding="md">
+          <p className="text-overline text-[var(--color-ink-subtle)]">Con precio cargado</p>
+          <p className="mt-1 text-2xl font-semibold">
+            {withPrice} / {inventoryEntries.length}
           </p>
-        </div>
+        </Card>
+      </div>
+
+      {inventoryEntries.length === 0 ? (
+        <EmptyState
+          icon={<Package className="h-8 w-8" />}
+          title="Inventario vacío"
+          description="Usá el buscador de arriba para agregar tu primera carta."
+        />
       ) : (
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-wide subtle">Tus cartas</h2>

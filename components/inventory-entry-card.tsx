@@ -5,14 +5,22 @@ import { useState } from "react";
 import type { InventoryEntry } from "@/lib/domain/types";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { assertListingLogisticsValid } from "@/lib/shared/listing-logistics";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { ImageUploader } from "@/components/ui/image-uploader";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { FormField } from "@/components/ui/form-field";
+import { ChevronDown, ChevronUp, Tag, Trash2 } from "@/components/ui/icon";
 
-const conditionBadge: Record<string, string> = {
-  mint: "chip chip-success",
-  near_mint: "chip chip-success",
-  lightly_played: "chip chip-warning",
-  moderately_played: "chip chip-warning",
-  heavily_played: "chip chip-danger",
-  damaged: "chip chip-danger",
+const conditionVariant: Record<string, "success" | "warning" | "danger" | "default"> = {
+  mint: "success",
+  near_mint: "success",
+  lightly_played: "warning",
+  moderately_played: "warning",
+  heavily_played: "danger",
+  damaged: "danger",
 };
 
 type Props = {
@@ -20,79 +28,52 @@ type Props = {
   alreadyListed: boolean;
 };
 
+type Panel = "none" | "edit" | "publish";
+
 export function InventoryEntryCard({ entry, alreadyListed }: Props) {
   const router = useRouter();
-  const [mode, setMode] = useState<"view" | "edit" | "publish">("view");
+  const [panel, setPanel] = useState<Panel>("none");
+
+  // Edit state
   const [price, setPrice] = useState<string>(
     entry.askingPriceArs ? String(entry.askingPriceArs) : "",
   );
   const [quantity, setQuantity] = useState<number>(entry.quantity);
-  const [imageUrl, setImageUrl] = useState(entry.imageUrl ?? "");
+  const [imageUrl, setImageUrl] = useState<string | null>(entry.imageUrl ?? null);
+
+  // Publish state
   const [offersShipping, setOffersShipping] = useState(false);
   const [offersPickup, setOffersPickup] = useState(true);
   const [deliveryNotes, setDeliveryNotes] = useState("");
-  const [busy, setBusy] = useState<null | "edit" | "delete" | "publish" | "upload">(null);
-  const [message, setMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  const [busy, setBusy] = useState<null | "save" | "delete" | "publish">(null);
+  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   const dirty =
     Number(price || 0) !== (entry.askingPriceArs ?? 0) ||
     quantity !== entry.quantity ||
-    imageUrl.trim() !== (entry.imageUrl ?? "").trim();
+    (imageUrl ?? "") !== (entry.imageUrl ?? "");
 
   async function save() {
-    setBusy("edit");
-    setMessage(null);
+    setBusy("save");
+    setMsg(null);
     try {
-      const response = await fetch("/api/inventory", {
+      const res = await fetch("/api/inventory", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: entry.id,
           quantity,
           askingPriceArs: Number(price) || undefined,
-          imageUrl: imageUrl.trim() || null,
+          imageUrl: imageUrl || null,
         }),
       });
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(data.error ?? "No se pudo guardar.");
-      setMessage({ kind: "ok", text: "Guardado." });
-      setMode("view");
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "No se pudo guardar.");
+      setMsg({ kind: "ok", text: "Guardado." });
       router.refresh();
-    } catch (error) {
-      setMessage({
-        kind: "err",
-        text: error instanceof Error ? error.message : "Error al guardar.",
-      });
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function uploadFile(file: File | null) {
-    if (!file) return;
-    setBusy("upload");
-    setMessage(null);
-    try {
-      const body = new FormData();
-      body.set("file", file);
-      const response = await fetch("/api/upload/card-image", {
-        method: "POST",
-        body,
-      });
-      const data = (await response.json()) as { error?: string; url?: string };
-      if (!response.ok) throw new Error(data.error ?? "No se pudo subir la foto.");
-      if (data.url) {
-        setImageUrl(data.url);
-        setMessage({
-          kind: "ok",
-          text: "Foto subida. Tocá Guardar para aplicarla.",
-        });
-      }
-    } catch (error) {
-      setMessage({
-        kind: "err",
-        text: error instanceof Error ? error.message : "Error al subir la foto.",
-      });
+    } catch (err) {
+      setMsg({ kind: "err", text: err instanceof Error ? err.message : "Error al guardar." });
     } finally {
       setBusy(null);
     }
@@ -101,21 +82,18 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
   async function remove() {
     if (!confirm(`¿Eliminar "${entry.cardName}" del inventario?`)) return;
     setBusy("delete");
-    setMessage(null);
+    setMsg(null);
     try {
-      const response = await fetch("/api/inventory", {
+      const res = await fetch("/api/inventory", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: entry.id }),
       });
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(data.error ?? "No se pudo eliminar.");
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "No se pudo eliminar.");
       router.refresh();
-    } catch (error) {
-      setMessage({
-        kind: "err",
-        text: error instanceof Error ? error.message : "Error al eliminar.",
-      });
+    } catch (err) {
+      setMsg({ kind: "err", text: err instanceof Error ? err.message : "Error al eliminar." });
       setBusy(null);
     }
   }
@@ -123,22 +101,19 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
   async function publish() {
     const priceNum = Number(price);
     if (!priceNum || priceNum <= 0) {
-      setMessage({ kind: "err", text: "Poné un precio antes de publicar." });
+      setMsg({ kind: "err", text: "Cargá un precio antes de publicar." });
       return;
     }
     try {
       assertListingLogisticsValid(offersShipping, offersPickup, deliveryNotes);
     } catch (err) {
-      setMessage({
-        kind: "err",
-        text: err instanceof Error ? err.message : "Revisá las opciones de entrega.",
-      });
+      setMsg({ kind: "err", text: err instanceof Error ? err.message : "Revisá envío / retiro." });
       return;
     }
     setBusy("publish");
-    setMessage(null);
+    setMsg(null);
     try {
-      const response = await fetch("/api/listings", {
+      const res = await fetch("/api/listings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -146,7 +121,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
           cardName: entry.cardName,
           setName: entry.setName ?? "",
           catalogCardId: entry.catalogCardId,
-          imageUrl: imageUrl.trim() || entry.imageUrl,
+          imageUrl: imageUrl ?? entry.imageUrl,
           condition: entry.condition,
           priceArs: priceNum,
           quantity,
@@ -156,254 +131,222 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
           deliveryAreaNotes: deliveryNotes.trim(),
         }),
       });
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(data.error ?? "No se pudo publicar.");
-      setMessage({ kind: "ok", text: "¡Publicada en el Mercado!" });
-      setMode("view");
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "No se pudo publicar.");
+      setMsg({ kind: "ok", text: "Publicada en el Mercado." });
+      setPanel("none");
       router.refresh();
-    } catch (error) {
-      setMessage({
-        kind: "err",
-        text: error instanceof Error ? error.message : "Error al publicar.",
-      });
+    } catch (err) {
+      setMsg({ kind: "err", text: err instanceof Error ? err.message : "Error al publicar." });
     } finally {
       setBusy(null);
     }
   }
 
-  const preview = imageUrl.trim() || entry.imageUrl;
+  const preview = imageUrl ?? entry.imageUrl;
+  const priceNum = Number(price);
+  const platformFee = priceNum > 0 ? Math.max(1, Math.round(priceNum * 0.01)) : 0;
+  const netArs = priceNum - platformFee;
 
   return (
-    <article className="card card-hover overflow-hidden">
-      <div className="flex gap-4 p-4">
-        <div className="flex-shrink-0">
+    <Card as="article" padding="md">
+      {/* ── Header (always visible) ── */}
+      <div className="flex gap-3">
+        <div className="h-24 w-[68px] shrink-0 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
           {preview ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={preview}
-              alt={entry.cardName}
-              className="h-32 w-24 rounded-lg object-cover"
-            />
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={preview} alt={entry.cardName} className="h-full w-full object-cover" />
           ) : (
-            <div className="grid h-32 w-24 place-items-center rounded-lg bg-[var(--color-surface-muted)] subtle">
-              <span className="text-2xl opacity-40">🃏</span>
+            <div className="grid h-full w-full place-items-center text-caption text-[var(--color-ink-subtle)]">
+              Sin foto
             </div>
           )}
         </div>
+      ) : null}
 
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h3 className="truncate text-base font-bold tracking-tight">{entry.cardName}</h3>
-              <p className="truncate text-xs muted">
-                {entry.setName || "Set sin especificar"}
+            <div className="min-w-0 flex-1">
+              <h3 className="truncate text-[1rem] font-semibold leading-tight">{entry.cardName}</h3>
+              <p className="truncate text-caption text-[var(--color-ink-muted)]">
+                {entry.setName || "Sin set"}
               </p>
             </div>
-            <span className={conditionBadge[entry.condition] ?? "chip"}>
+            <Chip variant={conditionVariant[entry.condition] ?? "default"} size="sm">
               {formatConditionEs(entry.condition)}
+            </Chip>
+          </div>
+
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-body-sm">
+            <span>
+              {entry.askingPriceArs ? (
+                <strong>ARS {entry.askingPriceArs.toLocaleString("es-AR")}</strong>
+              ) : (
+                <span className="text-[var(--color-ink-subtle)]">Sin precio</span>
+              )}
             </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="rounded-lg bg-[var(--color-surface-muted)] p-2">
-              <p className="subtle">Stock</p>
-              <p className="mt-0.5 font-semibold">{entry.quantity}</p>
-            </div>
-            <div className="rounded-lg bg-[var(--color-surface-muted)] p-2">
-              <p className="subtle">Precio</p>
-              <p className="mt-0.5 font-semibold">
-                {entry.askingPriceArs
-                  ? `ARS ${entry.askingPriceArs.toLocaleString("es-AR")}`
-                  : "Sin precio"}
-              </p>
-            </div>
-          </div>
-
-          {alreadyListed ? (
-            <p className="chip chip-success w-max">✓ Publicada en Mercado</p>
-          ) : null}
-
-          <div className="mt-1 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setMode(mode === "edit" ? "view" : "edit")}
-              disabled={busy !== null}
-              className="btn btn-ghost btn-sm"
-            >
-              {mode === "edit" ? "Cerrar" : "Editar"}
-            </button>
-            {!alreadyListed ? (
-              <button
-                type="button"
-                onClick={() => setMode(mode === "publish" ? "view" : "publish")}
-                disabled={busy !== null}
-                className="btn btn-primary btn-sm"
-              >
-                {mode === "publish" ? "Cerrar" : "Publicar en Mercado"}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={remove}
-              disabled={busy !== null}
-              className="btn btn-danger btn-sm ml-auto"
-            >
-              {busy === "delete" ? "..." : "Eliminar"}
-            </button>
+            <span className="text-[var(--color-ink-muted)]">·</span>
+            <span className="text-[var(--color-ink-muted)]">x{entry.quantity}</span>
+            {alreadyListed && (
+              <Chip variant="info" size="sm">Publicada</Chip>
+            )}
           </div>
         </div>
       </div>
 
-      {mode === "edit" ? (
-        <div className="border-t border-[var(--color-border)] bg-[var(--color-surface-muted)] p-4 text-sm">
-          <p className="eyebrow">Editar datos</p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <label className="text-xs font-medium">
-              Stock
-              <input
-                type="number"
-                min={1}
-                max={100}
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-                className="input mt-1"
-              />
-            </label>
-            <label className="text-xs font-medium">
-              Precio ARS
-              <input
-                type="number"
-                min={0}
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="Ej. 12000"
-                className="input mt-1"
-              />
-            </label>
-            <label className="text-xs font-medium sm:col-span-2">
-              URL de foto (opcional)
-              <input
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://..."
-                className="input mt-1"
-              />
-            </label>
-            <label className="text-xs font-medium sm:col-span-2">
-              O subir una foto propia
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                disabled={busy !== null}
-                className="mt-1 block w-full text-xs file:mr-2 file:rounded-md file:border-0 file:bg-[var(--color-accent)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-[var(--color-accent-strong)]"
-                onChange={(e) => uploadFile(e.target.files?.[0] ?? null)}
-              />
-            </label>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              onClick={save}
-              disabled={!dirty || busy !== null}
-              className="btn btn-primary btn-sm"
-            >
-              {busy === "edit" ? "Guardando..." : "Guardar"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("view")}
-              disabled={busy !== null}
-              className="btn btn-ghost btn-sm"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ) : null}
+      {/* ── Action buttons ── */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant={panel === "edit" ? "primary" : "secondary"}
+          onClick={() => setPanel(panel === "edit" ? "none" : "edit")}
+          disabled={busy !== null}
+        >
+          {panel === "edit" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          Editar
+        </Button>
 
-      {mode === "publish" ? (
-        <div className="border-t border-[var(--color-border)] bg-[var(--color-surface-muted)] p-4 text-sm">
-          <p className="eyebrow">Publicar en el Mercado</p>
-          {!entry.askingPriceArs && !Number(price) ? (
-            <p className="mt-1 text-xs text-[var(--color-warning)]">
-              Cargá primero un precio en Editar.
-            </p>
-          ) : null}
-          <div className="mt-3 space-y-3">
-            <label className="text-xs font-medium">
-              Precio ARS
-              <input
-                type="number"
-                min={1}
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="input mt-1"
-              />
-            </label>
-            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-              <p className="text-xs font-semibold">Entrega</p>
-              <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={offersPickup}
-                  onChange={(e) => setOffersPickup(e.target.checked)}
-                  className="h-4 w-4 accent-[var(--color-accent)]"
+        {!alreadyListed && (
+          <Button
+            size="sm"
+            variant={panel === "publish" ? "primary" : "secondary"}
+            onClick={() => setPanel(panel === "publish" ? "none" : "publish")}
+            disabled={busy !== null}
+          >
+            <Tag className="h-4 w-4" />
+            Publicar
+          </Button>
+        )}
+
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={remove}
+          disabled={busy !== null}
+          loading={busy === "delete"}
+          className="ml-auto hover:text-[var(--color-danger)]"
+          aria-label="Eliminar carta"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* ── Edit panel ── */}
+      {panel === "edit" && (
+        <div className="mt-4 space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4">
+          <div className="grid gap-4 md:grid-cols-[auto,1fr]">
+            <div>
+              <p className="mb-2 text-caption font-medium">Foto</p>
+              <ImageUploader value={imageUrl} onChange={setImageUrl} variant="card" />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FormField label="Precio ARS" htmlFor={`price-${entry.id}`}>
+                <Input
+                  id={`price-${entry.id}`}
+                  type="number"
+                  min={0}
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="12000"
                 />
-                Retiro en persona
-              </label>
-              <label className="mt-1.5 flex cursor-pointer items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={offersShipping}
-                  onChange={(e) => setOffersShipping(e.target.checked)}
-                  className="h-4 w-4 accent-[var(--color-accent)]"
+              </FormField>
+              <FormField label="Cantidad" htmlFor={`qty-${entry.id}`}>
+                <Input
+                  id={`qty-${entry.id}`}
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
                 />
-                Envío postal / courier
-              </label>
-              <label className="mt-2 block text-xs font-medium">
-                Detalle de zona, horarios o costo de envío
-                <textarea
-                  value={deliveryNotes}
-                  onChange={(e) => setDeliveryNotes(e.target.value)}
-                  rows={2}
-                  placeholder="Ej.: Retiro Caballito lun–vie 18–21h. Envío Andreani a cargo del comprador."
-                  className="input mt-1"
-                />
-              </label>
+              </FormField>
             </div>
           </div>
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              onClick={publish}
-              disabled={busy !== null}
-              className="btn btn-primary btn-sm"
-            >
-              {busy === "publish" ? "Publicando..." : "Publicar ahora"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("view")}
-              disabled={busy !== null}
-              className="btn btn-ghost btn-sm"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ) : null}
 
-      {message ? (
-        <div
-          className={`border-t border-[var(--color-border)] px-4 py-2 text-xs ${
-            message.kind === "ok"
-              ? "bg-[var(--color-success-soft)] text-[var(--color-success)]"
-              : "bg-[var(--color-danger-soft)] text-[var(--color-danger)]"
+          <Button size="sm" onClick={save} disabled={!dirty || busy !== null} loading={busy === "save"}>
+            Guardar cambios
+          </Button>
+        </div>
+      )}
+
+      {/* ── Publish panel ── */}
+      {panel === "publish" && (
+        <div className="mt-4 space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4">
+          {!entry.askingPriceArs && (
+            <FormField label="Precio ARS" htmlFor={`pub-price-${entry.id}`} required>
+              <Input
+                id={`pub-price-${entry.id}`}
+                type="number"
+                min={1}
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="12000"
+              />
+            </FormField>
+          )}
+
+          {priceNum > 0 && (
+            <div className="rounded-lg bg-[var(--color-info-soft)] p-3 text-caption">
+              <p className="font-semibold text-[var(--color-ink)]">
+                Te quedan ARS {netArs.toLocaleString("es-AR")}
+              </p>
+              <p className="text-[var(--color-ink-muted)]">
+                Comisión plataforma 1 %: ARS {platformFee.toLocaleString("es-AR")}
+              </p>
+            </div>
+          )}
+
+          <fieldset className="space-y-2">
+            <legend className="text-caption font-medium">Entrega</legend>
+            <label className="flex cursor-pointer items-center gap-2 text-body-sm">
+              <input
+                type="checkbox"
+                checked={offersPickup}
+                onChange={(e) => setOffersPickup(e.target.checked)}
+              />
+              Retiro en persona
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-body-sm">
+              <input
+                type="checkbox"
+                checked={offersShipping}
+                onChange={(e) => setOffersShipping(e.target.checked)}
+              />
+              Envío a todo el país
+            </label>
+          </fieldset>
+
+          <FormField
+            label="Detalles de entrega"
+            htmlFor={`delivery-${entry.id}`}
+            hint="Zona, horarios, costo de envío. Mínimo 8 caracteres."
+            required
+          >
+            <Textarea
+              id={`delivery-${entry.id}`}
+              value={deliveryNotes}
+              onChange={(e) => setDeliveryNotes(e.target.value)}
+              rows={2}
+              placeholder="Retiro Caballito CABA · envío Andreani a cargo del comprador"
+            />
+          </FormField>
+
+          <Button size="sm" onClick={publish} disabled={busy !== null} loading={busy === "publish"}>
+            Publicar al Mercado
+          </Button>
+        </div>
+      )}
+
+      {msg && (
+        <p
+          role={msg.kind === "err" ? "alert" : "status"}
+          className={`mt-3 text-body-sm ${
+            msg.kind === "ok" ? "text-[var(--color-success)]" : "text-[var(--color-danger)]"
           }`}
         >
-          {message.text}
-        </div>
-      ) : null}
-    </article>
+          {msg.text}
+        </p>
+      )}
+    </Card>
   );
 }

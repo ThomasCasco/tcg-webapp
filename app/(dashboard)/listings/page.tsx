@@ -6,6 +6,9 @@ import { getSellerPaymentProfile, listListings } from "@/lib/server/repository";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { redirect } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Tag } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 
@@ -38,14 +41,14 @@ export default async function ListingsPage() {
 
   return (
     <section className="space-y-5">
-      <header className="surface-panel p-5">
-        <p className="text-xs uppercase tracking-[0.12em] text-black/55">
+      <Card as="header" padding="lg">
+        <p className="text-overline text-[var(--color-ink-subtle)]">
           Paso 2 de 2 · Tus ofertas en el Mercado
         </p>
-        <h1 className="mt-1 text-3xl [font-family:var(--font-display)]">
+        <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
           Publicaciones
         </h1>
-        <p className="mt-2 text-sm text-black/70">
+        <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
           Tus ofertas visibles en el{" "}
           <Link href="/market" className="underline">Mercado</Link>. Para publicar una
           carta individual, cargala en{" "}
@@ -53,41 +56,52 @@ export default async function ListingsPage() {
           &quot;Publicar en Mercado&quot;. Acá podés publicar{" "}
           <strong>Mystery Packs</strong> o administrar las publicaciones existentes.
         </p>
-      </header>
+      </Card>
 
       {!isSupabaseConfigured() ? (
-        <article className="surface-panel border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          Configurá Supabase para publicar en producción.
-        </article>
+        <Card as="article" padding="md" className="border-amber-300 bg-amber-50">
+          <p className="text-sm text-amber-900">
+            Configurá Supabase para publicar en producción.
+          </p>
+        </Card>
       ) : null}
 
       {loadError ? (
-        <article className="surface-panel border-2 border-rose-300 bg-rose-50 p-4 text-sm text-rose-900">
-          Error de backend: {loadError}
-        </article>
+        <Card as="article" padding="md" className="border-rose-300 bg-rose-50">
+          <p className="text-sm text-rose-900">Error de backend: {loadError}</p>
+        </Card>
       ) : null}
 
       {paymentProfileError ? (
-        <article className="surface-panel border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          No se pudo cargar tu perfil de cobro: {paymentProfileError}
-        </article>
+        <Card as="article" padding="md" className="border-amber-300 bg-amber-50">
+          <p className="text-sm text-amber-900">
+            No se pudo cargar tu perfil de cobro: {paymentProfileError}
+          </p>
+        </Card>
       ) : null}
 
       {paymentProfile ? <SellerPaymentProfileForm initialProfile={paymentProfile} /> : null}
 
       <ListingCreateForm />
 
-      <div className="surface-panel p-5">
+      <Card padding="lg">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Publicaciones activas</h2>
-          <span className="text-xs text-black/55">{active.length} activas</span>
+          <h2 className="text-h3">Publicaciones activas</h2>
+          <span className="text-caption text-[var(--color-ink-subtle)]">{active.length} activas</span>
         </div>
         {active.length === 0 ? (
-          <p className="mt-3 text-sm text-black/60">
-            No tenés publicaciones activas. Publicá una carta desde{" "}
-            <Link href="/inventory" className="underline">Inventario</Link> o
-            creá un Mystery Pack arriba.
-          </p>
+          <EmptyState
+            icon={<Tag className="h-8 w-8" />}
+            title="Sin publicaciones activas"
+            description={
+              <>
+                Publicá una carta desde{" "}
+                <Link href="/inventory" className="underline">Inventario</Link> o
+                creá un Mystery Pack arriba.
+              </>
+            }
+            className="mt-4"
+          />
         ) : (
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             {active.map((listing) => (
@@ -98,13 +112,13 @@ export default async function ListingsPage() {
             ))}
           </div>
         )}
-      </div>
+      </Card>
 
       {closed.length > 0 ? (
-        <div className="surface-panel p-5">
+        <Card padding="lg">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Historial</h2>
-            <span className="text-xs text-black/55">{closed.length} cerradas</span>
+            <h2 className="text-h3">Historial</h2>
+            <span className="text-caption text-[var(--color-ink-subtle)]">{closed.length} cerradas</span>
           </div>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             {closed.map((listing) => (
@@ -114,7 +128,7 @@ export default async function ListingsPage() {
               />
             ))}
           </div>
-        </div>
+        </Card>
       ) : null}
     </section>
   );

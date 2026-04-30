@@ -136,6 +136,7 @@ export interface PaymentEvent {
   providerStatus: string;
   verificationStatus: PaymentVerificationStatus;
   fulfillmentStatus?: FulfillmentStatus;
+  shippingTracking?: string;
   checkedAt: string;
   createdAt: string;
 }

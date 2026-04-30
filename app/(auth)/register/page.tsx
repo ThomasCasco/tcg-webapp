@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { RegisterForm } from "@/components/register-form";
 import { getAuthenticatedUser } from "@/lib/server/auth";
+import { Card } from "@/components/ui/card";
 
 export default async function RegisterPage() {
   const user = await getAuthenticatedUser();
@@ -10,20 +10,22 @@ export default async function RegisterPage() {
   }
 
   return (
-    <section className="card mx-auto w-full max-w-md p-7 md:p-8">
-      <h1 className="text-3xl font-bold tracking-tight">Crear cuenta</h1>
-      <p className="mt-2 text-sm muted">
-        Registrate gratis para cargar tu inventario y empezar a publicar.
-      </p>
+    <div className="flex min-h-svh items-center justify-center p-4">
+      <Card as="section" className="w-full max-w-md">
+        <p className="text-overline text-[var(--color-ink-subtle)]">
+          Onboarding vendedor
+        </p>
+        <h1 className="mt-2 text-h1 [font-family:var(--font-display)]">
+          Crear cuenta
+        </h1>
+        <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
+          Registrate para cargar tu inventario y publicar cartas.
+        </p>
 
-      <RegisterForm />
-
-      <p className="mt-6 text-sm muted">
-        ¿Ya tenés cuenta?{" "}
-        <Link href="/login" className="font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-strong)]">
-          Iniciar sesión
-        </Link>
-      </p>
-    </section>
+        <div className="mt-6">
+          <RegisterForm />
+        </div>
+      </Card>
+    </div>
   );
 }

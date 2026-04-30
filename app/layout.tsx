@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Bebas_Neue, Manrope } from "next/font/google";
+import { Toaster } from "@/components/ui/toast";
 import "./globals.css";
 
 const bodyFont = Inter({
@@ -30,8 +31,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${bodyFont.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html
+      lang="es"
+      className={`${displayFont.variable} ${bodyFont.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col">
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

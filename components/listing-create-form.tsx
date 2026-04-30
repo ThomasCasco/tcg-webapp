@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import type { CardCondition } from "@/lib/domain/types";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 const conditions: CardCondition[] = [
   "mint",
@@ -85,170 +91,141 @@ export function ListingCreateForm() {
   }
 
   return (
-    <div className="card p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="eyebrow">Mystery Pack</p>
-          <h2 className="mt-0.5 text-lg font-bold tracking-tight">Publicar un pack sorpresa</h2>
-          <p className="mt-1 text-xs muted">
-            Para publicar una carta individual, hacelo desde{" "}
-            <Link href="/inventory" className="font-semibold text-[var(--color-accent)] hover:underline">
-              Inventario
-            </Link>
-            .
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className={open ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"}
-        >
-          {open ? "Cerrar" : "+ Nuevo pack"}
-        </button>
+    <Card padding="md">
+      <div>
+        <p className="text-overline text-[var(--color-ink-subtle)]">Nuevo Mystery Pack</p>
+        <p className="mt-1 text-body-sm text-[var(--color-ink-muted)]">
+          Un pack sorpresa con varias cartas a un precio fijo. Para publicar una{" "}
+          <strong>carta individual</strong>, cargala primero en{" "}
+          <a href="/inventory" className="underline">Inventario</a> y tocá{" "}
+          &quot;Publicar en Mercado&quot;.
+        </p>
       </div>
 
-      {open ? (
-        <form onSubmit={onSubmit} className="mt-4 space-y-3 border-t border-[var(--color-border)] pt-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="text-xs font-medium md:col-span-2">
-              Título del pack
-              <input
+      <form onSubmit={onSubmit} className="mt-4 space-y-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <FormField label="Título del pack" htmlFor="packTitle" required>
+              <Input
+                id="packTitle"
                 name="packTitle"
                 required
-                placeholder="Ej: Pack fuego 5 cartas + 1 holo"
-                className="input mt-1"
+                placeholder="Pack Charizard vibes 5 cartas"
               />
-            </label>
-            <label className="text-xs font-medium">
-              Temática (opcional)
-              <input
-                name="packTheme"
-                placeholder="Fire types, Trainers, Base Set..."
-                className="input mt-1"
-              />
-            </label>
-            <label className="text-xs font-medium">
-              Cartas por pack
-              <input
-                name="packCardCount"
-                type="number"
-                min={1}
-                max={50}
-                defaultValue={5}
-                required
-                className="input mt-1"
-              />
-            </label>
-            <label className="text-xs font-medium">
-              Rareza mínima garantizada
-              <select name="packRarityFloor" defaultValue="rare" className="input mt-1">
-                {rarityFloors.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs font-medium">
-              Condición mínima
-              <select name="condition" defaultValue="near_mint" className="input mt-1">
-                {conditions.map((condition) => (
-                  <option key={condition} value={condition}>
-                    {formatConditionEs(condition)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs font-medium md:col-span-2">
-              Descripción (mín. 20 caracteres)
-              <textarea
+            </FormField>
+          </div>
+          <FormField label="Temática (opcional)" htmlFor="packTheme">
+            <Input
+              id="packTheme"
+              name="packTheme"
+              placeholder="Fire types, Trainers, Base Set..."
+            />
+          </FormField>
+          <FormField label="Cartas por pack" htmlFor="packCardCount" required>
+            <Input
+              id="packCardCount"
+              name="packCardCount"
+              type="number"
+              min={1}
+              max={50}
+              defaultValue={5}
+              required
+            />
+          </FormField>
+          <FormField label="Rareza piso garantizada" htmlFor="packRarityFloor">
+            <Select id="packRarityFloor" name="packRarityFloor" defaultValue="rare">
+              {rarityFloors.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </Select>
+          </FormField>
+          <div className="md:col-span-2">
+            <FormField
+              label="Descripción (mín. 20 caracteres)"
+              htmlFor="packDescription"
+              required
+            >
+              <Textarea
+                id="packDescription"
                 name="packDescription"
                 required
                 minLength={20}
                 rows={3}
-                placeholder="Ej: 5 cartas random tipo fuego + 1 holo garantizada near_mint o mejor."
-                className="input mt-1"
+                placeholder="5 cartas random tipo fuego + 1 holo garantizada near_mint o mejor."
               />
-            </label>
+            </FormField>
           </div>
+        </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="text-xs font-medium">
-              Precio ARS
-              <input
-                name="priceArs"
-                required
-                type="number"
-                min={1}
-                placeholder="25000"
-                className="input mt-1"
-              />
-            </label>
-            <label className="text-xs font-medium">
-              Stock
-              <input
-                name="quantity"
-                type="number"
-                min={1}
-                defaultValue={1}
-                className="input mt-1"
-              />
-            </label>
-          </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <FormField label="Condición mínima" htmlFor="condition">
+            <Select id="condition" name="condition" defaultValue="near_mint">
+              {conditions.map((condition) => (
+                <option key={condition} value={condition}>
+                  {formatConditionEs(condition)}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+          <FormField label="Precio ARS" htmlFor="priceArs" required>
+            <Input
+              id="priceArs"
+              name="priceArs"
+              required
+              type="number"
+              min={1}
+              placeholder="25000"
+            />
+          </FormField>
+          <FormField label="Stock" htmlFor="quantity">
+            <Input
+              id="quantity"
+              name="quantity"
+              type="number"
+              min={1}
+              defaultValue={1}
+            />
+          </FormField>
+        </div>
 
-          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-3 text-sm">
-            <p className="text-xs font-semibold">Entrega</p>
-            <p className="mt-0.5 text-[11px] subtle">
-              El comprador lo ve al reservar. Marcá al menos una opción.
-            </p>
-            <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs">
-              <input
-                type="checkbox"
-                name="offersPickup"
-                value="on"
-                defaultChecked
-                className="h-4 w-4 accent-[var(--color-accent)]"
-              />
-              Retiro en persona
-            </label>
-            <label className="mt-1.5 flex cursor-pointer items-center gap-2 text-xs">
-              <input
-                type="checkbox"
-                name="offersShipping"
-                value="on"
-                className="h-4 w-4 accent-[var(--color-accent)]"
-              />
-              Envío postal / courier
-            </label>
-            <label className="mt-2 block text-xs font-medium">
-              Detalle (mín. 8 caracteres)
-              <textarea
+        <div className="rounded-xl border border-[var(--color-border)] bg-white/50 p-3 text-body-sm text-[var(--color-ink-muted)]">
+          <p className="font-semibold text-[var(--color-ink)]">Entrega del pack</p>
+          <p className="mt-1 text-caption text-[var(--color-ink-subtle)]">
+            El comprador ve esto en el Mercado. Marcá al menos una opción y detallá dónde / cómo.
+          </p>
+          <label className="mt-2 flex cursor-pointer items-center gap-2">
+            <input type="checkbox" name="offersPickup" value="on" defaultChecked />
+            Retiro en persona
+          </label>
+          <label className="mt-1 flex cursor-pointer items-center gap-2">
+            <input type="checkbox" name="offersShipping" value="on" />
+            Envío postal / courier
+          </label>
+          <div className="mt-2">
+            <FormField label="Detalle (mín. 8 caracteres)" htmlFor="deliveryAreaNotes" required>
+              <Textarea
+                id="deliveryAreaNotes"
                 name="deliveryAreaNotes"
                 required
                 minLength={8}
                 rows={2}
-                placeholder="Ej: Retiro en Rosario centro / envío OCA a todo el país."
-                className="input mt-1"
+                placeholder="Ej.: Retiro en Rosario centro / envío OCA a todo el país a cargo del comprador."
               />
-            </label>
+            </FormField>
           </div>
+        </div>
 
-          <button type="submit" disabled={loading} className="btn btn-primary">
-            {loading ? "Publicando..." : "Publicar pack"}
-          </button>
+        <Button type="submit" loading={loading}>
+          Publicar pack
+        </Button>
 
-          {error ? (
-            <p className="rounded-lg bg-[var(--color-danger-soft)] px-3 py-2 text-sm text-[var(--color-danger)]">
-              {error}
-            </p>
-          ) : null}
-          {success ? (
-            <p className="rounded-lg bg-[var(--color-success-soft)] px-3 py-2 text-sm text-[var(--color-success)]">
-              {success}
-            </p>
-          ) : null}
-        </form>
-      ) : null}
-    </div>
+        {error ? (
+          <p role="alert" className="text-body-sm text-[var(--color-danger)]">{error}</p>
+        ) : null}
+        {success ? (
+          <p role="status" className="text-body-sm text-[var(--color-success)]">{success}</p>
+        ) : null}
+      </form>
+    </Card>
   );
 }

@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { DisputeCreateForm } from "@/components/dispute-create-form";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { listDisputesForUser } from "@/lib/server/repository";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Scale } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 
@@ -22,30 +25,42 @@ export default async function DisputesPage() {
 
   return (
     <section className="space-y-4">
+      <Card as="header" padding="lg">
+        <p className="text-overline text-[var(--color-ink-subtle)]">Disputas</p>
+        <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
+          Centro de resolución
+        </h1>
+      </Card>
+
       <DisputeCreateForm />
 
       {loadError ? (
-        <article className="surface-panel border-2 border-rose-300 bg-rose-50 p-4 text-sm text-rose-900">
-          Error de backend: {loadError}
-        </article>
+        <Card as="article" padding="md" className="border-rose-300 bg-rose-50">
+          <p className="text-sm text-rose-900">Error de backend: {loadError}</p>
+        </Card>
       ) : null}
 
-      <div className="surface-panel p-5">
-        <p className="text-xs uppercase tracking-[0.12em] text-black/55">Disputas</p>
-        <h1 className="mt-1 text-3xl [font-family:var(--font-display)]">Centro de resolucion</h1>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {disputes.map((dispute) => (
-          <article key={dispute.id} className="surface-panel p-5 text-sm">
-            <p className="text-xs uppercase tracking-[0.12em] text-black/55">{dispute.transactionId}</p>
-            <p className="mt-1 font-semibold">{dispute.reason}</p>
-            <p className="mt-1 text-black/70">{dispute.details}</p>
-            <p className="mt-2 text-black/70">Abierta por: {dispute.openedByHandle}</p>
-            <p className="text-black/70">Estado: {dispute.status}</p>
-          </article>
-        ))}
-      </div>
+      {disputes.length === 0 && !loadError ? (
+        <EmptyState
+          icon={<Scale className="h-8 w-8" />}
+          title="Sin disputas"
+          description="No tenés disputas abiertas. Ojalá siga así."
+        />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {disputes.map((dispute) => (
+            <Card as="article" key={dispute.id} padding="md">
+              <p className="text-overline text-[var(--color-ink-subtle)]">{dispute.transactionId}</p>
+              <p className="mt-1 font-semibold text-[var(--color-ink)]">{dispute.reason}</p>
+              <p className="mt-1 text-body-sm text-[var(--color-ink-muted)]">{dispute.details}</p>
+              <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
+                Abierta por: {dispute.openedByHandle}
+              </p>
+              <p className="text-body-sm text-[var(--color-ink-muted)]">Estado: {dispute.status}</p>
+            </Card>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

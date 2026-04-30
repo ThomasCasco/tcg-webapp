@@ -54,6 +54,12 @@ function isValidCondition(value: unknown): value is CardCondition {
 }
 
 export async function GET(request: Request) {
+  const ip = getRequestIp(request);
+  const limit = rateLimit(`listings-get:${ip}`, 60, 60_000);
+  if (!limit.allowed) {
+    return Response.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const url = new URL(request.url);
   const scope = url.searchParams.get("scope");
   const tab = url.searchParams.get("tab");

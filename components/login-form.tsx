@@ -1,7 +1,10 @@
 "use client";
-
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 
 export function LoginForm() {
   const router = useRouter();
@@ -25,12 +28,8 @@ export function LoginForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       const data = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        throw new Error(data.error ?? "No se pudo iniciar sesión.");
-      }
-
+      if (!response.ok) throw new Error(data.error ?? "No se pudo iniciar sesión.");
       router.push("/inventory");
       router.refresh();
     } catch (submitError) {
@@ -41,38 +40,42 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 space-y-4">
-      <label className="block text-sm">
-        <span className="mb-1.5 block font-medium">Email</span>
-        <input
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <FormField label="Email" htmlFor="email" required>
+        <Input
+          id="email"
           type="email"
           name="email"
+          autoComplete="email"
           required
           placeholder="tu@email.com"
-          className="input"
         />
-      </label>
-      <label className="block text-sm">
-        <span className="mb-1.5 block font-medium">Contraseña</span>
-        <input
+      </FormField>
+      <FormField label="Contraseña" htmlFor="password" required>
+        <Input
+          id="password"
           type="password"
           name="password"
+          autoComplete="current-password"
           required
           minLength={8}
-          placeholder="Mínimo 8 caracteres"
-          className="input"
+          placeholder="••••••••"
         />
-      </label>
-
-      <button type="submit" disabled={loading} className="btn btn-primary w-full">
-        {loading ? "Ingresando..." : "Ingresar"}
-      </button>
-
-      {error ? (
-        <p className="rounded-lg bg-[var(--color-danger-soft)] px-3 py-2 text-sm text-[var(--color-danger)]">
+      </FormField>
+      {error && (
+        <p role="alert" className="text-[0.8125rem] text-[var(--color-danger)]">
           {error}
         </p>
-      ) : null}
+      )}
+      <Button type="submit" loading={loading} fullWidth size="lg">
+        Entrar
+      </Button>
+      <p className="text-center text-[0.8125rem] text-[var(--color-ink-muted)]">
+        ¿No tenés cuenta?{" "}
+        <Link href="/register" className="text-[var(--color-accent-strong)] hover:underline">
+          Crear cuenta
+        </Link>
+      </p>
     </form>
   );
 }

@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'docs: master roadmap para llevar la app a producción *)",
+      "Bash(git commit -m 'docs: implementation plan for Phase 0 \\(foundations\\) *)",
+      "Bash(npm i *)",
+      "Bash(npm run *)",
+      "Bash(git commit *)",
+      "Bash(npx vitest *)",
+      "Bash(del \"C:\\\\tcg-webapp\\\\.claire\\\\worktrees\\\\nostalgic-dubinsky-2453a4\\\\components\\\\watchlist-manager.tsx\")",
+      "Bash(not exist *)",
+      "Bash(npm test *)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npx next *)",
+      "mcp__4b8ea82d-7e62-456d-a6c8-a8d784ea1c85__list_projects",
+      "mcp__4b8ea82d-7e62-456d-a6c8-a8d784ea1c85__list_migrations",
+      "mcp__4b8ea82d-7e62-456d-a6c8-a8d784ea1c85__apply_migration",
+      "mcp__4b8ea82d-7e62-456d-a6c8-a8d784ea1c85__execute_sql",
+      "mcp__4b8ea82d-7e62-456d-a6c8-a8d784ea1c85__get_publishable_keys"
+    ]
+  }
+}
