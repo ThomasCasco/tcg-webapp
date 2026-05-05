@@ -19,11 +19,13 @@ import {
   verifyTransaction,
   setPaymentMpPaymentId,
   getUserProfile,
+  getMpPaymentValidationContext,
 } from "@/lib/server/repository";
 import { sendPaymentConfirmedBuyer, sendSaleConfirmedSeller } from "@/lib/server/email";
 import { log } from "@/lib/server/logger";
 
 const PLATFORM_FEE_PERCENT = Number(process.env.PLATFORM_FEE_PERCENT ?? "1") / 100;
+const MONEY_TOLERANCE_ARS = 0.01;
 
 type MpWebhookBody = {
   action?: string;
@@ -60,8 +62,13 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: true });
   }
 
-  // Validate HMAC signature
-  if (xSignature) {
+  if (!xSignature || !xRequestId) {
+    if (process.env.NODE_ENV === "production") {
+      log.warn("MP webhook: missing signature headers", { dataId });
+      return Response.json({ error: "Missing signature" }, { status: 401 });
+    }
+    log.warn("MP webhook: missing signature headers (dev mode)", { dataId });
+  } else {
     try {
       const valid = await validateMpWebhookSignature({
         xSignature,
@@ -133,6 +140,17 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: true });
   }
 
+  try {
+    await assertMpPaymentMatchesTransaction(paymentEvent.transactionId, mpPayment);
+  } catch (err) {
+    log.error("MP webhook: payment validation failed", {
+      dataId,
+      transactionId: paymentEvent.transactionId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return Response.json({ ok: true });
+  }
+
   // Verify transaction (bypasses buyer ownership check — this is a server-side call)
   let verified: Awaited<ReturnType<typeof verifyTransaction>>;
   try {
@@ -166,6 +184,54 @@ export async function POST(request: Request): Promise<Response> {
   });
 
   return Response.json({ ok: true });
+}
+
+async function assertMpPaymentMatchesTransaction(
+  transactionId: string,
+  mpPayment: Awaited<ReturnType<typeof getMpPayment>>,
+): Promise<void> {
+  const expected = await getMpPaymentValidationContext(transactionId);
+  if (!expected) {
+    throw new Error("Missing expected payment context.");
+  }
+
+  const expectedAmount = Number(expected.expectedAmountArs);
+  if (Math.abs(mpPayment.transactionAmount - expectedAmount) > MONEY_TOLERANCE_ARS) {
+    throw new Error(
+      `Amount mismatch: expected ${expectedAmount}, got ${mpPayment.transactionAmount}.`,
+    );
+  }
+
+  if (mpPayment.currencyId !== expected.expectedCurrencyId) {
+    throw new Error(
+      `Currency mismatch: expected ${expected.expectedCurrencyId}, got ${mpPayment.currencyId}.`,
+    );
+  }
+
+  if (String(mpPayment.collectorId) !== expected.expectedSellerMpUserId) {
+    throw new Error(
+      `Collector mismatch: expected ${expected.expectedSellerMpUserId}, got ${mpPayment.collectorId}.`,
+    );
+  }
+
+  if (
+    expected.expectedPreferenceId &&
+    mpPayment.preferenceId &&
+    mpPayment.preferenceId !== expected.expectedPreferenceId
+  ) {
+    throw new Error(
+      `Preference mismatch: expected ${expected.expectedPreferenceId}, got ${mpPayment.preferenceId}.`,
+    );
+  }
+
+  if (
+    typeof expected.expectedPlatformFeeArs === "number" &&
+    Math.abs(mpPayment.marketplaceFee - expected.expectedPlatformFeeArs) > MONEY_TOLERANCE_ARS
+  ) {
+    throw new Error(
+      `Platform fee mismatch: expected ${expected.expectedPlatformFeeArs}, got ${mpPayment.marketplaceFee}.`,
+    );
+  }
 }
 
 async function sendEmailsAfterPayment(opts: {

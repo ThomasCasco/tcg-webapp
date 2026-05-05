@@ -14,11 +14,16 @@ import { log } from "@/lib/server/logger";
 export async function GET(request: Request): Promise<Response> {
   // Verify cron secret
   const cronSecret = process.env.CRON_SECRET?.trim();
-  if (cronSecret) {
-    const authHeader = request.headers.get("authorization");
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!cronSecret) {
+    return Response.json(
+      { error: "Definí CRON_SECRET en el entorno del servidor." },
+      { status: 503 },
+    );
+  }
+
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const REFRESH_WINDOW_SECONDS = 60 * 60; // refresh if expiring within 1 hour

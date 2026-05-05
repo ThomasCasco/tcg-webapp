@@ -43,6 +43,7 @@ export type MpPaymentInfo = {
   externalReference: string | null;
   collectorId: number;
   marketplaceFee: number;
+  preferenceId: string | null;
 };
 
 export type MpTokenResult = {
@@ -160,7 +161,8 @@ export async function getMpPayment(mpPaymentId: string): Promise<MpPaymentInfo> 
     currency_id: string;
     external_reference: string | null;
     collector_id: number;
-    marketplace_fee: number;
+    marketplace_fee: number | null;
+    preference_id?: string | null;
   };
 
   const raw = await mpFetch<RawPayment>(`/v1/payments/${encodeURIComponent(mpPaymentId)}`, {
@@ -176,7 +178,8 @@ export async function getMpPayment(mpPaymentId: string): Promise<MpPaymentInfo> 
     currencyId: raw.currency_id,
     externalReference: raw.external_reference,
     collectorId: raw.collector_id,
-    marketplaceFee: raw.marketplace_fee,
+    marketplaceFee: raw.marketplace_fee ?? 0,
+    preferenceId: raw.preference_id ?? null,
   };
 }
 

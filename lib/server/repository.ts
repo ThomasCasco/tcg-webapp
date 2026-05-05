@@ -111,6 +111,10 @@ type PaymentRow = {
   verification_status: PaymentVerificationStatus;
   fulfillment_status: FulfillmentStatus;
   shipping_tracking: string | null;
+  mp_preference_id?: string | null;
+  mp_checkout_url?: string | null;
+  platform_fee_ars?: number | null;
+  mp_payment_id?: string | null;
   checked_at: string;
   created_at: string;
 };
@@ -230,6 +234,16 @@ type UpdateSellerPaymentProfileInput = {
   paymentProvider: SellerPaymentProvider;
   paymentAlias?: string;
   paymentInstructions?: string;
+};
+
+export type MpPaymentValidationContext = {
+  transactionId: string;
+  listingId: string;
+  expectedAmountArs: number;
+  expectedCurrencyId: "ARS";
+  expectedSellerMpUserId: string;
+  expectedPreferenceId?: string;
+  expectedPlatformFeeArs?: number;
 };
 
 function mapInventoryRow(row: InventoryRow): InventoryEntry {
@@ -878,6 +892,11 @@ export async function reserveListing(input: ReserveListingInput): Promise<{
   });
 
   if (paymentError) {
+    await client
+      .from(LISTINGS_TABLE)
+      .update({ status: "active", reserved_at: null })
+      .eq("id", listingId)
+      .eq("status", "pending_payment");
     throw new Error(paymentError.message);
   }
 
@@ -886,6 +905,30 @@ export async function reserveListing(input: ReserveListingInput): Promise<{
     transactionId,
     sellerPayment,
   };
+}
+
+export async function releasePendingCheckoutReservation(input: {
+  listingId: string;
+  transactionId: string;
+}): Promise<void> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  await client
+    .from(PAYMENTS_TABLE)
+    .delete()
+    .eq("transaction_id", input.transactionId)
+    .eq("listing_id", input.listingId)
+    .eq("provider_status", "pending")
+    .eq("verification_status", "pending_review");
+
+  const { error } = await client
+    .from(LISTINGS_TABLE)
+    .update({ status: "active", reserved_at: null })
+    .eq("id", input.listingId)
+    .eq("status", "pending_payment");
+
+  if (error) throw new Error(error.message);
 }
 
 export async function verifyTransaction(input: VerifyTransactionInput): Promise<{
@@ -1567,6 +1610,68 @@ export async function getPaymentEventByExternalRef(
   if (error) throw new Error(error.message);
   if (!data) return null;
   return mapPaymentRow(data as PaymentRow);
+}
+
+export async function getMpPaymentValidationContext(
+  transactionId: string,
+): Promise<MpPaymentValidationContext | null> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  const { data: paymentData, error: paymentError } = await client
+    .from(PAYMENTS_TABLE)
+    .select("transaction_id,listing_id,mp_preference_id,platform_fee_ars")
+    .eq("transaction_id", transactionId.trim())
+    .maybeSingle();
+
+  if (paymentError) throw new Error(paymentError.message);
+  if (!paymentData) return null;
+
+  const payment = paymentData as {
+    transaction_id: string;
+    listing_id: string;
+    mp_preference_id: string | null;
+    platform_fee_ars: number | null;
+  };
+
+  const { data: listingData, error: listingError } = await client
+    .from(LISTINGS_TABLE)
+    .select("id,seller_id,price_ars")
+    .eq("id", payment.listing_id)
+    .maybeSingle();
+
+  if (listingError) throw new Error(listingError.message);
+  if (!listingData) return null;
+
+  const listing = listingData as {
+    id: string;
+    seller_id: string | null;
+    price_ars: number;
+  };
+  if (!listing.seller_id) return null;
+
+  const { data: profileData, error: profileError } = await client
+    .from(PROFILES_TABLE)
+    .select("mp_user_id")
+    .eq("id", listing.seller_id)
+    .maybeSingle();
+
+  if (profileError) throw new Error(profileError.message);
+
+  const expectedSellerMpUserId =
+    (profileData as { mp_user_id: string | null } | null)?.mp_user_id ?? "";
+  if (!expectedSellerMpUserId) return null;
+
+  return {
+    transactionId: payment.transaction_id,
+    listingId: listing.id,
+    expectedAmountArs: Number(listing.price_ars),
+    expectedCurrencyId: "ARS",
+    expectedSellerMpUserId,
+    expectedPreferenceId: payment.mp_preference_id ?? undefined,
+    expectedPlatformFeeArs:
+      payment.platform_fee_ars == null ? undefined : Number(payment.platform_fee_ars),
+  };
 }
 
 /**

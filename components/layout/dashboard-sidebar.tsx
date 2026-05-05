@@ -54,7 +54,7 @@ export interface DashboardSidebarProps {
   logoutSlot?: React.ReactNode;
 }
 
-export function DashboardSidebar(_props: DashboardSidebarProps) {
+export function DashboardSidebar() {
   const pathname = usePathname();
 
   return (

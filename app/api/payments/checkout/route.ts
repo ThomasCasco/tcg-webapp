@@ -15,6 +15,7 @@ import {
   reserveListing,
   updatePaymentMpCheckout,
   getUserProfile,
+  releasePendingCheckoutReservation,
 } from "@/lib/server/repository";
 import { getValidAccessToken } from "@/lib/server/mp-auth";
 import { createMpPreference } from "@/lib/server/mp-client";
@@ -50,6 +51,8 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "listingId is required." }, { status: 400 });
   }
 
+  let pendingReservation: { listingId: string; transactionId: string } | null = null;
+
   try {
     // 1. Validate listing exists and is purchasable
     const listing = await getListingById(listingId);
@@ -83,6 +86,7 @@ export async function POST(request: Request): Promise<Response> {
       buyerId: user.id,
       buyerHandle: user.username,
     });
+    pendingReservation = { listingId, transactionId: reservation.transactionId };
 
     // 4. Compute platform fee (rounded to nearest ARS peso)
     const priceArs = listing.priceArs;
@@ -118,6 +122,7 @@ export async function POST(request: Request): Promise<Response> {
       mpCheckoutUrl: preference.initPoint,
       platformFeeArs,
     });
+    pendingReservation = null;
 
     log.info("MP checkout created", {
       transactionId: reservation.transactionId,
@@ -140,6 +145,17 @@ export async function POST(request: Request): Promise<Response> {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Checkout failed.";
+    if (pendingReservation) {
+      try {
+        await releasePendingCheckoutReservation(pendingReservation);
+      } catch (rollbackError) {
+        log.error("Checkout rollback error", {
+          listingId: pendingReservation.listingId,
+          transactionId: pendingReservation.transactionId,
+          message: rollbackError instanceof Error ? rollbackError.message : String(rollbackError),
+        });
+      }
+    }
     log.error("Checkout error", { listingId, buyerId: user.id, message });
     const status = message === "Listing is not available." ? 409 : 500;
     return Response.json({ error: message }, { status });

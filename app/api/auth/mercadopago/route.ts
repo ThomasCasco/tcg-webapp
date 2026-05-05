@@ -5,11 +5,12 @@
  * Redirects the authenticated seller to the MP authorization page.
  *
  * Query params forwarded as-is: none.
- * State param: seller's user ID (used to verify callback).
+ * State param: random nonce stored in an httpOnly cookie.
  */
 
 import { requireAuthenticatedUser } from "@/lib/server/auth";
 import { getMpAuthorizationUrl } from "@/lib/server/mp-client";
+import { MP_OAUTH_STATE_COOKIE } from "@/lib/server/mp-oauth-state";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request): Promise<Response> {
@@ -19,11 +20,19 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const redirectUri = mpRedirectUri(request);
-  const state = user.id;
+  const state = crypto.randomUUID();
 
   try {
     const url = getMpAuthorizationUrl(state, redirectUri);
-    return NextResponse.redirect(url);
+    const response = NextResponse.redirect(url);
+    response.cookies.set(MP_OAUTH_STATE_COOKIE, `${user.id}:${state}`, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 10 * 60,
+    });
+    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "MP config error";
     return Response.json({ error: message }, { status: 500 });
