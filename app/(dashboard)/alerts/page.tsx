@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { WatchlistManager } from "@/components/watchlist-manager";
+import { NotificationsMarkReadOnMount } from "@/components/notifications-mark-read-on-mount";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { listNotificationsForUser } from "@/lib/server/repository";
 import { Card } from "@/components/ui/card";
@@ -21,8 +22,11 @@ export default async function AlertsPage() {
       error instanceof Error ? error.message : "Failed to load notifications.";
   }
 
+  const unreadIds = notifications.filter((n) => !n.readAt).map((n) => n.id);
+
   return (
     <section className="space-y-6">
+      <NotificationsMarkReadOnMount ids={unreadIds} />
       <Card as="header" padding="lg">
         <p className="text-overline text-[var(--color-ink-subtle)]">
           Alertas de cartas

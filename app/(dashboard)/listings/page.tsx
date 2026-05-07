@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { ListingCreateForm } from "@/components/listing-create-form";
-import { SellerPaymentProfileForm } from "@/components/seller-payment-profile-form";
 import { ListingRow } from "@/components/listing-row";
-import { getSellerPaymentProfile, listListings } from "@/lib/server/repository";
+import { listListings } from "@/lib/server/repository";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { redirect } from "next/navigation";
@@ -20,20 +19,11 @@ export default async function ListingsPage() {
 
   let listings = [] as Awaited<ReturnType<typeof listListings>>;
   let loadError: string | null = null;
-  let paymentProfile: Awaited<ReturnType<typeof getSellerPaymentProfile>> | null = null;
-  let paymentProfileError: string | null = null;
 
   try {
     listings = await listListings({ sellerId: user.id });
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Failed to load listings.";
-  }
-
-  try {
-    paymentProfile = await getSellerPaymentProfile(user.id);
-  } catch (error) {
-    paymentProfileError =
-      error instanceof Error ? error.message : "Failed to load seller payment profile.";
   }
 
   const active = listings.filter((l) => l.status === "active");
@@ -55,7 +45,8 @@ export default async function ListingsPage() {
           <Link href="/inventory" className="underline">Inventario</Link> y tocá
           &quot;Publicar en Mercado&quot;. Acá podés publicar{" "}
           <strong>Mystery Packs</strong> o administrar las publicaciones existentes.
-          Subastas esta marcado como proximo formato, pero todavia no tiene pujas activas.
+          Las subastas se gestionan desde{" "}
+          <Link href="/auctions" className="underline">Subastas</Link>.
         </p>
       </Card>
 
@@ -72,16 +63,6 @@ export default async function ListingsPage() {
           <p className="text-sm text-rose-900">Error de backend: {loadError}</p>
         </Card>
       ) : null}
-
-      {paymentProfileError ? (
-        <Card as="article" padding="md" className="border-amber-300 bg-amber-50">
-          <p className="text-sm text-amber-900">
-            No se pudo cargar tu perfil de cobro: {paymentProfileError}
-          </p>
-        </Card>
-      ) : null}
-
-      {paymentProfile ? <SellerPaymentProfileForm initialProfile={paymentProfile} /> : null}
 
       <ListingCreateForm />
 
