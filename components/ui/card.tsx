@@ -9,7 +9,7 @@ const cardVariants = cva(
       variant: {
         default: "border-[var(--color-border-default)] shadow-[var(--shadow-card)]",
         interactive:
-          "border-[var(--color-border-default)] shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-card-lg)]",
+          "border-[var(--color-border-default)] shadow-[var(--shadow-card)] transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-card-lg)]",
         muted: "border-[var(--color-border-subtle)] bg-[var(--color-surface)] shadow-none",
         outlined: "border-[var(--color-border-strong)] bg-transparent shadow-none",
       },

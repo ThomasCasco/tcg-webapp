@@ -22,11 +22,11 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
       as="article"
       variant={listing.status === "active" ? "interactive" : "default"}
       padding="none"
-      className="group flex flex-col overflow-hidden"
+      className="group flex flex-col overflow-hidden bg-white"
     >
       <Link
         href={`/market/${listing.id}`}
-        className="relative block aspect-[3/4] w-full overflow-hidden bg-[var(--color-surface-elevated)]"
+        className="relative block aspect-[3/4] w-full overflow-hidden bg-[#f1f1ee]"
         aria-label={`Ver ${listing.cardName}`}
       >
         {listing.imageUrl ? (
@@ -52,18 +52,22 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
         )}
 
         <div className="absolute left-2 top-2">
-          <Chip size="sm" variant="default" className="bg-white/95 backdrop-blur">
+          <Chip size="sm" variant="default" className="border-black bg-white/95 text-black backdrop-blur">
             {formatConditionEs(listing.condition)}
           </Chip>
         </div>
+
+        <div className="absolute bottom-2 right-2 rounded-[var(--radius-input)] bg-black px-2 py-1 text-[0.6875rem] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
+          Ver carta
+        </div>
       </Link>
 
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
+      <div className="flex flex-1 flex-col gap-1.5 border-t border-[var(--color-border-subtle)] p-3">
         <Link href={`/market/${listing.id}`} className="group/link">
-          <p className="text-[1.0625rem] font-bold leading-tight text-[var(--color-ink)] group-hover/link:text-[var(--color-accent-strong)]">
+          <p className="text-[1.0625rem] font-extrabold leading-tight text-[var(--color-ink)]">
             {formattedPrice}
           </p>
-          <h3 className="mt-1 line-clamp-2 text-body-sm font-medium text-[var(--color-ink)] group-hover/link:underline">
+          <h3 className="mt-1 line-clamp-2 text-body-sm font-semibold text-[var(--color-ink)] group-hover/link:underline">
             {listing.cardName}
           </h3>
         </Link>
@@ -85,9 +89,10 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
           </div>
         )}
 
-        <p className="mt-1 truncate text-caption text-[var(--color-ink-subtle)]">
-          @{listing.sellerHandle}
-        </p>
+        <div className="mt-1 flex items-center justify-between gap-2 border-t border-[var(--color-border-subtle)] pt-2 text-caption text-[var(--color-ink-subtle)]">
+          <span className="truncate">@{listing.sellerHandle}</span>
+          <span className="shrink-0 font-semibold text-[var(--color-ink)]">Stock {listing.quantity}</span>
+        </div>
 
         {listing.status === "active" && (
           <div className="mt-3">

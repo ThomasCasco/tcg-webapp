@@ -6,7 +6,7 @@ import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ShoppingBag, Search } from "@/components/ui/icon";
+import { Filter, Search, ShoppingBag } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/ui/cn";
@@ -93,9 +93,7 @@ export default async function MarketPage({
   const query = q.trim().toLowerCase();
   if (query) {
     listings = listings.filter((listing) =>
-      `${listing.cardName} ${listing.setName}`
-        .toLowerCase()
-        .includes(query),
+      `${listing.cardName} ${listing.setName}`.toLowerCase().includes(query),
     );
   }
 
@@ -134,9 +132,7 @@ export default async function MarketPage({
   const enriched = await Promise.all(
     listings.map(async (listing, index) => {
       const pokemonTypes =
-        index >= 24
-          ? null
-          : await getPokemonTypesForCardTitle(listing.cardName);
+        index >= 24 ? null : await getPokemonTypesForCardTitle(listing.cardName);
       return { listing, pokemonTypes };
     }),
   );
@@ -153,7 +149,7 @@ export default async function MarketPage({
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
+    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-3 py-4 md:px-6 md:py-7">
       {!isSupabaseConfigured() && (
         <Card padding="md" className="border-[var(--color-warning)] bg-[var(--color-warning-soft)]">
           <p className="text-body-sm text-[var(--color-warning)]">
@@ -168,30 +164,51 @@ export default async function MarketPage({
         </Card>
       )}
 
-      <header className="sticky top-14 z-10 -mx-3 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)]/95 px-3 py-3 backdrop-blur md:relative md:top-auto md:mx-0 md:rounded-[var(--radius-card)] md:border md:bg-[var(--color-surface-elevated)] md:p-5 md:shadow-sm">
-        <h1 className="hidden text-h2 [font-family:var(--font-display)] md:block">
-          Mercado
-        </h1>
-        <p className="mt-1 hidden text-body-sm text-[var(--color-ink-muted)] md:block">
-          Cartas publicadas por la comunidad.
-        </p>
-
-        <form method="GET" className="mt-0 space-y-3 md:mt-4">
-          <input type="hidden" name="tab" value={activeTab} />
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-subtle)]" />
-            <Input
-              name="q"
-              defaultValue={q}
-              placeholder="Buscar Charizard, Mew, Paradox Rift..."
-              className="pl-9"
-            />
+      <header className="border-b border-[var(--color-border-strong)] pb-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-overline text-[var(--color-ink-subtle)]">Marketplace</p>
+            <h1 className="mt-1 text-display-md text-[var(--color-ink)] md:text-display-lg">
+              Mercado de cartas
+            </h1>
+            <p className="mt-2 max-w-2xl text-body-sm text-[var(--color-ink-muted)]">
+              Singles publicados por coleccionistas, con busqueda directa,
+              precio en pesos y filtros de compra.
+            </p>
           </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr,1fr,1fr,1fr,auto]">
+
+          <div className="grid grid-cols-3 border border-[var(--color-border-strong)] bg-white text-center md:min-w-80">
+            <MarketMetric value={`${total}`} label="resultados" />
+            <MarketMetric value="ARS" label="moneda" />
+            <MarketMetric value="TCG" label="foco" />
+          </div>
+        </div>
+      </header>
+
+      <section className="sticky top-14 z-10 -mx-3 border-b border-[var(--color-border-strong)] bg-white/95 px-3 py-3 backdrop-blur md:top-16 md:mx-0 md:rounded-[var(--radius-card)] md:border md:p-4">
+        <form method="GET" className="space-y-3">
+          <input type="hidden" name="tab" value={activeTab} />
+          <div className="grid gap-2 md:grid-cols-[1fr,auto]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-subtle)]" />
+              <Input
+                name="q"
+                defaultValue={q}
+                placeholder="Buscar Charizard, Mew, Paradox Rift..."
+                className="border-[var(--color-border-strong)] bg-white pl-9"
+              />
+            </div>
+            <Button type="submit" size="md">
+              <Filter className="h-4 w-4" />
+              Aplicar
+            </Button>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr,1fr,1fr,1fr]">
             <select
               name="condition"
               defaultValue={condition}
-              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] px-3 text-body-sm text-[var(--color-ink)]"
+              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-3 text-body-sm text-[var(--color-ink)]"
             >
               <option value="">Todas las condiciones</option>
               {CONDITIONS.map((item) => (
@@ -203,10 +220,10 @@ export default async function MarketPage({
             <select
               name="delivery"
               defaultValue={delivery}
-              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] px-3 text-body-sm text-[var(--color-ink)]"
+              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-3 text-body-sm text-[var(--color-ink)]"
             >
-              <option value="">Envío o retiro</option>
-              <option value="shipping">Con envío</option>
+              <option value="">Envio o retiro</option>
+              <option value="shipping">Con envio</option>
               <option value="pickup">Con retiro</option>
             </select>
             <div className="grid grid-cols-2 gap-2">
@@ -216,15 +233,12 @@ export default async function MarketPage({
             <select
               name="sort"
               defaultValue={sort}
-              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] px-3 text-body-sm text-[var(--color-ink)]"
+              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-3 text-body-sm text-[var(--color-ink)]"
             >
-              <option value="recent">Más recientes</option>
+              <option value="recent">Mas recientes</option>
               <option value="price_asc">Menor precio</option>
               <option value="price_desc">Mayor precio</option>
             </select>
-            <Button type="submit" size="md">
-              Buscar
-            </Button>
           </div>
         </form>
 
@@ -234,47 +248,36 @@ export default async function MarketPage({
               key={t.key}
               href={getParamHref({ tab: t.key }, currentParams)}
               className={cn(
-                "shrink-0 rounded-full px-4 py-1.5 text-[0.8125rem] font-medium transition-colors",
+                "shrink-0 rounded-[var(--radius-input)] border px-4 py-1.5 text-[0.8125rem] font-bold transition-colors",
                 activeTab === t.key
-                  ? "bg-[var(--color-accent)] text-white"
-                  : "bg-[var(--color-surface-elevated)] text-[var(--color-ink-muted)] hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent-strong)]",
+                  ? "border-black bg-black text-white"
+                  : "border-[var(--color-border-default)] bg-white text-[var(--color-ink-muted)] hover:border-black hover:text-black",
               )}
             >
               {t.label}
             </Link>
           ))}
         </div>
-      </header>
+      </section>
 
-      <Card padding="md" className="border-dashed shadow-none">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-body-sm font-semibold text-[var(--color-ink)]">
-              Formatos del mercado
-            </p>
-            <p className="text-caption text-[var(--color-ink-muted)]">
-              Venta directa e intercambios desde perfiles.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {["Venta directa", "Trades", "Mercado Pago"].map((label) => (
-              <span
-                key={label}
-                className="rounded-full bg-[var(--color-accent-soft)] px-3 py-1 text-caption font-medium text-[var(--color-accent-strong)]"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <p className="text-caption font-semibold text-[var(--color-ink-muted)]">
+          {total} {total === 1 ? "publicacion" : "publicaciones"}
+          {query && ` para "${q}"`}
+          {condition && isCondition(condition) ? ` / ${formatConditionEs(condition)}` : ""}
+          {delivery === "shipping" ? " / con envio" : delivery === "pickup" ? " / con retiro" : ""}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {["Venta directa", "Trades", "Mercado Pago"].map((label) => (
+            <span
+              key={label}
+              className="rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-3 py-1 text-caption font-bold text-[var(--color-ink)]"
+            >
+              {label}
+            </span>
+          ))}
         </div>
-      </Card>
-
-      <p className="text-caption text-[var(--color-ink-muted)]">
-        {total} {total === 1 ? "publicación" : "publicaciones"}
-        {query && ` para "${q}"`}
-        {condition && isCondition(condition) ? ` · ${formatConditionEs(condition)}` : ""}
-        {delivery === "shipping" ? " · con envío" : delivery === "pickup" ? " · con retiro" : ""}
-      </p>
+      </div>
 
       {total === 0 ? (
         <EmptyState
@@ -282,9 +285,9 @@ export default async function MarketPage({
           title="Sin publicaciones"
           description={
             <>
-              <p>Todavía no hay publicaciones que coincidan.</p>
+              <p>Todavia no hay publicaciones que coincidan.</p>
               <p className="mt-1 text-caption">
-                ¿Vendés cartas? Cargalas en{" "}
+                Vendes cartas? Cargalas en{" "}
                 <Link href="/inventory" className="font-semibold underline">
                   Inventario
                 </Link>{" "}
@@ -306,5 +309,16 @@ export default async function MarketPage({
         </section>
       )}
     </main>
+  );
+}
+
+function MarketMetric({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="border-l border-[var(--color-border-strong)] px-3 py-3 first:border-l-0">
+      <p className="text-h3 font-extrabold">{value}</p>
+      <p className="text-caption font-semibold uppercase text-[var(--color-ink-subtle)]">
+        {label}
+      </p>
+    </div>
   );
 }

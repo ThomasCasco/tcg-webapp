@@ -2,27 +2,27 @@
 
 @theme {
   /* Surfaces */
-  --color-surface: #f7f7f3;
-  --color-surface-muted: #eef1ec;
+  --color-surface: #f5f5f2;
+  --color-surface-muted: #ededeb;
   --color-surface-elevated: #ffffff;
   --color-surface-overlay: rgba(255, 255, 255, 0.98);
 
   /* Ink (text) */
-  --color-ink: #1d211e;
-  --color-ink-muted: #59635d;
-  --color-ink-subtle: #818b85;
+  --color-ink: #080808;
+  --color-ink-muted: #4f4f4b;
+  --color-ink-subtle: #85857f;
   --color-ink-inverse: #ffffff;
 
   /* Borders */
-  --color-border: #d9ded8;
-  --color-border-default: #d9ded8;
-  --color-border-strong: #b5beb7;
-  --color-border-subtle: #e8ece7;
+  --color-border: #d8d8d2;
+  --color-border-default: #d8d8d2;
+  --color-border-strong: #111111;
+  --color-border-subtle: #e7e7e1;
 
   /* Accent */
-  --color-accent: #0f7a66;
-  --color-accent-strong: #0a5f50;
-  --color-accent-soft: #d4ede5;
+  --color-accent: #111111;
+  --color-accent-strong: #000000;
+  --color-accent-soft: #ededeb;
 
   /* Status */
   --color-success: #157a4d;
@@ -45,10 +45,10 @@
   --radius-pill: 9999px;
 
   /* Shadows */
-  --shadow-card-sm: 0 1px 2px rgba(29, 33, 30, 0.05);
-  --shadow-card: 0 1px 3px rgba(29, 33, 30, 0.08), 0 1px 2px rgba(29, 33, 30, 0.04);
-  --shadow-card-lg: 0 10px 24px rgba(29, 33, 30, 0.1);
-  --shadow-overlay: 0 24px 60px rgba(29, 33, 30, 0.22);
+  --shadow-card-sm: 0 1px 2px rgba(8, 8, 8, 0.04);
+  --shadow-card: 0 1px 2px rgba(8, 8, 8, 0.06), 0 8px 24px rgba(8, 8, 8, 0.04);
+  --shadow-card-lg: 0 18px 42px rgba(8, 8, 8, 0.14);
+  --shadow-overlay: 0 24px 60px rgba(8, 8, 8, 0.24);
 }
 
 @layer base {
@@ -57,7 +57,9 @@
   }
   body {
     margin: 0;
-    background: var(--color-surface);
+    background:
+      linear-gradient(180deg, #ffffff 0%, var(--color-surface) 34rem),
+      var(--color-surface);
     color: var(--color-ink);
     font-family: var(--font-body), "Segoe UI", sans-serif;
   }
@@ -77,7 +79,7 @@
     color: var(--color-ink-subtle);
     font-size: 0.6875rem;
     font-weight: 600;
-    letter-spacing: 0.12em;
+    letter-spacing: 0;
     line-height: 1.2;
     text-transform: uppercase;
   }
@@ -97,7 +99,7 @@
     line-height: 1;
   }
   .chip-accent {
-    border-color: transparent;
+    border-color: var(--color-ink);
     background: var(--color-accent-soft);
     color: var(--color-accent-strong);
   }
@@ -144,7 +146,7 @@
   .btn-ghost:hover { background: color-mix(in srgb, var(--color-ink) 5%, transparent); }
 }
 
-@utility text-display-lg { font-family: var(--font-display); font-size: 3rem; line-height: 1.05; letter-spacing: 0.01em; }
+@utility text-display-lg { font-family: var(--font-display); font-size: 3rem; line-height: 1.05; letter-spacing: 0; }
 @utility text-display-md { font-family: var(--font-display); font-size: 2.25rem; line-height: 1.1; }
 @utility text-h1 { font-size: 1.875rem; line-height: 1.2; font-weight: 700; }
 @utility text-h2 { font-size: 1.5rem; line-height: 1.25; font-weight: 700; }
@@ -154,5 +156,5 @@
 @utility text-body { font-size: 0.9375rem; line-height: 1.5; }
 @utility text-body-sm { font-size: 0.8125rem; line-height: 1.45; }
 @utility text-caption { font-size: 0.75rem; line-height: 1.4; }
-@utility text-overline { font-size: 0.6875rem; line-height: 1.2; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
+@utility text-overline { font-size: 0.6875rem; line-height: 1.2; letter-spacing: 0; text-transform: uppercase; font-weight: 700; }
 
