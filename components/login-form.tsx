@@ -3,8 +3,8 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { FormSection, FormRow } from "@/components/ui/form-section";
 
 export function LoginForm() {
   const router = useRouter();
@@ -40,39 +40,52 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <FormField label="Email" htmlFor="email" required>
-        <Input
-          id="email"
-          type="email"
-          name="email"
-          autoComplete="email"
-          required
-          placeholder="tu@email.com"
-        />
-      </FormField>
-      <FormField label="Contraseña" htmlFor="password" required>
-        <Input
-          id="password"
-          type="password"
-          name="password"
-          autoComplete="current-password"
-          required
-          minLength={8}
-          placeholder="••••••••"
-        />
-      </FormField>
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <FormSection>
+        <FormRow label="Email" htmlFor="email" required>
+          <Input
+            id="email"
+            type="email"
+            name="email"
+            variant="ghost"
+            autoComplete="email"
+            required
+            placeholder="tu@email.com"
+          />
+        </FormRow>
+        <FormRow label="Contraseña" htmlFor="password" required>
+          <Input
+            id="password"
+            type="password"
+            name="password"
+            variant="ghost"
+            autoComplete="current-password"
+            required
+            minLength={8}
+            placeholder="••••••••"
+          />
+        </FormRow>
+      </FormSection>
+
       {error && (
-        <p role="alert" className="text-[0.8125rem] text-[var(--color-danger)]">
+        <p role="alert" className="text-center text-[0.8125rem] text-[var(--color-danger)]">
           {error}
         </p>
       )}
-      <Button type="submit" loading={loading} fullWidth size="lg">
+
+      <Button
+        type="submit"
+        loading={loading}
+        fullWidth
+        size="lg"
+        className="rounded-full"
+      >
         Entrar
       </Button>
+
       <p className="text-center text-[0.8125rem] text-[var(--color-ink-muted)]">
-        ¿No tenés cuenta pbt?{" "}
-        <Link href="/register" className="text-[var(--color-accent-strong)] hover:underline">
+        ¿No tenés cuenta?{" "}
+        <Link href="/register" className="font-medium text-[var(--color-accent-strong)] hover:underline">
           Crear cuenta
         </Link>
       </p>

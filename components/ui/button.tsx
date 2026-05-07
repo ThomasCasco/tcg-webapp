@@ -6,20 +6,20 @@ import { cn } from "@/lib/ui/cn";
 import { Loader2 } from "@/components/ui/icon";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-input)] border border-transparent font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60",
+  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-input)] border border-transparent font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        primary: "bg-[var(--color-accent)] text-[var(--color-ink-inverse)] hover:bg-[var(--color-accent-strong)]",
+        primary: "bg-[var(--color-accent)] text-[var(--color-ink-inverse)] shadow-sm hover:bg-[var(--color-accent-strong)]",
         secondary: "border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)] text-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-[var(--color-ink-inverse)]",
         ghost: "text-[var(--color-ink)] hover:bg-[var(--color-ink)]/5",
-        danger: "bg-[var(--color-danger)] text-[var(--color-ink-inverse)] hover:bg-[var(--color-danger)]/90",
+        danger: "bg-[var(--color-danger)] text-[var(--color-ink-inverse)] shadow-sm hover:bg-[var(--color-danger)]/90",
         link: "text-[var(--color-accent-strong)] underline-offset-4 hover:underline",
       },
       size: {
         sm: "h-9 px-3 text-[0.8125rem]",
         md: "h-11 px-4 text-[0.9375rem]",
-        lg: "h-12 px-6 text-[1.0625rem]",
+        lg: "h-14 px-8 text-[1.0625rem]",
       },
       fullWidth: { true: "w-full" },
     },
@@ -42,8 +42,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
-    // Slot (asChild) requires exactly one React element child — pass children through directly.
-    // Icons/loading are only injected when rendering a real <button>.
     const inner = asChild ? (
       children
     ) : (

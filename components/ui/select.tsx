@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/ui/cn";
 
 const selectClass =
-  "h-11 w-full appearance-none rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] px-3 pr-9 text-[0.9375rem] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 disabled:cursor-not-allowed disabled:opacity-60";
+  "h-12 w-full appearance-none rounded-[var(--radius-input)] border-0 bg-[var(--color-input-fill)] px-4 pr-10 text-[0.9375rem] text-[var(--color-ink)] transition-all duration-150 focus:bg-[var(--color-input-fill-focus)] focus:outline-none focus:ring-2 focus:ring-[var(--color-focus-ring)]/30 disabled:cursor-not-allowed disabled:opacity-50";
 
 export const Select = React.forwardRef<
   HTMLSelectElement,

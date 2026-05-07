@@ -3,8 +3,9 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { FormSection, FormRow } from "@/components/ui/form-section";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -50,88 +51,87 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <FormField
-        label="Nombre público"
-        htmlFor="username"
-        required
-        hint="Lo verán otros vendedores y compradores."
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <FormSection title="Tu cuenta">
+        <FormRow label="Usuario" htmlFor="username" required>
+          <Input
+            id="username"
+            name="username"
+            variant="ghost"
+            required
+            minLength={3}
+            maxLength={24}
+            placeholder="BinderBoss"
+          />
+        </FormRow>
+        <FormRow label="Email" htmlFor="email" required>
+          <Input
+            id="email"
+            type="email"
+            name="email"
+            variant="ghost"
+            autoComplete="email"
+            required
+            placeholder="tu@email.com"
+          />
+        </FormRow>
+        <FormRow label="Contraseña" htmlFor="password" required>
+          <Input
+            id="password"
+            type="password"
+            name="password"
+            variant="ghost"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            placeholder="Mín. 8 caracteres"
+          />
+        </FormRow>
+      </FormSection>
+
+      <FormSection
+        title="Términos"
+        hint="La plataforma es un clasificado y NO custodia fondos."
       >
-        <Input
-          id="username"
-          name="username"
-          required
-          minLength={3}
-          maxLength={24}
-          placeholder="BinderBoss"
-        />
-      </FormField>
-      <FormField label="Email" htmlFor="email" required>
-        <Input
-          id="email"
-          type="email"
-          name="email"
-          autoComplete="email"
-          required
-          placeholder="tu@email.com"
-        />
-      </FormField>
-      <FormField label="Contraseña" htmlFor="password" required hint="Mínimo 8 caracteres.">
-        <Input
-          id="password"
-          type="password"
-          name="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          placeholder="••••••••"
-        />
-      </FormField>
-      <label className="flex items-start gap-2 text-[0.875rem] text-[var(--color-ink-muted)]">
-        <input
-          type="checkbox"
-          required
-          name="terms"
-          className="mt-1 h-4 w-4 accent-[var(--color-accent)]"
-        />
-        <span>
-          Soy mayor de 18 años y acepto los{" "}
-          <Link
-            href="/terms"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[var(--color-accent-strong)] underline"
-          >
-            Términos y Condiciones
-          </Link>
-          {" "}y la{" "}
-          <Link
-            href="/privacy"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[var(--color-accent-strong)] underline"
-          >
-            Política de Privacidad
-          </Link>
-          . Entiendo que la plataforma es un clasificado y NO custodia fondos.
-        </span>
-      </label>
+        <div className="flex items-center justify-between gap-4 px-4 py-3">
+          <span className="text-[0.875rem] leading-snug text-[var(--color-ink-muted)]">
+            Soy mayor de 18 años y acepto los{" "}
+            <Link href="/terms" target="_blank" rel="noreferrer" className="font-medium text-[var(--color-accent-strong)] underline underline-offset-2">
+              Términos
+            </Link>{" "}
+            y la{" "}
+            <Link href="/privacy" target="_blank" rel="noreferrer" className="font-medium text-[var(--color-accent-strong)] underline underline-offset-2">
+              Privacidad
+            </Link>
+          </span>
+          <Switch id="terms" name="terms" required />
+        </div>
+      </FormSection>
+
       {error && (
-        <p role="alert" className="text-[0.8125rem] text-[var(--color-danger)]">
+        <p role="alert" className="text-center text-[0.8125rem] text-[var(--color-danger)]">
           {error}
         </p>
       )}
       {success && (
-        <p role="status" className="text-[0.8125rem] text-[var(--color-success)]">
+        <p role="status" className="text-center text-[0.8125rem] text-[var(--color-success)]">
           {success}
         </p>
       )}
-      <Button type="submit" loading={loading} fullWidth size="lg">
+
+      <Button
+        type="submit"
+        loading={loading}
+        fullWidth
+        size="lg"
+        className="rounded-full"
+      >
         Crear cuenta
       </Button>
+
       <p className="text-center text-[0.8125rem] text-[var(--color-ink-muted)]">
         ¿Ya tenés cuenta?{" "}
-        <Link href="/login" className="text-[var(--color-accent-strong)] hover:underline">
+        <Link href="/login" className="font-medium text-[var(--color-accent-strong)] hover:underline">
           Iniciar sesión
         </Link>
       </p>

@@ -39,10 +39,16 @@
   --font-sans: var(--font-body);
 
   /* Radius */
-  --radius-input: 0.5rem;
-  --radius-card: 0.5rem;
-  --radius-modal: 0.75rem;
+  --radius-input: 0.75rem;
+  --radius-card: 0.75rem;
+  --radius-modal: 1.25rem;
   --radius-pill: 9999px;
+  --radius-section: 1rem;
+
+  /* Form input fills & focus (iOS-inspired) */
+  --color-input-fill: #f0f0ee;
+  --color-input-fill-focus: #e8e8e5;
+  --color-focus-ring: #007aff;
 
   /* Shadows */
   --shadow-card-sm: 0 1px 2px rgba(8, 8, 8, 0.04);
@@ -140,6 +146,7 @@
     padding: 0.625rem 1rem;
   }
   .btn-primary:hover { background: var(--color-accent-strong); }
+  .btn-primary:active { transform: scale(0.98); }
   .btn-ghost {
     color: var(--color-ink);
   }
