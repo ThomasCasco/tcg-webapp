@@ -47,14 +47,14 @@ export function TopBar({ user }: Props) {
     pathname !== "/market";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)]/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)]/95 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-3 md:h-16 md:gap-5 md:px-6">
         {/* ── Logo ── */}
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2 text-[1.25rem] font-bold leading-none tracking-tight text-[var(--color-accent-strong)] md:text-[1.5rem]"
+          className="flex shrink-0 items-center gap-2 text-[1.25rem] font-bold leading-none text-[var(--color-ink)] md:text-[1.5rem]"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--color-accent)] text-white">
+          <span className="grid h-8 w-8 place-items-center rounded-[var(--radius-input)] border border-[var(--color-ink)] bg-[var(--color-ink)] text-white">
             <ShoppingBag className="h-4 w-4" />
           </span>
           <span className="hidden sm:inline [font-family:var(--font-display)]">
@@ -78,7 +78,7 @@ export function TopBar({ user }: Props) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar Charizard, Mew, Paradox Rift..."
                 className={cn(
-                  "h-10 w-full rounded-full border border-[var(--color-border-default)] bg-[var(--color-surface)] pl-9 pr-3 text-body-sm",
+                  "h-10 w-full rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-[var(--color-surface)] pl-9 pr-3 text-body-sm",
                   "outline-none placeholder:text-[var(--color-ink-subtle)]",
                   "focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/20",
                 )}
@@ -96,7 +96,7 @@ export function TopBar({ user }: Props) {
               className={cn(
                 "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
                 pathname === "/market"
-                  ? "bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]"
+                  ? "bg-[var(--color-ink)] text-[var(--color-ink-inverse)]"
                   : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
               )}
             >
@@ -107,7 +107,7 @@ export function TopBar({ user }: Props) {
               className={cn(
                 "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
                 pathname === "/trades"
-                  ? "bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]"
+                  ? "bg-[var(--color-ink)] text-[var(--color-ink-inverse)]"
                   : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
               )}
             >
@@ -118,7 +118,7 @@ export function TopBar({ user }: Props) {
               className={cn(
                 "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
                 pathname === "/profiles"
-                  ? "bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]"
+                  ? "bg-[var(--color-ink)] text-[var(--color-ink-inverse)]"
                   : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
               )}
             >

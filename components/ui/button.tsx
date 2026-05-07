@@ -6,12 +6,12 @@ import { cn } from "@/lib/ui/cn";
 import { Loader2 } from "@/components/ui/icon";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-input)] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60",
+  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-input)] border border-transparent font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60",
   {
     variants: {
       variant: {
         primary: "bg-[var(--color-accent)] text-[var(--color-ink-inverse)] hover:bg-[var(--color-accent-strong)]",
-        secondary: "bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)] hover:bg-[var(--color-accent-soft)]/80",
+        secondary: "border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)] text-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-[var(--color-ink-inverse)]",
         ghost: "text-[var(--color-ink)] hover:bg-[var(--color-ink)]/5",
         danger: "bg-[var(--color-danger)] text-[var(--color-ink-inverse)] hover:bg-[var(--color-danger)]/90",
         link: "text-[var(--color-accent-strong)] underline-offset-4 hover:underline",
