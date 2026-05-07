@@ -81,6 +81,11 @@ export function PublicFooter() {
                 Términos y condiciones
               </Link>
             </li>
+            <li>
+              <Link href="/privacy" className="text-[var(--color-ink-muted)] hover:text-[var(--color-accent-strong)]">
+                Privacidad
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

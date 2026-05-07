@@ -3,12 +3,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ShoppingBag,
+  ArrowLeftRight,
   Layers,
   Tag,
   Package,
   Bell,
+  Gavel,
   Scale,
-  User,
+  Users,
   Wallet,
 } from "@/components/ui/icon";
 import { cn } from "@/lib/ui/cn";
@@ -27,6 +29,10 @@ const sections: NavSection[] = [
     label: "Comprar",
     items: [
       { href: "/market", label: "Mercado", icon: ShoppingBag },
+      { href: "/trades", label: "Trades", icon: ArrowLeftRight },
+      { href: "/profiles", label: "Perfiles", icon: Users },
+      { href: "/trade-proposals", label: "Propuestas", icon: ArrowLeftRight },
+      { href: "/auctions", label: "Subastas", icon: Gavel },
       { href: "/transactions", label: "Mis compras", icon: Package },
     ],
   },
@@ -35,7 +41,6 @@ const sections: NavSection[] = [
     items: [
       { href: "/inventory", label: "Inventario", icon: Layers },
       { href: "/listings", label: "Mis ventas", icon: Tag },
-      { href: "/account", label: "Cobros (MP)", icon: Wallet },
     ],
   },
   {
@@ -43,7 +48,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/alerts", label: "Alertas", icon: Bell },
       { href: "/disputes", label: "Disputas", icon: Scale },
-      { href: "/account", label: "Mi cuenta", icon: User },
+      { href: "/account", label: "Cuenta y cobros", icon: Wallet },
     ],
   },
 ];

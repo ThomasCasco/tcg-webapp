@@ -1,6 +1,9 @@
 import type {
   CardCondition,
   CardWatch,
+  AuctionBid,
+  AuctionListing,
+  AuctionStatus,
   DisputeEvent,
   DisputeStatus,
   FulfillmentStatus,
@@ -12,11 +15,16 @@ import type {
   PaymentEvent,
   PaymentEventWithListing,
   PaymentProvider,
+  PublicProfileDetail,
   TransactionChatMessage,
   PaymentVerificationStatus,
   SellerPaymentDetails,
   SellerPaymentProfile,
   SellerPaymentProvider,
+  SocialProfile,
+  TradeProposal,
+  TradeProposalStatus,
+  TradeProfile,
 } from "@/lib/domain/types";
 import { assertListingLogisticsValid } from "@/lib/shared/listing-logistics";
 import { getSupabaseAdminClient, isSupabaseConfigured } from "@/lib/server/supabase";
@@ -29,6 +37,12 @@ const WATCHES_TABLE = "card_watches";
 const NOTIFICATIONS_TABLE = "notifications";
 const PROFILES_TABLE = "profiles";
 const CHAT_MESSAGES_TABLE = "transaction_chat_messages";
+const PROFILE_FOLLOWS_TABLE = "profile_follows";
+const TRADE_PROPOSALS_TABLE = "trade_proposals";
+const AUCTIONS_TABLE = "auction_listings";
+const AUCTION_BIDS_TABLE = "auction_bids";
+const SOCIAL_PROFILE_SELECT =
+  "id,username,display_name,bio,location,avatar_url,favorite_game,favorite_card,instagram,discord,whatsapp,payment_provider,payment_alias,payment_instructions,created_at,updated_at";
 
 const SUCCESS_PROVIDER_STATUSES = new Set(["approved", "accredited", "succeeded"]);
 
@@ -43,6 +57,8 @@ type InventoryRow = {
   condition: CardCondition;
   quantity: number;
   asking_price_ars: number | null;
+  available_for_trade?: boolean | null;
+  trade_notes?: string | null;
   created_at: string;
 };
 
@@ -74,8 +90,11 @@ type ListingRow = {
 type WatchRow = {
   id: string;
   user_id: string;
+  profiles?: { username: string | null } | null;
   query: string;
   max_price_ars: number | null;
+  public_wanted?: boolean | null;
+  notes?: string | null;
   created_at: string;
 };
 
@@ -134,11 +153,72 @@ type DisputeRow = {
 type ProfileRow = {
   id: string;
   username: string;
+  display_name?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  avatar_url?: string | null;
+  favorite_game?: string | null;
+  favorite_card?: string | null;
+  instagram?: string | null;
+  discord?: string | null;
   whatsapp: string | null;
   payment_provider: SellerPaymentProvider | null;
   payment_alias: string | null;
   payment_instructions: string | null;
+  created_at?: string | null;
   updated_at: string;
+};
+
+type TradeProposalRow = {
+  id: string;
+  proposer_id: string;
+  proposer_handle: string;
+  recipient_id: string;
+  recipient_handle: string;
+  offered_inventory_ids: string[] | null;
+  requested_inventory_ids: string[] | null;
+  message: string | null;
+  status: TradeProposalStatus;
+  proposer_confirmed_at?: string | null;
+  recipient_confirmed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type AuctionRow = {
+  id: string;
+  seller_id: string | null;
+  seller_handle: string;
+  inventory_entry_id: string | null;
+  card_name: string;
+  set_name: string | null;
+  catalog_card_id: string | null;
+  image_url: string | null;
+  condition: CardCondition;
+  quantity: number;
+  status: AuctionStatus;
+  start_price_ars: number;
+  bid_increment_ars: number;
+  current_price_ars: number;
+  buyout_price_ars: number | null;
+  bid_count: number | null;
+  winner_id: string | null;
+  winner_handle: string | null;
+  starts_at: string;
+  ends_at: string;
+  created_at: string;
+  offers_shipping?: boolean | null;
+  offers_pickup?: boolean | null;
+  delivery_area_notes?: string | null;
+};
+
+type AuctionBidRow = {
+  id: string;
+  auction_id: string;
+  bidder_id: string;
+  bidder_handle: string;
+  amount_ars: number;
+  created_at: string;
 };
 
 type CreateInventoryInput = {
@@ -151,6 +231,8 @@ type CreateInventoryInput = {
   condition: CardCondition;
   quantity: number;
   askingPriceArs?: number;
+  availableForTrade?: boolean;
+  tradeNotes?: string;
 };
 
 type CreateListingInput = {
@@ -195,6 +277,8 @@ type UpdateInventoryInput = {
   askingPriceArs?: number;
   quantity?: number;
   imageUrl?: string | null;
+  availableForTrade?: boolean;
+  tradeNotes?: string | null;
 };
 
 type UpdateListingInput = {
@@ -246,6 +330,37 @@ export type MpPaymentValidationContext = {
   expectedPlatformFeeArs?: number;
 };
 
+type UpdateSocialProfileInput = {
+  userId: string;
+  displayName?: string;
+  bio?: string;
+  location?: string;
+  avatarUrl?: string;
+  favoriteGame?: string;
+  favoriteCard?: string;
+  instagram?: string;
+  discord?: string;
+};
+
+type CreateAuctionInput = {
+  sellerId: string;
+  sellerHandle: string;
+  inventoryId: string;
+  cardName: string;
+  setName?: string;
+  catalogCardId?: string;
+  imageUrl?: string;
+  condition: CardCondition;
+  quantity: number;
+  startPriceArs: number;
+  bidIncrementArs: number;
+  buyoutPriceArs?: number;
+  durationHours: number;
+  offersShipping: boolean;
+  offersPickup: boolean;
+  deliveryAreaNotes: string;
+};
+
 function mapInventoryRow(row: InventoryRow): InventoryEntry {
   return {
     id: row.id,
@@ -258,6 +373,8 @@ function mapInventoryRow(row: InventoryRow): InventoryEntry {
     condition: row.condition,
     quantity: row.quantity,
     askingPriceArs: row.asking_price_ars ?? undefined,
+    availableForTrade: Boolean(row.available_for_trade),
+    tradeNotes: row.trade_notes?.trim() || undefined,
     createdAt: row.created_at,
   };
 }
@@ -293,8 +410,11 @@ function mapWatchRow(row: WatchRow): CardWatch {
   return {
     id: row.id,
     userId: row.user_id,
+    username: row.profiles?.username ?? undefined,
     query: row.query,
     maxPriceArs: row.max_price_ars ?? undefined,
+    publicWanted: Boolean(row.public_wanted),
+    notes: row.notes?.trim() || undefined,
     createdAt: row.created_at,
   };
 }
@@ -378,6 +498,139 @@ function mapSellerPaymentDetails(row: ProfileRow): SellerPaymentDetails {
   };
 }
 
+function profileCompletionScore(row: ProfileRow, counts?: {
+  tradeCount?: number;
+  wantedCount?: number;
+  listingCount?: number;
+  followersCount?: number;
+}): number {
+  const checks = [
+    row.username,
+    row.display_name,
+    row.avatar_url,
+    row.bio && row.bio.length >= 24 ? row.bio : "",
+    row.location,
+    row.favorite_game,
+    row.favorite_card,
+    row.instagram || row.discord || row.whatsapp,
+    (counts?.tradeCount ?? 0) > 0 ? "trade" : "",
+    (counts?.wantedCount ?? 0) > 0 ? "wanted" : "",
+    (counts?.listingCount ?? 0) > 0 ? "listing" : "",
+    (counts?.followersCount ?? 0) > 0 ? "followers" : "",
+  ];
+
+  const completed = checks.filter((value) => Boolean(String(value ?? "").trim())).length;
+  return Math.round((completed / checks.length) * 100);
+}
+
+function mapSocialProfile(
+  row: ProfileRow,
+  counts?: {
+    tradeCount?: number;
+    wantedCount?: number;
+    listingCount?: number;
+    followersCount?: number;
+    followingCount?: number;
+  },
+): SocialProfile {
+  const tradeCount = counts?.tradeCount ?? 0;
+  const wantedCount = counts?.wantedCount ?? 0;
+  const listingCount = counts?.listingCount ?? 0;
+  const followersCount = counts?.followersCount ?? 0;
+  const followingCount = counts?.followingCount ?? 0;
+  const badges = [
+    row.bio && row.avatar_url ? "Perfil cuidado" : "",
+    tradeCount > 0 && wantedCount > 0 ? "Trader activo" : "",
+    listingCount >= 3 ? "Vendedor activo" : "",
+    followersCount >= 5 ? "Conocido en la comunidad" : "",
+  ].filter(Boolean);
+
+  return {
+    userId: row.id,
+    username: row.username,
+    displayName: row.display_name?.trim() || undefined,
+    bio: row.bio?.trim() || undefined,
+    location: row.location?.trim() || undefined,
+    avatarUrl: row.avatar_url?.trim() || undefined,
+    favoriteGame: row.favorite_game?.trim() || undefined,
+    favoriteCard: row.favorite_card?.trim() || undefined,
+    instagram: row.instagram?.trim() || undefined,
+    discord: row.discord?.trim() || undefined,
+    completionScore: profileCompletionScore(row, {
+      tradeCount,
+      wantedCount,
+      listingCount,
+      followersCount,
+    }),
+    tradeCount,
+    wantedCount,
+    listingCount,
+    followersCount,
+    followingCount,
+    badges,
+    joinedAt: row.created_at ?? undefined,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapTradeProposal(row: TradeProposalRow): TradeProposal {
+  return {
+    id: row.id,
+    proposerId: row.proposer_id,
+    proposerHandle: row.proposer_handle,
+    recipientId: row.recipient_id,
+    recipientHandle: row.recipient_handle,
+    offeredInventoryIds: row.offered_inventory_ids ?? [],
+    requestedInventoryIds: row.requested_inventory_ids ?? [],
+    message: row.message?.trim() || undefined,
+    status: row.status,
+    proposerConfirmedAt: row.proposer_confirmed_at ?? undefined,
+    recipientConfirmedAt: row.recipient_confirmed_at ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapAuctionRow(row: AuctionRow): AuctionListing {
+  return {
+    id: row.id,
+    sellerId: row.seller_id ?? undefined,
+    sellerHandle: row.seller_handle,
+    inventoryId: row.inventory_entry_id ?? undefined,
+    cardName: row.card_name,
+    setName: row.set_name ?? undefined,
+    catalogCardId: row.catalog_card_id ?? undefined,
+    imageUrl: row.image_url ?? undefined,
+    condition: row.condition,
+    quantity: row.quantity,
+    status: row.status,
+    startPriceArs: Math.round(Number(row.start_price_ars)),
+    bidIncrementArs: Math.round(Number(row.bid_increment_ars)),
+    currentPriceArs: Math.round(Number(row.current_price_ars)),
+    buyoutPriceArs: row.buyout_price_ars ? Math.round(Number(row.buyout_price_ars)) : undefined,
+    bidCount: row.bid_count ?? 0,
+    winnerId: row.winner_id ?? undefined,
+    winnerHandle: row.winner_handle ?? undefined,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    createdAt: row.created_at,
+    offersShipping: Boolean(row.offers_shipping),
+    offersPickup: Boolean(row.offers_pickup),
+    deliveryAreaNotes: row.delivery_area_notes?.trim() || undefined,
+  };
+}
+
+function mapAuctionBidRow(row: AuctionBidRow): AuctionBid {
+  return {
+    id: row.id,
+    auctionId: row.auction_id,
+    bidderId: row.bidder_id,
+    bidderHandle: row.bidder_handle,
+    amountArs: Math.round(Number(row.amount_ars)),
+    createdAt: row.created_at,
+  };
+}
+
 function resolveTransactionProviderFromSellerPayment(
   paymentProvider?: SellerPaymentProvider,
 ): PaymentProvider {
@@ -447,6 +700,90 @@ export async function updateSellerPaymentProfile(
   return mapSellerPaymentProfile(data as ProfileRow);
 }
 
+export async function getSocialProfile(userId: string): Promise<SocialProfile> {
+  assertSupabaseReady();
+
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(PROFILES_TABLE)
+    .select(SOCIAL_PROFILE_SELECT)
+    .eq("id", userId)
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Profile not found.");
+  }
+
+  const [tradeResult, wantedResult, listingResult, followersResult, followingResult] = await Promise.all([
+    client
+      .from(INVENTORY_TABLE)
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", userId)
+      .eq("available_for_trade", true),
+    client
+      .from(WATCHES_TABLE)
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("public_wanted", true),
+    client
+      .from(LISTINGS_TABLE)
+      .select("id", { count: "exact", head: true })
+      .eq("seller_id", userId)
+      .in("status", ["active", "pending_payment", "sold"]),
+    client
+      .from(PROFILE_FOLLOWS_TABLE)
+      .select("follower_id", { count: "exact", head: true })
+      .eq("following_id", userId),
+    client
+      .from(PROFILE_FOLLOWS_TABLE)
+      .select("following_id", { count: "exact", head: true })
+      .eq("follower_id", userId),
+  ]);
+
+  return mapSocialProfile(data as ProfileRow, {
+    tradeCount: tradeResult.count ?? 0,
+    wantedCount: wantedResult.count ?? 0,
+    listingCount: listingResult.count ?? 0,
+    followersCount: followersResult.count ?? 0,
+    followingCount: followingResult.count ?? 0,
+  });
+}
+
+export async function updateSocialProfile(
+  input: UpdateSocialProfileInput,
+): Promise<SocialProfile> {
+  assertSupabaseReady();
+
+  const clean = (value?: string, max = 160) => {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed.slice(0, max) : null;
+  };
+
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(PROFILES_TABLE)
+    .update({
+      display_name: clean(input.displayName, 60),
+      bio: clean(input.bio, 360),
+      location: clean(input.location, 80),
+      avatar_url: clean(input.avatarUrl, 500),
+      favorite_game: clean(input.favoriteGame, 60),
+      favorite_card: clean(input.favoriteCard, 120),
+      instagram: clean(input.instagram, 80),
+      discord: clean(input.discord, 80),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.userId)
+    .select(SOCIAL_PROFILE_SELECT)
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Failed to update social profile.");
+  }
+
+  return getSocialProfile(input.userId);
+}
+
 export async function checkBackendHealth() {
   if (!isSupabaseConfigured()) {
     return {
@@ -477,7 +814,7 @@ export async function checkBackendHealth() {
       connected: false,
       message,
       hint: missingSchema
-        ? "Run supabase/migrate-v2.sql in Supabase SQL Editor to create the missing tables/columns."
+        ? "Run the pending Supabase migrations, including supabase/migrate-v8.sql, to create the missing tables/columns."
         : "Check that the service role key is valid and the project is reachable.",
     };
   }
@@ -530,6 +867,8 @@ export async function createInventoryEntry(
       condition: input.condition,
       quantity: input.quantity,
       asking_price_ars: input.askingPriceArs ?? null,
+      available_for_trade: Boolean(input.availableForTrade),
+      trade_notes: input.tradeNotes?.trim() || null,
       created_at: new Date().toISOString(),
     })
     .select("*")
@@ -547,7 +886,7 @@ export async function updateInventoryEntry(
 ): Promise<InventoryEntry> {
   assertSupabaseReady();
 
-  const updates: Record<string, number | string | null> = {};
+  const updates: Record<string, number | string | boolean | null> = {};
   if (typeof input.askingPriceArs === "number") {
     updates.asking_price_ars = Math.max(0, Math.round(input.askingPriceArs));
   }
@@ -557,6 +896,13 @@ export async function updateInventoryEntry(
   if (input.imageUrl !== undefined) {
     const trimmed = input.imageUrl?.trim();
     updates.image_url = trimmed && trimmed.length > 0 ? trimmed : null;
+  }
+  if (typeof input.availableForTrade === "boolean") {
+    updates.available_for_trade = input.availableForTrade;
+  }
+  if (input.tradeNotes !== undefined) {
+    const trimmed = input.tradeNotes?.trim();
+    updates.trade_notes = trimmed && trimmed.length > 0 ? trimmed : null;
   }
 
   if (Object.keys(updates).length === 0) {
@@ -595,6 +941,759 @@ export async function deleteInventoryEntry(input: {
   if (error) {
     throw new Error(error.message);
   }
+}
+
+export async function listPublicTradeProfiles(): Promise<TradeProfile[]> {
+  assertSupabaseReady();
+
+  const client = getSupabaseAdminClient();
+  const [inventoryResult, watchesResult] = await Promise.all([
+    client
+      .from(INVENTORY_TABLE)
+      .select("*")
+      .eq("available_for_trade", true)
+      .order("created_at", { ascending: false })
+      .limit(200),
+    client
+      .from(WATCHES_TABLE)
+      .select("*")
+      .eq("public_wanted", true)
+      .order("created_at", { ascending: false })
+      .limit(200),
+  ]);
+
+  if (inventoryResult.error) throw new Error(inventoryResult.error.message);
+  if (watchesResult.error) throw new Error(watchesResult.error.message);
+
+  const tradeCards = ((inventoryResult.data ?? []) as InventoryRow[]).map(mapInventoryRow);
+  const wantedCards = ((watchesResult.data ?? []) as WatchRow[]).map(mapWatchRow);
+  const userIds = Array.from(
+    new Set(
+      [
+        ...tradeCards.map((card) => card.ownerId),
+        ...wantedCards.map((watch) => watch.userId),
+      ].filter((id): id is string => Boolean(id)),
+    ),
+  );
+
+  if (userIds.length === 0) return [];
+
+  const { data: profiles, error: profilesError } = await client
+    .from(PROFILES_TABLE)
+    .select("id,username")
+    .in("id", userIds);
+
+  if (profilesError) throw new Error(profilesError.message);
+
+  const usernames = new Map(
+    ((profiles ?? []) as Array<{ id: string; username: string }>).map((profile) => [
+      profile.id,
+      profile.username,
+    ]),
+  );
+
+  const grouped = new Map<string, TradeProfile>();
+  for (const userId of userIds) {
+    grouped.set(userId, {
+      userId,
+      username: usernames.get(userId) ?? "usuario",
+      tradeCards: [],
+      wantedCards: [],
+    });
+  }
+
+  for (const card of tradeCards) {
+    if (!card.ownerId) continue;
+    grouped.get(card.ownerId)?.tradeCards.push(card);
+  }
+
+  for (const watch of wantedCards) {
+    grouped.get(watch.userId)?.wantedCards.push({
+      ...watch,
+      username: usernames.get(watch.userId),
+    });
+  }
+
+  return Array.from(grouped.values()).filter(
+    (profile) => profile.tradeCards.length > 0 || profile.wantedCards.length > 0,
+  );
+}
+
+export async function listSocialProfiles(options?: {
+  query?: string;
+  limit?: number;
+}): Promise<SocialProfile[]> {
+  assertSupabaseReady();
+
+  const client = getSupabaseAdminClient();
+  const take = Math.min(Math.max(options?.limit ?? 60, 1), 120);
+  const { data, error } = await client
+    .from(PROFILES_TABLE)
+    .select(SOCIAL_PROFILE_SELECT)
+    .eq("account_status", "active")
+    .order("updated_at", { ascending: false })
+    .limit(take);
+
+  if (error) throw new Error(error.message);
+
+  let rows = (data ?? []) as ProfileRow[];
+
+  const userIds = rows.map((row) => row.id);
+  if (userIds.length === 0) return [];
+
+  const [tradeResult, wantedResult, listingResult, followersResult, followingResult] = await Promise.all([
+    client
+      .from(INVENTORY_TABLE)
+      .select("owner_id,card_name,set_name,trade_notes")
+      .in("owner_id", userIds)
+      .eq("available_for_trade", true),
+    client
+      .from(WATCHES_TABLE)
+      .select("user_id,query,notes")
+      .in("user_id", userIds)
+      .eq("public_wanted", true),
+    client
+      .from(LISTINGS_TABLE)
+      .select("seller_id,card_name,set_name,pack_theme")
+      .in("seller_id", userIds)
+      .in("status", ["active", "pending_payment", "sold"]),
+    client
+      .from(PROFILE_FOLLOWS_TABLE)
+      .select("following_id")
+      .in("following_id", userIds),
+    client
+      .from(PROFILE_FOLLOWS_TABLE)
+      .select("follower_id")
+      .in("follower_id", userIds),
+  ]);
+
+  if (tradeResult.error) throw new Error(tradeResult.error.message);
+  if (wantedResult.error) throw new Error(wantedResult.error.message);
+  if (listingResult.error) throw new Error(listingResult.error.message);
+  if (followersResult.error) throw new Error(followersResult.error.message);
+  if (followingResult.error) throw new Error(followingResult.error.message);
+
+  const tradeRows = (tradeResult.data ?? []) as Array<Record<string, string | null>>;
+  const wantedRows = (wantedResult.data ?? []) as Array<Record<string, string | null>>;
+  const listingRows = (listingResult.data ?? []) as Array<Record<string, string | null>>;
+  const query = options?.query?.trim().toLowerCase();
+  if (query) {
+    const matchesByUser = new Set<string>();
+    for (const row of rows) {
+      const text = [
+        row.username,
+        row.display_name,
+        row.bio,
+        row.location,
+        row.favorite_game,
+        row.favorite_card,
+      ].join(" ").toLowerCase();
+      if (text.includes(query)) matchesByUser.add(row.id);
+    }
+    for (const item of tradeRows) {
+      if ([item.card_name, item.set_name, item.trade_notes].join(" ").toLowerCase().includes(query)) {
+        if (item.owner_id) matchesByUser.add(item.owner_id);
+      }
+    }
+    for (const item of wantedRows) {
+      if ([item.query, item.notes].join(" ").toLowerCase().includes(query)) {
+        if (item.user_id) matchesByUser.add(item.user_id);
+      }
+    }
+    for (const item of listingRows) {
+      if ([item.card_name, item.set_name, item.pack_theme].join(" ").toLowerCase().includes(query)) {
+        if (item.seller_id) matchesByUser.add(item.seller_id);
+      }
+    }
+    rows = rows.filter((row) => matchesByUser.has(row.id));
+  }
+
+  const countBy = (items: Array<Record<string, string | null>>, key: string) => {
+    const counts = new Map<string, number>();
+    for (const item of items) {
+      const id = item[key];
+      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+    return counts;
+  };
+
+  const tradeCounts = countBy(tradeRows, "owner_id");
+  const wantedCounts = countBy(wantedRows, "user_id");
+  const listingCounts = countBy(listingRows, "seller_id");
+  const followersCounts = countBy((followersResult.data ?? []) as Array<Record<string, string | null>>, "following_id");
+  const followingCounts = countBy((followingResult.data ?? []) as Array<Record<string, string | null>>, "follower_id");
+
+  return rows
+    .map((row) =>
+      mapSocialProfile(row, {
+        tradeCount: tradeCounts.get(row.id) ?? 0,
+        wantedCount: wantedCounts.get(row.id) ?? 0,
+        listingCount: listingCounts.get(row.id) ?? 0,
+        followersCount: followersCounts.get(row.id) ?? 0,
+        followingCount: followingCounts.get(row.id) ?? 0,
+      }),
+    )
+    .sort((a, b) => {
+      if (b.completionScore !== a.completionScore) {
+        return b.completionScore - a.completionScore;
+      }
+      return b.tradeCount + b.wantedCount + b.listingCount - (a.tradeCount + a.wantedCount + a.listingCount);
+    });
+}
+
+export async function getPublicProfileByUsername(
+  username: string,
+  actorUserId?: string,
+): Promise<PublicProfileDetail | null> {
+  assertSupabaseReady();
+
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(PROFILES_TABLE)
+    .select(SOCIAL_PROFILE_SELECT)
+    .eq("username", username.trim().toLowerCase())
+    .eq("account_status", "active")
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+
+  const row = data as ProfileRow;
+  const [tradeResult, wantedResult, listingResult, followersResult, followingResult, isFollowingResult] = await Promise.all([
+    client
+      .from(INVENTORY_TABLE)
+      .select("*")
+      .eq("owner_id", row.id)
+      .eq("available_for_trade", true)
+      .order("created_at", { ascending: false })
+      .limit(24),
+    client
+      .from(WATCHES_TABLE)
+      .select("*")
+      .eq("user_id", row.id)
+      .eq("public_wanted", true)
+      .order("created_at", { ascending: false })
+      .limit(24),
+    client
+      .from(LISTINGS_TABLE)
+      .select("*")
+      .eq("seller_id", row.id)
+      .in("status", ["active", "pending_payment", "sold"])
+      .order("created_at", { ascending: false })
+      .limit(12),
+    client
+      .from(PROFILE_FOLLOWS_TABLE)
+      .select("follower_id", { count: "exact", head: true })
+      .eq("following_id", row.id),
+    client
+      .from(PROFILE_FOLLOWS_TABLE)
+      .select("following_id", { count: "exact", head: true })
+      .eq("follower_id", row.id),
+    actorUserId
+      ? client
+          .from(PROFILE_FOLLOWS_TABLE)
+          .select("follower_id")
+          .eq("follower_id", actorUserId)
+          .eq("following_id", row.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+
+  if (tradeResult.error) throw new Error(tradeResult.error.message);
+  if (wantedResult.error) throw new Error(wantedResult.error.message);
+  if (listingResult.error) throw new Error(listingResult.error.message);
+  if (followersResult.error) throw new Error(followersResult.error.message);
+  if (followingResult.error) throw new Error(followingResult.error.message);
+  if (isFollowingResult.error) throw new Error(isFollowingResult.error.message);
+
+  const tradeCards = ((tradeResult.data ?? []) as InventoryRow[]).map(mapInventoryRow);
+  const wantedCards = ((wantedResult.data ?? []) as WatchRow[]).map(mapWatchRow);
+  const listings = ((listingResult.data ?? []) as ListingRow[]).map(mapListingRow);
+
+  return {
+    profile: mapSocialProfile(row, {
+      tradeCount: tradeCards.length,
+      wantedCount: wantedCards.length,
+      listingCount: listings.length,
+      followersCount: followersResult.count ?? 0,
+      followingCount: followingResult.count ?? 0,
+    }),
+    tradeCards,
+    wantedCards,
+    listings,
+    isFollowing: Boolean(isFollowingResult.data),
+  };
+}
+
+export async function setProfileFollow(input: {
+  followerId: string;
+  followingId: string;
+  follow: boolean;
+}): Promise<{ following: boolean }> {
+  assertSupabaseReady();
+  if (input.followerId === input.followingId) {
+    throw new Error("No podes seguir tu propio perfil.");
+  }
+
+  const client = getSupabaseAdminClient();
+  if (!input.follow) {
+    const { error } = await client
+      .from(PROFILE_FOLLOWS_TABLE)
+      .delete()
+      .eq("follower_id", input.followerId)
+      .eq("following_id", input.followingId);
+    if (error) throw new Error(error.message);
+    return { following: false };
+  }
+
+  const { error } = await client.from(PROFILE_FOLLOWS_TABLE).upsert(
+    {
+      follower_id: input.followerId,
+      following_id: input.followingId,
+      created_at: new Date().toISOString(),
+    },
+    { onConflict: "follower_id,following_id" },
+  );
+  if (error) throw new Error(error.message);
+  return { following: true };
+}
+
+export async function createTradeProposal(input: {
+  proposerId: string;
+  proposerHandle: string;
+  recipientId: string;
+  recipientHandle: string;
+  offeredInventoryIds: string[];
+  requestedInventoryIds: string[];
+  message?: string;
+}): Promise<TradeProposal> {
+  assertSupabaseReady();
+  if (input.proposerId === input.recipientId) {
+    throw new Error("No podes proponerte un trade a vos mismo.");
+  }
+
+  const offeredIds = Array.from(new Set(input.offeredInventoryIds)).slice(0, 12);
+  const requestedIds = Array.from(new Set(input.requestedInventoryIds)).slice(0, 12);
+  if (offeredIds.length === 0 || requestedIds.length === 0) {
+    throw new Error("Elegí al menos una carta ofrecida y una carta pedida.");
+  }
+
+  const client = getSupabaseAdminClient();
+  const [offeredResult, requestedResult] = await Promise.all([
+    client
+      .from(INVENTORY_TABLE)
+      .select("id")
+      .eq("owner_id", input.proposerId)
+      .in("id", offeredIds),
+    client
+      .from(INVENTORY_TABLE)
+      .select("id")
+      .eq("owner_id", input.recipientId)
+      .eq("available_for_trade", true)
+      .in("id", requestedIds),
+  ]);
+
+  if (offeredResult.error) throw new Error(offeredResult.error.message);
+  if (requestedResult.error) throw new Error(requestedResult.error.message);
+  if ((offeredResult.data ?? []).length !== offeredIds.length) {
+    throw new Error("Una o mas cartas ofrecidas no pertenecen a tu inventario.");
+  }
+  if ((requestedResult.data ?? []).length !== requestedIds.length) {
+    throw new Error("Una o mas cartas pedidas ya no estan disponibles para trade.");
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await client
+    .from(TRADE_PROPOSALS_TABLE)
+    .insert({
+      proposer_id: input.proposerId,
+      proposer_handle: input.proposerHandle.trim().toLowerCase(),
+      recipient_id: input.recipientId,
+      recipient_handle: input.recipientHandle.trim().toLowerCase(),
+      offered_inventory_ids: offeredIds,
+      requested_inventory_ids: requestedIds,
+      message: input.message?.trim() || null,
+      status: "pending",
+      created_at: now,
+      updated_at: now,
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) throw new Error(error?.message ?? "Failed to create trade proposal.");
+  return mapTradeProposal(data as TradeProposalRow);
+}
+
+export async function listTradeProposalsForUser(userId: string): Promise<TradeProposal[]> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(TRADE_PROPOSALS_TABLE)
+    .select("*")
+    .or(`proposer_id.eq.${userId},recipient_id.eq.${userId}`)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as TradeProposalRow[]).map(mapTradeProposal);
+}
+
+export async function updateTradeProposalStatus(input: {
+  userId: string;
+  proposalId: string;
+  nextStatus: TradeProposalStatus;
+}): Promise<TradeProposal> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data: existing, error: existingError } = await client
+    .from(TRADE_PROPOSALS_TABLE)
+    .select("*")
+    .eq("id", input.proposalId)
+    .single();
+
+  if (existingError || !existing) {
+    throw new Error(existingError?.message ?? "Trade proposal not found.");
+  }
+
+  const proposal = existing as TradeProposalRow;
+  const isRecipient = proposal.recipient_id === input.userId;
+  const isProposer = proposal.proposer_id === input.userId;
+  if (!isRecipient && !isProposer) {
+    throw new Error("No autorizado para modificar esta propuesta.");
+  }
+  if (input.nextStatus === "accepted" || input.nextStatus === "declined") {
+    if (!isRecipient) throw new Error("Solo el receptor puede aceptar o rechazar.");
+  }
+  if (input.nextStatus === "cancelled" && !isProposer) {
+    throw new Error("Solo quien propuso puede cancelar.");
+  }
+  if (input.nextStatus === "completed" && proposal.status !== "accepted") {
+    throw new Error("Primero ambas partes tienen que aceptar el acuerdo.");
+  }
+  if (input.nextStatus !== "completed" && proposal.status !== "pending") {
+    throw new Error("Esta propuesta ya no esta pendiente.");
+  }
+
+  if (input.nextStatus === "completed") {
+    const now = new Date().toISOString();
+    const nextProposerConfirmedAt = isProposer
+      ? now
+      : proposal.proposer_confirmed_at ?? null;
+    const nextRecipientConfirmedAt = isRecipient
+      ? now
+      : proposal.recipient_confirmed_at ?? null;
+    const bothConfirmed = Boolean(nextProposerConfirmedAt && nextRecipientConfirmedAt);
+
+    if (!bothConfirmed) {
+      const { data, error } = await client
+        .from(TRADE_PROPOSALS_TABLE)
+        .update({
+          proposer_confirmed_at: nextProposerConfirmedAt,
+          recipient_confirmed_at: nextRecipientConfirmedAt,
+          updated_at: now,
+        })
+        .eq("id", input.proposalId)
+        .select("*")
+        .single();
+
+      if (error || !data) throw new Error(error?.message ?? "Failed to confirm trade.");
+      return mapTradeProposal(data as TradeProposalRow);
+    }
+
+    const offeredIds = proposal.offered_inventory_ids ?? [];
+    const requestedIds = proposal.requested_inventory_ids ?? [];
+    const [offeredResult, requestedResult] = await Promise.all([
+      client
+        .from(INVENTORY_TABLE)
+        .select("id")
+        .eq("owner_id", proposal.proposer_id)
+        .in("id", offeredIds),
+      client
+        .from(INVENTORY_TABLE)
+        .select("id")
+        .eq("owner_id", proposal.recipient_id)
+        .eq("available_for_trade", true)
+        .in("id", requestedIds),
+    ]);
+
+    if (offeredResult.error) throw new Error(offeredResult.error.message);
+    if (requestedResult.error) throw new Error(requestedResult.error.message);
+    if ((offeredResult.data ?? []).length !== offeredIds.length) {
+      throw new Error("Una o mas cartas ofrecidas ya no pertenecen al proponente.");
+    }
+    if ((requestedResult.data ?? []).length !== requestedIds.length) {
+      throw new Error("Una o mas cartas pedidas ya no estan disponibles.");
+    }
+
+    if (offeredIds.length > 0) {
+      const { error: offeredSwapError } = await client
+        .from(INVENTORY_TABLE)
+        .update({
+          owner_id: proposal.recipient_id,
+          seller_handle: proposal.recipient_handle,
+          available_for_trade: false,
+          trade_notes: null,
+        })
+        .in("id", offeredIds);
+      if (offeredSwapError) throw new Error(offeredSwapError.message);
+    }
+
+    if (requestedIds.length > 0) {
+      const { error: requestedSwapError } = await client
+        .from(INVENTORY_TABLE)
+        .update({
+          owner_id: proposal.proposer_id,
+          seller_handle: proposal.proposer_handle,
+          available_for_trade: false,
+          trade_notes: null,
+        })
+        .in("id", requestedIds);
+      if (requestedSwapError) throw new Error(requestedSwapError.message);
+    }
+
+    const { data, error } = await client
+      .from(TRADE_PROPOSALS_TABLE)
+      .update({
+        status: "completed",
+        proposer_confirmed_at: nextProposerConfirmedAt,
+        recipient_confirmed_at: nextRecipientConfirmedAt,
+        updated_at: now,
+      })
+      .eq("id", input.proposalId)
+      .select("*")
+      .single();
+
+    if (error || !data) throw new Error(error?.message ?? "Failed to complete trade.");
+    return mapTradeProposal(data as TradeProposalRow);
+  }
+
+  const { data, error } = await client
+    .from(TRADE_PROPOSALS_TABLE)
+    .update({ status: input.nextStatus, updated_at: new Date().toISOString() })
+    .eq("id", input.proposalId)
+    .select("*")
+    .single();
+
+  if (error || !data) throw new Error(error?.message ?? "Failed to update trade proposal.");
+  return mapTradeProposal(data as TradeProposalRow);
+}
+
+export async function listAuctions(options?: {
+  sellerId?: string;
+  bidderId?: string;
+  onlyPublic?: boolean;
+  statuses?: AuctionStatus[];
+}): Promise<AuctionListing[]> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  let query = client.from(AUCTIONS_TABLE).select("*").order("created_at", {
+    ascending: false,
+  });
+
+  if (options?.sellerId) {
+    query = query.eq("seller_id", options.sellerId);
+  }
+
+  if (options?.statuses && options.statuses.length > 0) {
+    query = query.in("status", options.statuses);
+  } else if (options?.onlyPublic) {
+    query = query.in("status", ["active", "ended", "settled"]);
+  }
+
+  if (options?.bidderId) {
+    const { data: bids, error: bidsError } = await client
+      .from(AUCTION_BIDS_TABLE)
+      .select("auction_id")
+      .eq("bidder_id", options.bidderId);
+    if (bidsError) throw new Error(bidsError.message);
+    const ids = Array.from(new Set((bids ?? []).map((row) => (row as { auction_id: string }).auction_id)));
+    if (ids.length === 0) return [];
+    query = query.in("id", ids);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as AuctionRow[]).map(mapAuctionRow);
+}
+
+export async function listAuctionBids(auctionId: string): Promise<AuctionBid[]> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(AUCTION_BIDS_TABLE)
+    .select("*")
+    .eq("auction_id", auctionId)
+    .order("amount_ars", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as AuctionBidRow[]).map(mapAuctionBidRow);
+}
+
+export async function createAuction(input: CreateAuctionInput): Promise<AuctionListing> {
+  assertSupabaseReady();
+  assertListingLogisticsValid(input.offersShipping, input.offersPickup, input.deliveryAreaNotes);
+
+  const startPrice = Math.round(input.startPriceArs);
+  const increment = Math.round(input.bidIncrementArs);
+  const durationHours = Math.min(Math.max(Math.round(input.durationHours), 1), 168);
+  if (startPrice <= 0) throw new Error("El precio inicial debe ser mayor a 0.");
+  if (increment <= 0) throw new Error("El incremento minimo debe ser mayor a 0.");
+  if (input.buyoutPriceArs && input.buyoutPriceArs <= startPrice) {
+    throw new Error("El precio de compra directa debe superar el precio inicial.");
+  }
+
+  const client = getSupabaseAdminClient();
+  const { data: inventory, error: inventoryError } = await client
+    .from(INVENTORY_TABLE)
+    .select("id,owner_id,quantity")
+    .eq("id", input.inventoryId)
+    .eq("owner_id", input.sellerId)
+    .single();
+
+  if (inventoryError || !inventory) {
+    throw new Error(inventoryError?.message ?? "La carta no pertenece a tu inventario.");
+  }
+
+  const inv = inventory as { quantity: number };
+  if (input.quantity <= 0 || input.quantity > inv.quantity) {
+    throw new Error("Cantidad invalida para subastar.");
+  }
+
+  const now = new Date();
+  const endsAt = new Date(now.getTime() + durationHours * 3_600_000);
+  const { data, error } = await client
+    .from(AUCTIONS_TABLE)
+    .insert({
+      seller_id: input.sellerId,
+      seller_handle: input.sellerHandle.trim().toLowerCase(),
+      inventory_entry_id: input.inventoryId,
+      card_name: input.cardName.trim(),
+      set_name: input.setName?.trim() || null,
+      catalog_card_id: input.catalogCardId ?? null,
+      image_url: input.imageUrl ?? null,
+      condition: input.condition,
+      quantity: input.quantity,
+      status: "active",
+      start_price_ars: startPrice,
+      bid_increment_ars: increment,
+      current_price_ars: startPrice,
+      buyout_price_ars: input.buyoutPriceArs ? Math.round(input.buyoutPriceArs) : null,
+      bid_count: 0,
+      starts_at: now.toISOString(),
+      ends_at: endsAt.toISOString(),
+      offers_shipping: input.offersShipping,
+      offers_pickup: input.offersPickup,
+      delivery_area_notes: input.deliveryAreaNotes.trim(),
+      created_at: now.toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) throw new Error(error?.message ?? "Failed to create auction.");
+  return mapAuctionRow(data as AuctionRow);
+}
+
+export async function placeAuctionBid(input: {
+  auctionId: string;
+  bidderId: string;
+  bidderHandle: string;
+  amountArs: number;
+}): Promise<{ auction: AuctionListing; bid: AuctionBid }> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data: existing, error: existingError } = await client
+    .from(AUCTIONS_TABLE)
+    .select("*")
+    .eq("id", input.auctionId)
+    .single();
+
+  if (existingError || !existing) {
+    throw new Error(existingError?.message ?? "Subasta no encontrada.");
+  }
+
+  const auction = existing as AuctionRow;
+  if (auction.status !== "active") throw new Error("La subasta no esta activa.");
+  if (auction.seller_id === input.bidderId) throw new Error("No podes ofertar en tu propia subasta.");
+  if (new Date(auction.ends_at).getTime() <= Date.now()) {
+    await closeAuction({ auctionId: auction.id, actorUserId: auction.seller_id ?? input.bidderId });
+    throw new Error("La subasta ya termino.");
+  }
+
+  const amount = Math.round(input.amountArs);
+  const minBid = Math.round(Number(auction.current_price_ars)) + Math.round(Number(auction.bid_increment_ars));
+  if (amount < minBid) {
+    throw new Error(`La oferta minima es ARS ${minBid.toLocaleString("es-AR")}.`);
+  }
+
+  const buyout = auction.buyout_price_ars ? Math.round(Number(auction.buyout_price_ars)) : null;
+  const nextStatus: AuctionStatus = buyout && amount >= buyout ? "ended" : "active";
+  const { data: bidData, error: bidError } = await client
+    .from(AUCTION_BIDS_TABLE)
+    .insert({
+      auction_id: auction.id,
+      bidder_id: input.bidderId,
+      bidder_handle: input.bidderHandle.trim().toLowerCase(),
+      amount_ars: amount,
+      created_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (bidError || !bidData) throw new Error(bidError?.message ?? "No se pudo ofertar.");
+
+  const { data: updated, error: updateError } = await client
+    .from(AUCTIONS_TABLE)
+    .update({
+      current_price_ars: amount,
+      bid_count: (auction.bid_count ?? 0) + 1,
+      winner_id: input.bidderId,
+      winner_handle: input.bidderHandle.trim().toLowerCase(),
+      status: nextStatus,
+    })
+    .eq("id", auction.id)
+    .select("*")
+    .single();
+
+  if (updateError || !updated) throw new Error(updateError?.message ?? "No se pudo actualizar la subasta.");
+  return {
+    auction: mapAuctionRow(updated as AuctionRow),
+    bid: mapAuctionBidRow(bidData as AuctionBidRow),
+  };
+}
+
+export async function closeAuction(input: {
+  auctionId: string;
+  actorUserId: string;
+}): Promise<AuctionListing> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data: existing, error: existingError } = await client
+    .from(AUCTIONS_TABLE)
+    .select("*")
+    .eq("id", input.auctionId)
+    .single();
+
+  if (existingError || !existing) throw new Error(existingError?.message ?? "Subasta no encontrada.");
+  const auction = existing as AuctionRow;
+  const isSeller = auction.seller_id === input.actorUserId;
+  const endedByTime = new Date(auction.ends_at).getTime() <= Date.now();
+  if (!isSeller && !endedByTime) {
+    throw new Error("Solo el vendedor puede cerrar una subasta antes del cierre automatico.");
+  }
+
+  const nextStatus: AuctionStatus = auction.winner_id ? "ended" : "cancelled";
+  const { data, error } = await client
+    .from(AUCTIONS_TABLE)
+    .update({ status: nextStatus })
+    .eq("id", input.auctionId)
+    .select("*")
+    .single();
+
+  if (error || !data) throw new Error(error?.message ?? "No se pudo cerrar la subasta.");
+  return mapAuctionRow(data as AuctionRow);
 }
 
 export async function listListings(options?: {
@@ -1313,6 +2412,8 @@ type CreateWatchInput = {
   userId: string;
   query: string;
   maxPriceArs?: number;
+  publicWanted?: boolean;
+  notes?: string;
 };
 
 export async function listWatchesForUser(userId: string): Promise<CardWatch[]> {
@@ -1343,6 +2444,8 @@ export async function createWatch(input: CreateWatchInput): Promise<CardWatch> {
         user_id: input.userId,
         query: normalizedQuery,
         max_price_ars: input.maxPriceArs ?? null,
+        public_wanted: Boolean(input.publicWanted),
+        notes: input.notes?.trim() || null,
         created_at: new Date().toISOString(),
       },
       { onConflict: "user_id,query" },

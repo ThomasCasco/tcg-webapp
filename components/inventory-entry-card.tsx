@@ -12,7 +12,7 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/ui/form-field";
-import { ChevronDown, ChevronUp, Tag, Trash2 } from "@/components/ui/icon";
+import { ArrowLeftRight, ChevronDown, ChevronUp, Gavel, Tag, Trash2 } from "@/components/ui/icon";
 
 const conditionVariant: Record<string, "success" | "warning" | "danger" | "default"> = {
   mint: "success",
@@ -28,7 +28,7 @@ type Props = {
   alreadyListed: boolean;
 };
 
-type Panel = "none" | "edit" | "publish";
+type Panel = "none" | "edit" | "publish" | "auction";
 
 export function InventoryEntryCard({ entry, alreadyListed }: Props) {
   const router = useRouter();
@@ -40,11 +40,19 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
   );
   const [quantity, setQuantity] = useState<number>(entry.quantity);
   const [imageUrl, setImageUrl] = useState<string | null>(entry.imageUrl ?? null);
+  const [availableForTrade, setAvailableForTrade] = useState(Boolean(entry.availableForTrade));
+  const [tradeNotes, setTradeNotes] = useState(entry.tradeNotes ?? "");
 
   // Publish state
   const [offersShipping, setOffersShipping] = useState(false);
   const [offersPickup, setOffersPickup] = useState(true);
   const [deliveryNotes, setDeliveryNotes] = useState("");
+  const [auctionStartPrice, setAuctionStartPrice] = useState(
+    entry.askingPriceArs ? String(entry.askingPriceArs) : "",
+  );
+  const [auctionIncrement, setAuctionIncrement] = useState("500");
+  const [auctionBuyout, setAuctionBuyout] = useState("");
+  const [auctionDurationHours, setAuctionDurationHours] = useState(24);
 
   const [busy, setBusy] = useState<null | "save" | "delete" | "publish">(null);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -52,7 +60,9 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
   const dirty =
     Number(price || 0) !== (entry.askingPriceArs ?? 0) ||
     quantity !== entry.quantity ||
-    (imageUrl ?? "") !== (entry.imageUrl ?? "");
+    (imageUrl ?? "") !== (entry.imageUrl ?? "") ||
+    availableForTrade !== Boolean(entry.availableForTrade) ||
+    tradeNotes.trim() !== (entry.tradeNotes ?? "");
 
   async function save() {
     setBusy("save");
@@ -66,6 +76,8 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
           quantity,
           askingPriceArs: Number(price) || undefined,
           imageUrl: imageUrl || null,
+          availableForTrade,
+          tradeNotes: tradeNotes.trim() || null,
         }),
       });
       const data = (await res.json()) as { error?: string };
@@ -143,6 +155,55 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
     }
   }
 
+  async function createAuction() {
+    const startPrice = Number(auctionStartPrice);
+    const bidIncrement = Number(auctionIncrement);
+    const buyoutPrice = Number(auctionBuyout);
+    if (!startPrice || startPrice <= 0) {
+      setMsg({ kind: "err", text: "Carga un precio inicial para la subasta." });
+      return;
+    }
+    if (!bidIncrement || bidIncrement <= 0) {
+      setMsg({ kind: "err", text: "Carga un incremento minimo valido." });
+      return;
+    }
+    try {
+      assertListingLogisticsValid(offersShipping, offersPickup, deliveryNotes);
+    } catch (err) {
+      setMsg({ kind: "err", text: err instanceof Error ? err.message : "Revisa envio / retiro." });
+      return;
+    }
+
+    setBusy("publish");
+    setMsg(null);
+    try {
+      const res = await fetch("/api/auctions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inventoryId: entry.id,
+          quantity,
+          startPriceArs: startPrice,
+          bidIncrementArs: bidIncrement,
+          buyoutPriceArs: buyoutPrice > 0 ? buyoutPrice : undefined,
+          durationHours: auctionDurationHours,
+          offersShipping,
+          offersPickup,
+          deliveryAreaNotes: deliveryNotes.trim(),
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "No se pudo crear la subasta.");
+      setMsg({ kind: "ok", text: "Subasta creada." });
+      setPanel("none");
+      router.refresh();
+    } catch (err) {
+      setMsg({ kind: "err", text: err instanceof Error ? err.message : "Error al crear subasta." });
+    } finally {
+      setBusy(null);
+    }
+  }
+
   const preview = imageUrl ?? entry.imageUrl;
   const priceNum = Number(price);
   const platformFee = priceNum > 0 ? Math.max(1, Math.round(priceNum * 0.01)) : 0;
@@ -189,6 +250,9 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
             {alreadyListed && (
               <Chip variant="info" size="sm">Publicada</Chip>
             )}
+            {entry.availableForTrade && (
+              <Chip variant="success" size="sm">Trade</Chip>
+            )}
           </div>
         </div>
       </div>
@@ -216,6 +280,16 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
             Publicar
           </Button>
         )}
+
+        <Button
+          size="sm"
+          variant={panel === "auction" ? "primary" : "secondary"}
+          onClick={() => setPanel(panel === "auction" ? "none" : "auction")}
+          disabled={busy !== null}
+        >
+          <Gavel className="h-4 w-4" />
+          Subastar
+        </Button>
 
         <Button
           size="sm"
@@ -260,6 +334,35 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
                 />
               </FormField>
             </div>
+          </div>
+
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+            <label className="flex cursor-pointer items-center gap-2 text-body-sm font-medium">
+              <input
+                type="checkbox"
+                checked={availableForTrade}
+                onChange={(e) => setAvailableForTrade(e.target.checked)}
+              />
+              <ArrowLeftRight className="h-4 w-4 text-[var(--color-accent-strong)]" />
+              Disponible para trade
+            </label>
+            {availableForTrade && (
+              <FormField
+                label="Notas de trade"
+                htmlFor={`trade-notes-${entry.id}`}
+                hint="Condiciones, zona o cartas que priorizás."
+                className="mt-3"
+              >
+                <Textarea
+                  id={`trade-notes-${entry.id}`}
+                  value={tradeNotes}
+                  onChange={(e) => setTradeNotes(e.target.value)}
+                  rows={2}
+                  maxLength={240}
+                  placeholder="Busco evoluciones, retiro por CABA, escucho ofertas"
+                />
+              </FormField>
+            )}
           </div>
 
           <Button size="sm" onClick={save} disabled={!dirty || busy !== null} loading={busy === "save"}>
@@ -332,6 +435,92 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
 
           <Button size="sm" onClick={publish} disabled={busy !== null} loading={busy === "publish"}>
             Publicar al Mercado
+          </Button>
+        </div>
+      )}
+
+      {panel === "auction" && (
+        <div className="mt-4 space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FormField label="Precio inicial ARS" htmlFor={`auction-start-${entry.id}`} required>
+              <Input
+                id={`auction-start-${entry.id}`}
+                type="number"
+                min={1}
+                value={auctionStartPrice}
+                onChange={(e) => setAuctionStartPrice(e.target.value)}
+                placeholder="12000"
+              />
+            </FormField>
+            <FormField label="Incremento minimo" htmlFor={`auction-inc-${entry.id}`} required>
+              <Input
+                id={`auction-inc-${entry.id}`}
+                type="number"
+                min={1}
+                value={auctionIncrement}
+                onChange={(e) => setAuctionIncrement(e.target.value)}
+                placeholder="500"
+              />
+            </FormField>
+            <FormField label="Compra directa (opcional)" htmlFor={`auction-buyout-${entry.id}`}>
+              <Input
+                id={`auction-buyout-${entry.id}`}
+                type="number"
+                min={1}
+                value={auctionBuyout}
+                onChange={(e) => setAuctionBuyout(e.target.value)}
+                placeholder="30000"
+              />
+            </FormField>
+            <FormField label="Duracion (horas)" htmlFor={`auction-duration-${entry.id}`} required>
+              <Input
+                id={`auction-duration-${entry.id}`}
+                type="number"
+                min={1}
+                max={168}
+                value={auctionDurationHours}
+                onChange={(e) => setAuctionDurationHours(Math.max(1, Number(e.target.value) || 24))}
+              />
+            </FormField>
+          </div>
+
+          <fieldset className="space-y-2">
+            <legend className="text-caption font-medium">Entrega</legend>
+            <label className="flex cursor-pointer items-center gap-2 text-body-sm">
+              <input
+                type="checkbox"
+                checked={offersPickup}
+                onChange={(e) => setOffersPickup(e.target.checked)}
+              />
+              Retiro en persona
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-body-sm">
+              <input
+                type="checkbox"
+                checked={offersShipping}
+                onChange={(e) => setOffersShipping(e.target.checked)}
+              />
+              Envio a todo el pais
+            </label>
+          </fieldset>
+
+          <FormField
+            label="Detalles de entrega"
+            htmlFor={`auction-delivery-${entry.id}`}
+            hint="Zona, horarios, costo de envio. Minimo 8 caracteres."
+            required
+          >
+            <Textarea
+              id={`auction-delivery-${entry.id}`}
+              value={deliveryNotes}
+              onChange={(e) => setDeliveryNotes(e.target.value)}
+              rows={2}
+              placeholder="Retiro Caballito CABA / envio a cargo del ganador"
+            />
+          </FormField>
+
+          <Button size="sm" onClick={createAuction} disabled={busy !== null} loading={busy === "publish"}>
+            Crear subasta
           </Button>
         </div>
       )}

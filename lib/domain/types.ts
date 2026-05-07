@@ -32,6 +32,13 @@ export type FulfillmentStatus =
 
 export type DisputeStatus = "open" | "investigating" | "resolved" | "rejected";
 
+export type TradeProposalStatus =
+  | "pending"
+  | "accepted"
+  | "completed"
+  | "declined"
+  | "cancelled";
+
 export interface CatalogCard {
   id: string;
   name: string;
@@ -52,10 +59,14 @@ export interface InventoryEntry {
   condition: CardCondition;
   quantity: number;
   askingPriceArs?: number;
+  availableForTrade?: boolean;
+  tradeNotes?: string;
   createdAt: string;
 }
 
 export type ListingType = "single" | "mystery_pack";
+
+export type AuctionStatus = "active" | "ended" | "cancelled" | "settled";
 
 export interface Listing {
   id: string;
@@ -109,9 +120,101 @@ export interface TransactionChatMessage {
 export interface CardWatch {
   id: string;
   userId: string;
+  username?: string;
   query: string;
   maxPriceArs?: number;
+  publicWanted?: boolean;
+  notes?: string;
   createdAt: string;
+}
+
+export interface AuctionListing {
+  id: string;
+  sellerId?: string;
+  sellerHandle: string;
+  inventoryId?: string;
+  cardName: string;
+  setName?: string;
+  catalogCardId?: string;
+  imageUrl?: string;
+  condition: CardCondition;
+  quantity: number;
+  status: AuctionStatus;
+  startPriceArs: number;
+  bidIncrementArs: number;
+  currentPriceArs: number;
+  buyoutPriceArs?: number;
+  bidCount: number;
+  winnerId?: string;
+  winnerHandle?: string;
+  startsAt: string;
+  endsAt: string;
+  createdAt: string;
+  offersShipping?: boolean;
+  offersPickup?: boolean;
+  deliveryAreaNotes?: string;
+}
+
+export interface AuctionBid {
+  id: string;
+  auctionId: string;
+  bidderId: string;
+  bidderHandle: string;
+  amountArs: number;
+  createdAt: string;
+}
+
+export interface TradeProfile {
+  userId: string;
+  username: string;
+  tradeCards: InventoryEntry[];
+  wantedCards: CardWatch[];
+}
+
+export interface SocialProfile {
+  userId: string;
+  username: string;
+  displayName?: string;
+  bio?: string;
+  location?: string;
+  avatarUrl?: string;
+  favoriteGame?: string;
+  favoriteCard?: string;
+  instagram?: string;
+  discord?: string;
+  completionScore: number;
+  tradeCount: number;
+  wantedCount: number;
+  listingCount: number;
+  followersCount: number;
+  followingCount: number;
+  badges: string[];
+  joinedAt?: string;
+  updatedAt: string;
+}
+
+export interface PublicProfileDetail {
+  profile: SocialProfile;
+  tradeCards: InventoryEntry[];
+  wantedCards: CardWatch[];
+  listings: Listing[];
+  isFollowing?: boolean;
+}
+
+export interface TradeProposal {
+  id: string;
+  proposerId: string;
+  proposerHandle: string;
+  recipientId: string;
+  recipientHandle: string;
+  offeredInventoryIds: string[];
+  requestedInventoryIds: string[];
+  message?: string;
+  status: TradeProposalStatus;
+  proposerConfirmedAt?: string;
+  recipientConfirmedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Notification {

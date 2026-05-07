@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { AuctionListingCard } from "@/components/auction-listing-card";
 import { MarketListingCard } from "@/components/market-listing-card";
-import { listListings } from "@/lib/server/repository";
+import { listAuctions, listListings } from "@/lib/server/repository";
 import { getPokemonTypesForCardTitle } from "@/lib/server/pokeapi";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
@@ -10,6 +11,8 @@ import { ShoppingBag, Search } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/ui/cn";
+import { formatConditionEs } from "@/lib/shared/condition-labels";
+import type { CardCondition } from "@/lib/domain/types";
 
 export const dynamic = "force-dynamic";
 
@@ -17,20 +20,78 @@ const TABS = [
   { key: "all", label: "Todo" },
   { key: "cards", label: "Cartas" },
   { key: "packs", label: "Packs" },
+  { key: "auctions", label: "Subastas" },
 ] as const;
+
+const CONDITIONS: CardCondition[] = [
+  "mint",
+  "near_mint",
+  "lightly_played",
+  "moderately_played",
+  "heavily_played",
+  "damaged",
+];
+
+function isCondition(value: string): value is CardCondition {
+  return CONDITIONS.includes(value as CardCondition);
+}
+
+function getParamHref(
+  next: Record<string, string | undefined>,
+  current: Record<string, string>,
+) {
+  const params = new URLSearchParams();
+  Object.entries(current).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+  Object.entries(next).forEach(([key, value]) => {
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+  });
+  const query = params.toString();
+  return query ? `/market?${query}` : "/market";
+}
 
 export default async function MarketPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; q?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    q?: string;
+    condition?: string;
+    min?: string;
+    max?: string;
+    delivery?: string;
+    sort?: string;
+  }>;
 }) {
   const user = await getAuthenticatedUser();
-  const { tab = "all", q = "" } = await searchParams;
+  const {
+    tab = "all",
+    q = "",
+    condition = "",
+    min = "",
+    max = "",
+    delivery = "",
+    sort = "recent",
+  } = await searchParams;
   let listings: Awaited<ReturnType<typeof listListings>> = [];
+  let auctions: Awaited<ReturnType<typeof listAuctions>> = [];
   let loadError: string | null = null;
+  const activeTab = TABS.some((item) => item.key === tab) ? tab : "all";
+  const minPrice = Number(min);
+  const maxPrice = Number(max);
+  const hasMin = Number.isFinite(minPrice) && minPrice > 0;
+  const hasMax = Number.isFinite(maxPrice) && maxPrice > 0;
 
   try {
-    listings = await listListings({ onlyPublic: true });
+    [listings, auctions] = await Promise.all([
+      listListings({ onlyPublic: true }),
+      listAuctions({ onlyPublic: true }),
+    ]);
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Failed to load market listings.";
   }
@@ -42,12 +103,57 @@ export default async function MarketPage({
         .toLowerCase()
         .includes(query),
     );
+    auctions = auctions.filter((auction) =>
+      `${auction.cardName} ${auction.setName ?? ""}`.toLowerCase().includes(query),
+    );
   }
 
-  if (tab === "packs") {
+  if (condition && isCondition(condition)) {
+    listings = listings.filter((listing) => listing.condition === condition);
+    auctions = auctions.filter((auction) => auction.condition === condition);
+  }
+
+  if (hasMin) {
+    listings = listings.filter((listing) => listing.priceArs >= minPrice);
+    auctions = auctions.filter((auction) => auction.currentPriceArs >= minPrice);
+  }
+
+  if (hasMax) {
+    listings = listings.filter((listing) => listing.priceArs <= maxPrice);
+    auctions = auctions.filter((auction) => auction.currentPriceArs <= maxPrice);
+  }
+
+  if (delivery === "shipping") {
+    listings = listings.filter((listing) => listing.offersShipping);
+    auctions = auctions.filter((auction) => auction.offersShipping);
+  } else if (delivery === "pickup") {
+    listings = listings.filter((listing) => listing.offersPickup);
+    auctions = auctions.filter((auction) => auction.offersPickup);
+  }
+
+  if (activeTab === "packs") {
     listings = listings.filter((l) => l.listingType === "mystery_pack");
-  } else if (tab === "cards") {
+    auctions = [];
+  } else if (activeTab === "cards") {
     listings = listings.filter((l) => l.listingType !== "mystery_pack");
+    auctions = [];
+  } else if (activeTab === "auctions") {
+    listings = [];
+  }
+
+  if (sort === "price_asc") {
+    listings = [...listings].sort((a, b) => a.priceArs - b.priceArs);
+    auctions = [...auctions].sort((a, b) => a.currentPriceArs - b.currentPriceArs);
+  } else if (sort === "price_desc") {
+    listings = [...listings].sort((a, b) => b.priceArs - a.priceArs);
+    auctions = [...auctions].sort((a, b) => b.currentPriceArs - a.currentPriceArs);
+  } else {
+    listings = [...listings].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    auctions = [...auctions].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
   }
 
   const enriched = await Promise.all(
@@ -60,12 +166,23 @@ export default async function MarketPage({
     }),
   );
 
+  const total = enriched.length + auctions.length;
+  const currentParams = {
+    q,
+    condition,
+    min,
+    max,
+    delivery,
+    sort,
+    tab: activeTab,
+  };
+
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
       {!isSupabaseConfigured() && (
         <Card padding="md" className="border-[var(--color-warning)] bg-[var(--color-warning-soft)]">
           <p className="text-body-sm text-[var(--color-warning)]">
-            Configurá Supabase en producción para abrir el marketplace.
+            Configura Supabase en produccion para abrir el marketplace.
           </p>
         </Card>
       )}
@@ -76,17 +193,16 @@ export default async function MarketPage({
         </Card>
       )}
 
-      {/* ── Search header — sticky on mobile for thumb access ── */}
-      <header className="sticky top-0 z-10 -mx-3 bg-[var(--color-surface)]/95 px-3 py-3 backdrop-blur md:relative md:mx-0 md:rounded-[var(--radius-card)] md:bg-[var(--color-surface-elevated)] md:p-5 md:shadow-sm">
+      <header className="sticky top-14 z-10 -mx-3 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)]/95 px-3 py-3 backdrop-blur md:relative md:top-auto md:mx-0 md:rounded-[var(--radius-card)] md:border md:bg-[var(--color-surface-elevated)] md:p-5 md:shadow-sm">
         <h1 className="hidden text-h2 [font-family:var(--font-display)] md:block">
           Mercado
         </h1>
         <p className="mt-1 hidden text-body-sm text-[var(--color-ink-muted)] md:block">
-          Cartas y packs publicados por la comunidad. Pago seguro vía Mercado Pago.
+          Cartas, packs y subastas publicados por la comunidad.
         </p>
 
-        <form method="GET" className="mt-0 flex gap-2 md:mt-4">
-          <input type="hidden" name="tab" value={tab} />
+        <form method="GET" className="mt-0 space-y-3 md:mt-4">
+          <input type="hidden" name="tab" value={activeTab} />
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-subtle)]" />
             <Input
@@ -96,19 +212,55 @@ export default async function MarketPage({
               className="pl-9"
             />
           </div>
-          <Button type="submit" size="md">
-            Buscar
-          </Button>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr,1fr,1fr,1fr,auto]">
+            <select
+              name="condition"
+              defaultValue={condition}
+              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] px-3 text-body-sm text-[var(--color-ink)]"
+            >
+              <option value="">Todas las condiciones</option>
+              {CONDITIONS.map((item) => (
+                <option key={item} value={item}>
+                  {formatConditionEs(item)}
+                </option>
+              ))}
+            </select>
+            <select
+              name="delivery"
+              defaultValue={delivery}
+              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] px-3 text-body-sm text-[var(--color-ink)]"
+            >
+              <option value="">Envío o retiro</option>
+              <option value="shipping">Con envío</option>
+              <option value="pickup">Con retiro</option>
+            </select>
+            <div className="grid grid-cols-2 gap-2">
+              <Input name="min" defaultValue={min} type="number" min={1} placeholder="Min $" />
+              <Input name="max" defaultValue={max} type="number" min={1} placeholder="Max $" />
+            </div>
+            <select
+              name="sort"
+              defaultValue={sort}
+              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] px-3 text-body-sm text-[var(--color-ink)]"
+            >
+              <option value="recent">Más recientes</option>
+              <option value="price_asc">Menor precio</option>
+              <option value="price_desc">Mayor precio</option>
+            </select>
+            <Button type="submit" size="md">
+              Buscar
+            </Button>
+          </div>
         </form>
 
         <div className="mt-3 flex gap-1 overflow-x-auto">
           {TABS.map((t) => (
             <Link
               key={t.key}
-              href={`/market?tab=${t.key}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+              href={getParamHref({ tab: t.key }, currentParams)}
               className={cn(
                 "shrink-0 rounded-full px-4 py-1.5 text-[0.8125rem] font-medium transition-colors",
-                tab === t.key
+                activeTab === t.key
                   ? "bg-[var(--color-accent)] text-white"
                   : "bg-[var(--color-surface-elevated)] text-[var(--color-ink-muted)] hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent-strong)]",
               )}
@@ -119,14 +271,37 @@ export default async function MarketPage({
         </div>
       </header>
 
-      {/* ── Results count ── */}
+      <Card padding="md" className="border-dashed shadow-none">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-body-sm font-semibold text-[var(--color-ink)]">
+              Formatos del mercado
+            </p>
+            <p className="text-caption text-[var(--color-ink-muted)]">
+              Venta directa, Mystery Packs, subastas con pujas e intercambios desde perfiles.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {["Venta directa", "Mystery Packs", "Subastas", "Trades"].map((label) => (
+              <span
+                key={label}
+                className="rounded-full bg-[var(--color-accent-soft)] px-3 py-1 text-caption font-medium text-[var(--color-accent-strong)]"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </Card>
+
       <p className="text-caption text-[var(--color-ink-muted)]">
-        {enriched.length} {enriched.length === 1 ? "publicación" : "publicaciones"}
+        {total} {total === 1 ? "publicación" : "publicaciones"}
         {query && ` para "${q}"`}
+        {condition && isCondition(condition) ? ` · ${formatConditionEs(condition)}` : ""}
+        {delivery === "shipping" ? " · con envío" : delivery === "pickup" ? " · con retiro" : ""}
       </p>
 
-      {/* ── Grid ── */}
-      {enriched.length === 0 ? (
+      {total === 0 ? (
         <EmptyState
           icon={<ShoppingBag className="h-8 w-8" />}
           title="Sin publicaciones"
@@ -145,6 +320,13 @@ export default async function MarketPage({
         />
       ) : (
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+          {auctions.map((auction) => (
+            <AuctionListingCard
+              key={auction.id}
+              auction={auction}
+              isLoggedIn={Boolean(user)}
+            />
+          ))}
           {enriched.map(({ listing, pokemonTypes }) => (
             <MarketListingCard
               key={listing.id}

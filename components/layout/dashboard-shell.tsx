@@ -14,8 +14,8 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
       <TopBar user={user} />
       <div className="flex flex-1 md:flex-row">
         <DashboardSidebar />
-        <main className="flex-1 px-3 pb-24 pt-3 md:px-8 md:pb-12 md:pt-8">
-          <div className="mx-auto w-full max-w-6xl">{children}</div>
+        <main className="flex-1 px-4 pb-24 pt-4 md:px-6 md:pb-10 md:pt-6">
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
         </main>
       </div>
       <BottomNav />

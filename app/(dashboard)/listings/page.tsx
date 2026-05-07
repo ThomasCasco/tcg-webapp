@@ -55,6 +55,7 @@ export default async function ListingsPage() {
           <Link href="/inventory" className="underline">Inventario</Link> y tocá
           &quot;Publicar en Mercado&quot;. Acá podés publicar{" "}
           <strong>Mystery Packs</strong> o administrar las publicaciones existentes.
+          Subastas esta marcado como proximo formato, pero todavia no tiene pujas activas.
         </p>
       </Card>
 

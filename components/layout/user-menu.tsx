@@ -11,6 +11,7 @@ import { Avatar } from "@/components/ui/avatar";
 import {
   ChevronDown,
   User,
+  Users,
   Layers,
   Tag,
   Package,
@@ -28,6 +29,8 @@ type Props = {
 
 const items = [
   { href: "/account", label: "Mi cuenta", icon: User },
+  { href: "/profiles", label: "Perfiles", icon: Users },
+  { href: "/trade-proposals", label: "Propuestas de trade", icon: Scale },
   { href: "/inventory", label: "Inventario", icon: Layers },
   { href: "/listings", label: "Mis ventas", icon: Tag },
   { href: "/transactions", label: "Mis compras", icon: Package },
@@ -96,6 +99,17 @@ export function UserMenu({ username, email, onLogout }: Props) {
           </div>
 
           <ul className="py-1">
+            <li>
+              <Link
+                href={`/u/${username}`}
+                onClick={() => setOpen(false)}
+                role="menuitem"
+                className="flex items-center gap-3 px-3 py-2 text-body-sm text-[var(--color-ink)] hover:bg-[var(--color-accent-soft)]/40"
+              >
+                <User className="h-4 w-4 text-[var(--color-ink-muted)]" />
+                Ver mi perfil publico
+              </Link>
+            </li>
             {items.map(({ href, label, icon: Icon }) => (
               <li key={`${href}-${label}`}>
                 <Link

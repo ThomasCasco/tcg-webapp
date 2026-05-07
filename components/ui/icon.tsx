@@ -16,6 +16,7 @@ export {
   Eye,
   EyeOff,
   Filter,
+  Gavel,
   Heart,
   Home,
   ImagePlus,
@@ -30,6 +31,7 @@ export {
   Scale,
   Search,
   Settings,
+  ShieldCheck,
   ShoppingBag,
   Star,
   Tag,
@@ -38,6 +40,7 @@ export {
   Truck,
   Upload,
   User,
+  Users,
   Wallet,
   X,
 } from "lucide-react";

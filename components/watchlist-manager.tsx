@@ -41,6 +41,8 @@ export function WatchlistManager() {
     const payload = {
       query: String(form.get("query") ?? ""),
       maxPriceArs: Number(form.get("maxPriceArs") ?? 0) || undefined,
+      publicWanted: form.get("publicWanted") === "on",
+      notes: String(form.get("notes") ?? "").trim() || undefined,
     };
 
     setError(null);
@@ -72,7 +74,7 @@ export function WatchlistManager() {
     <div className="space-y-4">
       <Card padding="md">
         <p className="text-overline text-[var(--color-ink-subtle)]">Nueva alerta</p>
-        <form onSubmit={onSubmit} className="mt-3 flex flex-wrap items-end gap-3">
+        <form onSubmit={onSubmit} className="mt-3 grid gap-3 md:grid-cols-[1fr,10rem,auto] md:items-end">
           <div className="flex-1 min-w-[180px]">
             <FormField label="Avisame cuando alguien publique" htmlFor="query" required>
               <Input
@@ -92,6 +94,22 @@ export function WatchlistManager() {
                 type="number"
                 min={1}
                 placeholder="50000"
+              />
+            </FormField>
+          </div>
+          <div className="md:col-span-3">
+            <label className="flex cursor-pointer items-center gap-2 text-body-sm">
+              <input id="publicWanted" name="publicWanted" type="checkbox" defaultChecked />
+              Mostrar en mi perfil de trades
+            </label>
+          </div>
+          <div className="md:col-span-2">
+            <FormField label="Notas para otros usuarios (opcional)" htmlFor="notes">
+              <Input
+                id="notes"
+                name="notes"
+                maxLength={240}
+                placeholder="Priorizo near mint, acepto versiones alternativas"
               />
             </FormField>
           </div>
@@ -122,9 +140,17 @@ export function WatchlistManager() {
                 <p className="font-semibold text-[var(--color-ink)]">{watch.query}</p>
                 <p className="text-caption text-[var(--color-ink-muted)]">
                   {watch.maxPriceArs
-                    ? `Solo si precio ≤ ARS ${watch.maxPriceArs.toLocaleString("es-AR")}`
+                    ? `Solo si precio <= ARS ${watch.maxPriceArs.toLocaleString("es-AR")}`
                     : "Cualquier precio"}
                 </p>
+                {watch.publicWanted && (
+                  <p className="text-caption text-[var(--color-accent-strong)]">
+                    Visible en trades
+                  </p>
+                )}
+                {watch.notes && (
+                  <p className="text-caption text-[var(--color-ink-muted)]">{watch.notes}</p>
+                )}
               </div>
               <Button
                 type="button"

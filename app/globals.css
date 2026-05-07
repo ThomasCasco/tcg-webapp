@@ -2,21 +2,22 @@
 
 @theme {
   /* Surfaces */
-  --color-surface: #f5efdf;
-  --color-surface-elevated: #fffaf0;
-  --color-surface-overlay: rgba(255, 250, 240, 0.98);
+  --color-surface: #f7f7f3;
+  --color-surface-muted: #eef1ec;
+  --color-surface-elevated: #ffffff;
+  --color-surface-overlay: rgba(255, 255, 255, 0.98);
 
   /* Ink (text) */
-  --color-ink: #1f1b15;
-  --color-ink-muted: #5b5347;
-  --color-ink-subtle: #8a8174;
-  --color-ink-inverse: #fffaf0;
+  --color-ink: #1d211e;
+  --color-ink-muted: #59635d;
+  --color-ink-subtle: #818b85;
+  --color-ink-inverse: #ffffff;
 
   /* Borders */
-  --color-border: #d9cbb0;
-  --color-border-default: #d9cbb0;
-  --color-border-strong: #b8a986;
-  --color-border-subtle: #ece1c8;
+  --color-border: #d9ded8;
+  --color-border-default: #d9ded8;
+  --color-border-strong: #b5beb7;
+  --color-border-subtle: #e8ece7;
 
   /* Accent */
   --color-accent: #0f7a66;
@@ -39,15 +40,15 @@
 
   /* Radius */
   --radius-input: 0.5rem;
-  --radius-card: 1rem;
-  --radius-modal: 1.25rem;
+  --radius-card: 0.5rem;
+  --radius-modal: 0.75rem;
   --radius-pill: 9999px;
 
   /* Shadows */
-  --shadow-card-sm: 0 1px 2px rgba(31, 27, 21, 0.06), 0 1px 3px rgba(31, 27, 21, 0.04);
-  --shadow-card: 0 4px 12px rgba(31, 27, 21, 0.08), 0 2px 4px rgba(31, 27, 21, 0.04);
-  --shadow-card-lg: 0 16px 36px rgba(77, 55, 19, 0.1);
-  --shadow-overlay: 0 24px 60px rgba(31, 27, 21, 0.25);
+  --shadow-card-sm: 0 1px 2px rgba(29, 33, 30, 0.05);
+  --shadow-card: 0 1px 3px rgba(29, 33, 30, 0.08), 0 1px 2px rgba(29, 33, 30, 0.04);
+  --shadow-card-lg: 0 10px 24px rgba(29, 33, 30, 0.1);
+  --shadow-overlay: 0 24px 60px rgba(29, 33, 30, 0.22);
 }
 
 @layer base {
@@ -56,15 +57,91 @@
   }
   body {
     margin: 0;
-    background:
-      radial-gradient(circle at 14% 8%, #ffdca5 0%, transparent 30%),
-      radial-gradient(circle at 86% 0%, #b6e7dc 0%, transparent 26%),
-      linear-gradient(180deg, #f5efdf 0%, #efe4ce 100%);
+    background: var(--color-surface);
     color: var(--color-ink);
     font-family: var(--font-body), "Segoe UI", sans-serif;
   }
   a { color: inherit; }
   .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+
+  .card {
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-card);
+    background: var(--color-surface-elevated);
+    box-shadow: var(--shadow-card);
+  }
+
+  .muted { color: var(--color-ink-muted); }
+  .subtle { color: var(--color-ink-subtle); }
+  .eyebrow {
+    color: var(--color-ink-subtle);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 1.75rem;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    color: var(--color-ink-muted);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .chip-accent {
+    border-color: transparent;
+    background: var(--color-accent-soft);
+    color: var(--color-accent-strong);
+  }
+  .chip-success {
+    border-color: transparent;
+    background: var(--color-success-soft);
+    color: var(--color-success);
+  }
+  .chip-warning {
+    border-color: transparent;
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
+  }
+  .chip-info {
+    border-color: transparent;
+    background: var(--color-info-soft);
+    color: var(--color-info);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-input);
+    font-weight: 600;
+    transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+  }
+  .btn-sm {
+    min-height: 2.25rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+  .btn-primary {
+    min-height: 2.75rem;
+    background: var(--color-accent);
+    color: var(--color-ink-inverse);
+    padding: 0.625rem 1rem;
+  }
+  .btn-primary:hover { background: var(--color-accent-strong); }
+  .btn-ghost {
+    color: var(--color-ink);
+  }
+  .btn-ghost:hover { background: color-mix(in srgb, var(--color-ink) 5%, transparent); }
 }
 
 @utility text-display-lg { font-family: var(--font-display); font-size: 3rem; line-height: 1.05; letter-spacing: 0.01em; }

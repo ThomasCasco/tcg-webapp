@@ -30,7 +30,11 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
       className="group flex flex-col overflow-hidden"
     >
       {/* ── Photo (3:4 aspect, photo-forward) ── */}
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[var(--color-surface-elevated)]">
+      <Link
+        href={`/market/${listing.id}`}
+        className="relative block aspect-[3/4] w-full overflow-hidden bg-[var(--color-surface-elevated)]"
+        aria-label={`Ver ${listing.cardName}`}
+      >
         {listing.imageUrl && !isPack ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
@@ -40,7 +44,7 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
             loading="lazy"
           />
         ) : isPack ? (
-          <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[var(--color-accent)] via-rose-500 to-purple-600 text-center">
+          <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[var(--color-accent)] via-[#2b67a0] to-[#7a3f91] text-center">
             <div>
               <p className="text-overline text-white/80">Pack sorpresa</p>
               <p className="mt-1 px-3 text-sm font-bold uppercase leading-tight tracking-wide text-white">
@@ -74,16 +78,18 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
             </Chip>
           </div>
         )}
-      </div>
+      </Link>
 
       {/* ── Body ── */}
       <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <p className="text-[1.0625rem] font-bold leading-tight text-[var(--color-ink)]">
-          {formattedPrice}
-        </p>
-        <h3 className="line-clamp-2 text-body-sm font-medium text-[var(--color-ink)]">
-          {listing.cardName}
-        </h3>
+        <Link href={`/market/${listing.id}`} className="group/link">
+          <p className="text-[1.0625rem] font-bold leading-tight text-[var(--color-ink)] group-hover/link:text-[var(--color-accent-strong)]">
+            {formattedPrice}
+          </p>
+          <h3 className="mt-1 line-clamp-2 text-body-sm font-medium text-[var(--color-ink)] group-hover/link:underline">
+            {listing.cardName}
+          </h3>
+        </Link>
         <p className="truncate text-caption text-[var(--color-ink-muted)]">
           {isPack ? `Pack · ${listing.packTheme ?? "Mix"}` : listing.setName}
         </p>

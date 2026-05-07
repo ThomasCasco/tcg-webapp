@@ -41,7 +41,10 @@ export function TopBar({ user }: Props) {
     else router.push("/market");
   }
 
-  const showSearch = !pathname?.startsWith("/login") && !pathname?.startsWith("/register");
+  const showSearch =
+    !pathname?.startsWith("/login") &&
+    !pathname?.startsWith("/register") &&
+    pathname !== "/market";
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)]/95 backdrop-blur">
@@ -63,7 +66,7 @@ export function TopBar({ user }: Props) {
         {showSearch && (
           <form
             onSubmit={onSearch}
-            className="flex flex-1 items-center"
+            className="hidden flex-1 items-center md:flex"
             role="search"
           >
             <div className="relative flex-1">
@@ -86,6 +89,44 @@ export function TopBar({ user }: Props) {
         )}
 
         {/* ── Actions ── */}
+        {showSearch && (
+          <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegacion publica">
+            <Link
+              href="/market"
+              className={cn(
+                "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
+                pathname === "/market"
+                  ? "bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]"
+                  : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
+              )}
+            >
+              Mercado
+            </Link>
+            <Link
+              href="/trades"
+              className={cn(
+                "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
+                pathname === "/trades"
+                  ? "bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]"
+                  : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
+              )}
+            >
+              Trades
+            </Link>
+            <Link
+              href="/profiles"
+              className={cn(
+                "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
+                pathname === "/profiles"
+                  ? "bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]"
+                  : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
+              )}
+            >
+              Perfiles
+            </Link>
+          </nav>
+        )}
+
         <div className="flex shrink-0 items-center gap-1 md:gap-2">
           {user ? (
             <>

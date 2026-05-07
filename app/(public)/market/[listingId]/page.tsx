@@ -7,6 +7,17 @@ import { getListingById } from "@/lib/server/repository";
 import { getPokemonTypesForCardTitle } from "@/lib/server/pokeapi";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { fetchCatalogCardById } from "@/lib/server/tcgdex";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Chip } from "@/components/ui/chip";
+import {
+  ArrowLeft,
+  CheckCircle,
+  CreditCard,
+  Package,
+  ShieldCheck,
+  Truck,
+} from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +31,14 @@ function getChipTextColor(hex: string): string {
   return luminance > 0.64 ? "#0f172a" : "#ffffff";
 }
 
-const statusMeta: Record<string, { label: string; className: string }> = {
-  active: { label: "Activa", className: "chip chip-success" },
-  pending_payment: { label: "Pago pendiente", className: "chip chip-warning" },
-  sold: { label: "Vendida", className: "chip" },
-  cancelled: { label: "Cancelada", className: "chip" },
+const statusMeta: Record<
+  string,
+  { label: string; variant: "default" | "success" | "warning" }
+> = {
+  active: { label: "Activa", variant: "success" },
+  pending_payment: { label: "Pago pendiente", variant: "warning" },
+  sold: { label: "Vendida", variant: "default" },
+  cancelled: { label: "Cancelada", variant: "default" },
 };
 
 export default async function ListingDetailPage({
@@ -36,53 +50,55 @@ export default async function ListingDetailPage({
   const { listingId } = await params;
   const listing = await getListingById(listingId);
   if (!listing) notFound();
+
   const catalog = listing.catalogCardId
     ? await fetchCatalogCardById(listing.catalogCardId).catch(() => null)
     : null;
   const image = listing.imageUrl ?? catalog?.imageLarge ?? catalog?.imageSmall ?? null;
-
   const isPack = listing.listingType === "mystery_pack";
   const pokemonTypes = isPack
     ? null
     : await getPokemonTypesForCardTitle(listing.cardName);
-  const status = statusMeta[listing.status] ?? { label: listing.status, className: "chip" };
+  const status = statusMeta[listing.status] ?? {
+    label: listing.status,
+    variant: "default" as const,
+  };
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 py-6 md:py-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-6 md:py-8">
       <div>
         <Link
           href="/market"
-          className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-strong)]"
+          className="inline-flex items-center gap-1 text-body-sm font-semibold text-[var(--color-accent-strong)] hover:underline"
         >
-          ← Volver al mercado
+          <ArrowLeft className="h-4 w-4" />
+          Volver al mercado
         </Link>
       </div>
 
-      <section className="card overflow-hidden">
-        <div className="grid gap-0 md:grid-cols-[minmax(260px,340px)_1fr]">
-          <div className="relative aspect-[3/4] w-full overflow-hidden bg-[var(--color-surface-muted)] md:aspect-auto md:h-full">
+      <Card as="section" padding="none" className="overflow-hidden">
+        <div className="grid gap-0 md:grid-cols-[minmax(280px,380px)_1fr]">
+          <div className="relative aspect-[3/4] w-full overflow-hidden bg-[var(--color-surface-muted)] md:aspect-auto md:min-h-[520px]">
             {image && !isPack ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={image}
                 alt={listing.cardName}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain p-4"
               />
             ) : isPack ? (
-              <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[var(--color-accent)] via-[#8b5cf6] to-[var(--color-info)] p-6 text-white">
+              <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[var(--color-accent)] via-[#2b67a0] to-[#7a3f91] p-6 text-white">
                 <div className="text-center">
-                  <p className="text-6xl">🎴</p>
-                  <p className="mt-3 text-sm font-bold uppercase tracking-widest">
-                    Mystery Pack
-                  </p>
-                  <p className="text-xs opacity-85">{listing.packCardCount ?? "?"} cartas</p>
+                  <Package className="mx-auto h-14 w-14" />
+                  <p className="mt-4 text-overline text-white/80">Mystery Pack</p>
+                  <p className="mt-1 text-h3">{listing.packCardCount ?? "?"} cartas</p>
                 </div>
               </div>
             ) : (
-              <div className="grid h-full w-full place-items-center subtle">
+              <div className="grid h-full w-full place-items-center text-[var(--color-ink-subtle)]">
                 <div className="text-center">
-                  <p className="text-5xl opacity-30">🃏</p>
-                  <p className="mt-2 text-xs uppercase tracking-widest">Sin foto</p>
+                  <Package className="mx-auto h-12 w-12 opacity-40" />
+                  <p className="mt-2 text-overline">Sin foto</p>
                 </div>
               </div>
             )}
@@ -91,54 +107,63 @@ export default async function ListingDetailPage({
           <div className="flex flex-col gap-4 p-6 md:p-8">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <p className="eyebrow">
+                <p className="text-overline text-[var(--color-ink-subtle)]">
                   {isPack ? "Mystery pack" : listing.setName || "Set sin especificar"}
                 </p>
-                <h1 className="mt-1 text-3xl font-bold tracking-tight md:text-4xl">
+                <h1 className="mt-1 text-h1 [font-family:var(--font-display)] md:text-display-md">
                   {listing.cardName}
                 </h1>
               </div>
-              <span className={status.className}>{status.label}</span>
+              <Chip variant={status.variant}>{status.label}</Chip>
             </div>
 
             {!isPack ? (
-              <p className="text-sm muted">Condición: {formatConditionEs(listing.condition)}</p>
+              <p className="text-body-sm text-[var(--color-ink-muted)]">
+                Condición:{" "}
+                <strong className="text-[var(--color-ink)]">
+                  {formatConditionEs(listing.condition)}
+                </strong>
+              </p>
             ) : null}
 
             {pokemonTypes && pokemonTypes.length > 0 ? (
               <div className="flex flex-wrap gap-1">
-                {pokemonTypes.map((t) => (
+                {pokemonTypes.map((type) => (
                   <span
-                    key={t.name}
+                    key={type.name}
                     className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold"
-                    style={{ backgroundColor: t.color, color: getChipTextColor(t.color) }}
+                    style={{
+                      backgroundColor: type.color,
+                      color: getChipTextColor(type.color),
+                    }}
                   >
-                    {t.labelEs}
+                    {type.labelEs}
                   </span>
                 ))}
               </div>
             ) : null}
 
-            <div className="rounded-xl bg-[var(--color-surface-muted)] p-4">
-              <p className="eyebrow">Precio</p>
+            <div className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-4">
+              <p className="text-overline text-[var(--color-ink-subtle)]">Precio</p>
               <p className="mt-1 text-3xl font-bold tracking-tight">
                 ARS {listing.priceArs.toLocaleString("es-AR")}
               </p>
               {catalog?.marketPriceEur ? (
-                <div className="mt-2 space-y-0.5 text-xs muted">
+                <div className="mt-2 space-y-0.5 text-caption text-[var(--color-ink-muted)]">
                   <p className="font-medium">Referencia internacional:</p>
                   <p>EUR {catalog.marketPriceEur.toFixed(2)} · Cardmarket</p>
                 </div>
               ) : null}
             </div>
 
-            <div className="grid gap-3 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="subtle">Vendedor:</span>
+            <div className="grid gap-3 text-body-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[var(--color-ink-subtle)]">Vendedor:</span>
                 <span className="font-semibold">@{listing.sellerHandle}</span>
+                <Chip size="sm" variant="info">Perfil activo</Chip>
               </div>
               {catalog ? (
-                <div className="text-xs muted">
+                <div className="text-caption text-[var(--color-ink-muted)]">
                   {catalog.setName || listing.setName}
                   {catalog.number ? ` · Nº ${catalog.number}` : ""}
                   {catalog.setId ? ` · Set ${catalog.setId}` : ""}
@@ -151,14 +176,16 @@ export default async function ListingDetailPage({
                 user ? (
                   <ReserveListingButton listingId={listing.id} />
                 ) : (
-                  <Link href="/login" className="btn btn-primary">
-                    Iniciá sesión para reservar
-                  </Link>
+                  <Button asChild>
+                    <Link href="/login">Iniciá sesión para reservar</Link>
+                  </Button>
                 )
               ) : (
-                <span className="chip">
-                  {listing.status === "pending_payment" ? "Reservado (pago pendiente)" : listing.status}
-                </span>
+                <Chip>
+                  {listing.status === "pending_payment"
+                    ? "Reservado (pago pendiente)"
+                    : listing.status}
+                </Chip>
               )}
               {user && listing.status === "active" ? (
                 <WatchFromListingButton
@@ -169,46 +196,60 @@ export default async function ListingDetailPage({
             </div>
           </div>
         </div>
-      </section>
+      </Card>
 
-      <section className="card p-5">
-        <p className="eyebrow">Entrega</p>
+      <Card as="section" padding="lg">
+        <div className="flex items-center gap-2">
+          <Truck className="h-5 w-5 text-[var(--color-accent-strong)]" />
+          <p className="text-overline text-[var(--color-ink-subtle)]">Entrega</p>
+        </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {listing.offersPickup ? <span className="chip chip-info">Retiro en persona</span> : null}
-          {listing.offersShipping ? <span className="chip chip-accent">Envío</span> : null}
+          {listing.offersPickup ? <Chip variant="info">Retiro en persona</Chip> : null}
+          {listing.offersShipping ? <Chip variant="accent">Envío</Chip> : null}
           {!listing.offersPickup && !listing.offersShipping ? (
-            <span className="chip chip-warning">A coordinar con el vendedor</span>
+            <Chip variant="warning">A coordinar con el vendedor</Chip>
           ) : null}
         </div>
         {listing.deliveryAreaNotes ? (
-          <p className="mt-3 whitespace-pre-wrap text-sm muted">{listing.deliveryAreaNotes}</p>
+          <p className="mt-3 whitespace-pre-wrap text-body-sm text-[var(--color-ink-muted)]">
+            {listing.deliveryAreaNotes}
+          </p>
         ) : (
-          <p className="mt-3 text-sm subtle">
+          <p className="mt-3 text-body-sm text-[var(--color-ink-subtle)]">
             El vendedor no cargó detalle de zona. Coordinalo por chat antes de pagar.
           </p>
         )}
-      </section>
+      </Card>
 
-      <section className="card p-5">
-        <p className="eyebrow">Cómo funciona la compra</p>
+      <Card as="section" padding="lg">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-[var(--color-accent-strong)]" />
+          <p className="text-overline text-[var(--color-ink-subtle)]">Compra segura</p>
+        </div>
         <ol className="mt-3 grid gap-3 md:grid-cols-3">
-          <li className="rounded-lg bg-[var(--color-surface-muted)] p-4">
-            <p className="text-2xl font-bold text-[var(--color-accent)]">01</p>
-            <p className="mt-1 text-sm font-semibold">Reservás</p>
-            <p className="mt-0.5 text-xs muted">La publicación queda en pago pendiente a tu nombre.</p>
+          <li className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-4">
+            <CheckCircle className="h-5 w-5 text-[var(--color-accent)]" />
+            <p className="mt-2 text-body-sm font-semibold">Reservás</p>
+            <p className="mt-0.5 text-caption text-[var(--color-ink-muted)]">
+              La publicación queda en pago pendiente a tu nombre.
+            </p>
           </li>
-          <li className="rounded-lg bg-[var(--color-surface-muted)] p-4">
-            <p className="text-2xl font-bold text-[var(--color-accent)]">02</p>
-            <p className="mt-1 text-sm font-semibold">Pagás al vendedor</p>
-            <p className="mt-0.5 text-xs muted">Mercado Pago, transferencia o lo que acuerden.</p>
+          <li className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-4">
+            <CreditCard className="h-5 w-5 text-[var(--color-accent)]" />
+            <p className="mt-2 text-body-sm font-semibold">Pagás al vendedor</p>
+            <p className="mt-0.5 text-caption text-[var(--color-ink-muted)]">
+              Mercado Pago automático si está conectado, o coordinación P2P.
+            </p>
           </li>
-          <li className="rounded-lg bg-[var(--color-surface-muted)] p-4">
-            <p className="text-2xl font-bold text-[var(--color-accent)]">03</p>
-            <p className="mt-1 text-sm font-semibold">Cargás el comprobante</p>
-            <p className="mt-0.5 text-xs muted">En Operaciones para verificar y cerrar la venta.</p>
+          <li className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-4">
+            <Truck className="h-5 w-5 text-[var(--color-accent)]" />
+            <p className="mt-2 text-body-sm font-semibold">Seguís la entrega</p>
+            <p className="mt-0.5 text-caption text-[var(--color-ink-muted)]">
+              Chat, tracking y disputa quedan asociados a la operación.
+            </p>
           </li>
         </ol>
-      </section>
+      </Card>
     </main>
   );
 }

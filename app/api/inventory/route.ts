@@ -25,6 +25,8 @@ type CreateInventoryPayload = {
   condition?: CardCondition;
   quantity?: number;
   askingPriceArs?: number;
+  availableForTrade?: boolean;
+  tradeNotes?: string;
 };
 
 type UpdateInventoryPayload = {
@@ -32,6 +34,8 @@ type UpdateInventoryPayload = {
   quantity?: number;
   askingPriceArs?: number;
   imageUrl?: string | null;
+  availableForTrade?: boolean;
+  tradeNotes?: string | null;
 };
 
 type DeleteInventoryPayload = {
@@ -126,6 +130,8 @@ export async function POST(request: Request) {
       condition: payload.condition,
       quantity,
       askingPriceArs: payload.askingPriceArs,
+      availableForTrade: Boolean(payload.availableForTrade),
+      tradeNotes: payload.tradeNotes?.trim() || undefined,
     });
 
     return Response.json({ item }, { status: 201 });
@@ -164,6 +170,8 @@ export async function PATCH(request: Request) {
       quantity: payload.quantity,
       askingPriceArs: payload.askingPriceArs,
       imageUrl: payload.imageUrl,
+      availableForTrade: payload.availableForTrade,
+      tradeNotes: payload.tradeNotes,
     });
 
     return Response.json({ item });

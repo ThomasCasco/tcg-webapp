@@ -8,6 +8,8 @@ import {
 type CreateWatchPayload = {
   query?: string;
   maxPriceArs?: number;
+  publicWanted?: boolean;
+  notes?: string;
 };
 
 type DeleteWatchPayload = {
@@ -59,6 +61,8 @@ export async function POST(request: Request) {
         typeof payload.maxPriceArs === "number" && payload.maxPriceArs > 0
           ? Math.round(payload.maxPriceArs)
           : undefined,
+      publicWanted: Boolean(payload.publicWanted),
+      notes: payload.notes?.trim() || undefined,
     });
     return Response.json({ watch }, { status: 201 });
   } catch (error) {

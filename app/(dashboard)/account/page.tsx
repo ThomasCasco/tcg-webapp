@@ -1,7 +1,12 @@
 import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/server/auth";
-import { getSellerPaymentProfile, getMpConnectionStatus } from "@/lib/server/repository";
+import {
+  getSellerPaymentProfile,
+  getMpConnectionStatus,
+  getSocialProfile,
+} from "@/lib/server/repository";
 import { SellerPaymentProfileForm } from "@/components/seller-payment-profile-form";
+import { SocialProfileForm } from "@/components/social-profile-form";
 import { MpConnectButton } from "@/components/mp-connect-button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
@@ -48,12 +53,16 @@ export default async function AccountPage({
   }
 
   let paymentProfile: Awaited<ReturnType<typeof getSellerPaymentProfile>> | null = null;
+  let socialProfile: Awaited<ReturnType<typeof getSocialProfile>> | null = null;
   let profileError: string | null = null;
 
   try {
-    paymentProfile = await getSellerPaymentProfile(user.id);
+    [paymentProfile, socialProfile] = await Promise.all([
+      getSellerPaymentProfile(user.id),
+      getSocialProfile(user.id),
+    ]);
   } catch (err) {
-    profileError = err instanceof Error ? err.message : "Error al cargar perfil de cobro.";
+    profileError = err instanceof Error ? err.message : "Error al cargar perfil.";
   }
 
   return (
@@ -70,6 +79,14 @@ export default async function AccountPage({
       </Card>
 
       {/* ── Mercado Pago ── */}
+      {profileError ? (
+        <Card as="article" padding="md" className="border-rose-300 bg-rose-50">
+          <p className="text-sm text-rose-900">Error: {profileError}</p>
+        </Card>
+      ) : null}
+
+      {socialProfile ? <SocialProfileForm initialProfile={socialProfile} /> : null}
+
       <Card padding="lg">
         <div className="mb-4 flex items-center gap-2">
           <Wallet className="h-5 w-5 text-[var(--color-accent-strong)]" />
@@ -97,11 +114,7 @@ export default async function AccountPage({
           (transferencia, efectivo, etc.). Opcional si ya tenés Mercado Pago conectado.
         </p>
 
-        {profileError ? (
-          <p className="text-body-sm text-[var(--color-danger)]">{profileError}</p>
-        ) : paymentProfile ? (
-          <SellerPaymentProfileForm initialProfile={paymentProfile} />
-        ) : null}
+        {paymentProfile ? <SellerPaymentProfileForm initialProfile={paymentProfile} /> : null}
       </Card>
 
       {/* ── Account info ── */}

@@ -104,6 +104,15 @@ export function RegisterForm() {
           >
             Términos y Condiciones
           </Link>
+          {" "}y la{" "}
+          <Link
+            href="/privacy"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[var(--color-accent-strong)] underline"
+          >
+            Política de Privacidad
+          </Link>
           . Entiendo que la plataforma es un clasificado y NO custodia fondos.
         </span>
       </label>

@@ -47,7 +47,8 @@ export default async function InventoryPage() {
         <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
           Cargá acá las cartas que tenés físicamente. Es tu stock privado.
           Cuando estés listo, poné un precio y tocá <strong>Publicar en Mercado</strong> para
-          que otros usuarios puedan comprarla.
+          que otros usuarios puedan comprarla. Las subastas aparecen como proximo formato,
+          pero todavia no aceptan pujas.
         </p>
       </Card>
 
@@ -65,8 +66,6 @@ export default async function InventoryPage() {
         </Card>
       ) : null}
 
-      <InventoryCreateForm />
-
       <div className="grid gap-3 md:grid-cols-3">
         <Card as="article" padding="md">
           <p className="text-overline text-[var(--color-ink-subtle)]">Entradas</p>
@@ -83,6 +82,8 @@ export default async function InventoryPage() {
           </p>
         </Card>
       </div>
+
+      <InventoryCreateForm defaultOpen={inventoryEntries.length === 0} />
 
       {inventoryEntries.length === 0 ? (
         <EmptyState

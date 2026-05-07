@@ -14,14 +14,14 @@ import { Chip } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/ui/form-field";
-import { Truck, Check, Scale, MessageCircle } from "@/components/ui/icon";
+import { Truck, Check, Scale, MessageCircle, CreditCard } from "@/components/ui/icon";
 
 type Props = {
   transaction: PaymentEventWithListing;
   viewerUserId: string;
 };
 
-type Panel = "none" | "ship" | "deliver" | "dispute" | "chat";
+type Panel = "none" | "verify" | "ship" | "deliver" | "dispute" | "chat";
 
 export function TransactionCard({ transaction, viewerUserId }: Props) {
   const router = useRouter();
@@ -29,6 +29,7 @@ export function TransactionCard({ transaction, viewerUserId }: Props) {
   const isPaid = transaction.verificationStatus === "verified";
 
   const [panel, setPanel] = useState<Panel>("none");
+  const [providerPaymentId, setProviderPaymentId] = useState(transaction.providerPaymentId ?? "");
   const [tracking, setTracking] = useState("");
   const [disputeReason, setDisputeReason] = useState("");
   const [disputeDetails, setDisputeDetails] = useState("");
@@ -52,6 +53,42 @@ export function TransactionCard({ transaction, viewerUserId }: Props) {
       router.refresh();
     } catch (err) {
       setMsg({ kind: "err", text: err instanceof Error ? err.message : "Error." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyPayment() {
+    if (providerPaymentId.trim().length < 4) {
+      setMsg({ kind: "err", text: "Ingresá un ID de pago válido." });
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/payments/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transactionId: transaction.transactionId,
+          providerPaymentId: providerPaymentId.trim(),
+        }),
+      });
+      const data = (await res.json()) as {
+        error?: string;
+        requiresManualCheck?: boolean;
+      };
+      if (!res.ok) throw new Error(data.error ?? "No se pudo verificar el pago.");
+      setMsg({
+        kind: "ok",
+        text: data.requiresManualCheck
+          ? "Pago enviado a revisión manual."
+          : "Pago verificado. Ya podés coordinar la entrega.",
+      });
+      setPanel("none");
+      router.refresh();
+    } catch (err) {
+      setMsg({ kind: "err", text: err instanceof Error ? err.message : "Error al verificar." });
     } finally {
       setBusy(false);
     }
@@ -144,6 +181,27 @@ export function TransactionCard({ transaction, viewerUserId }: Props) {
         )}
       </div>
 
+      {!isPaid && isBuyer && (
+        <div className="mt-4 rounded-[var(--radius-card)] border border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)] p-3">
+          <p className="text-body-sm font-semibold text-[var(--color-ink)]">
+            Pago pendiente de verificación
+          </p>
+          <p className="mt-1 text-caption text-[var(--color-ink-muted)]">
+            Si pagaste por Mercado Pago o transferencia, cargá el ID/comprobante para cerrar la compra.
+          </p>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="mt-3"
+            onClick={() => setPanel(panel === "verify" ? "none" : "verify")}
+            disabled={busy}
+          >
+            <CreditCard className="h-4 w-4" />
+            Verificar pago
+          </Button>
+        </div>
+      )}
+
       {/* ── Inline actions (only when payment verified) ── */}
       {isPaid && (
         <div className="mt-4 flex flex-wrap gap-2">
@@ -193,6 +251,32 @@ export function TransactionCard({ transaction, viewerUserId }: Props) {
           >
             <MessageCircle className="h-4 w-4" />
             Chat
+          </Button>
+        </div>
+      )}
+
+      {panel === "verify" && (
+        <div className="mt-4 space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4">
+          <FormField
+            label="ID de pago / comprobante"
+            htmlFor={`payment-id-${transaction.transactionId}`}
+            hint="En Mercado Pago suele figurar como número de operación."
+            required
+          >
+            <Input
+              id={`payment-id-${transaction.transactionId}`}
+              value={providerPaymentId}
+              onChange={(e) => setProviderPaymentId(e.target.value)}
+              placeholder="123456789"
+            />
+          </FormField>
+          <Button
+            size="sm"
+            onClick={verifyPayment}
+            disabled={busy}
+            loading={busy}
+          >
+            Verificar pago
           </Button>
         </div>
       )}

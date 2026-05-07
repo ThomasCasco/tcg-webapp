@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import type { ReactNode } from "react";
 import type { CardCondition } from "@/lib/domain/types";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { Card } from "@/components/ui/card";
@@ -10,6 +11,8 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Gavel, Package, Tag } from "@/components/ui/icon";
+import { cn } from "@/lib/ui/cn";
 
 const conditions: CardCondition[] = [
   "mint",
@@ -89,17 +92,44 @@ export function ListingCreateForm() {
 
   return (
     <Card padding="md">
-      <div>
-        <p className="text-overline text-[var(--color-ink-subtle)]">Nuevo Mystery Pack</p>
-        <p className="mt-1 text-body-sm text-[var(--color-ink-muted)]">
-          Un pack sorpresa con varias cartas a un precio fijo. Para publicar una{" "}
-          <strong>carta individual</strong>, cargala primero en{" "}
-          <a href="/inventory" className="underline">Inventario</a> y tocá{" "}
-          &quot;Publicar en Mercado&quot;.
-        </p>
+      <div className="mb-4 grid gap-2 md:grid-cols-3">
+        <FormatOption
+          icon={<Tag className="h-4 w-4" />}
+          title="Carta individual"
+          body="Se crea desde Inventario con Publicar en Mercado."
+          status="Activo"
+        />
+        <FormatOption
+          icon={<Package className="h-4 w-4" />}
+          title="Mystery Pack"
+          body="Disponible aca para armar packs con precio fijo."
+          status="Activo"
+        />
+        <FormatOption
+          icon={<Gavel className="h-4 w-4" />}
+          title="Subasta"
+          body="Se crea desde Inventario con pujas, cierre y ganador."
+          status="Activo"
+        />
       </div>
 
-      <form onSubmit={onSubmit} className="mt-4 space-y-4">
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
+          <span>
+            <span className="text-overline text-[var(--color-ink-subtle)]">Nuevo Mystery Pack</span>
+            <span className="mt-1 block text-body-sm text-[var(--color-ink-muted)]">
+              Publicá packs sorpresa. Las cartas individuales se publican desde Inventario.
+            </span>
+          </span>
+          <span className="shrink-0 text-caption font-medium text-[var(--color-accent-strong)] group-open:hidden">
+            Abrir
+          </span>
+          <span className="hidden shrink-0 text-caption font-medium text-[var(--color-ink-muted)] group-open:inline">
+            Cerrar
+          </span>
+        </summary>
+
+        <form onSubmit={onSubmit} className="mt-4 space-y-4">
         <div className="grid gap-3 md:grid-cols-2">
           <div className="md:col-span-2">
             <FormField label="Título del pack" htmlFor="packTitle" required>
@@ -222,7 +252,44 @@ export function ListingCreateForm() {
         {success ? (
           <p role="status" className="text-body-sm text-[var(--color-success)]">{success}</p>
         ) : null}
-      </form>
+        </form>
+      </details>
     </Card>
+  );
+}
+
+function FormatOption({
+  icon,
+  title,
+  body,
+  status,
+  muted = false,
+}: {
+  icon: ReactNode;
+  title: string;
+  body: string;
+  status: string;
+  muted?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[var(--radius-card)] border p-3",
+        muted
+          ? "border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)]"
+          : "border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)]",
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-2 text-body-sm font-semibold text-[var(--color-ink)]">
+          {icon}
+          {title}
+        </span>
+        <span className="rounded-full bg-[var(--color-surface)] px-2 py-0.5 text-[0.6875rem] font-medium text-[var(--color-ink-subtle)]">
+          {status}
+        </span>
+      </div>
+      <p className="mt-2 text-caption text-[var(--color-ink-muted)]">{body}</p>
+    </div>
   );
 }

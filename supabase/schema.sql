@@ -3,6 +3,14 @@ create extension if not exists "pgcrypto";
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text not null unique,
+  display_name text,
+  bio text,
+  location text,
+  avatar_url text,
+  favorite_game text,
+  favorite_card text,
+  instagram text,
+  discord text,
   whatsapp text,
   payment_provider text not null default 'mercado_pago' check (
     payment_provider in ('mercado_pago', 'bank_transfer', 'cash', 'other')
@@ -76,6 +84,33 @@ create table if not exists public.reputation_events (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.profile_follows (
+  follower_id uuid not null references auth.users(id) on delete cascade,
+  following_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (follower_id, following_id),
+  check (follower_id <> following_id)
+);
+
+create table if not exists public.trade_proposals (
+  id uuid primary key default gen_random_uuid(),
+  proposer_id uuid not null references auth.users(id) on delete cascade,
+  proposer_handle text not null,
+  recipient_id uuid not null references auth.users(id) on delete cascade,
+  recipient_handle text not null,
+  offered_inventory_ids uuid[] not null default '{}'::uuid[],
+  requested_inventory_ids uuid[] not null default '{}'::uuid[],
+  message text,
+  status text not null default 'pending' check (
+    status in ('pending', 'accepted', 'completed', 'declined', 'cancelled')
+  ),
+  proposer_confirmed_at timestamptz,
+  recipient_confirmed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (proposer_id <> recipient_id)
+);
+
 create index if not exists idx_inventory_owner on public.inventory_cards(owner_id);
 create index if not exists idx_listings_seller_status on public.listings(seller_id, status);
 create index if not exists idx_listings_status on public.listings(status);
@@ -87,6 +122,8 @@ alter table public.inventory_cards enable row level security;
 alter table public.listings enable row level security;
 alter table public.transaction_events enable row level security;
 alter table public.reputation_events enable row level security;
+alter table if exists public.profile_follows enable row level security;
+alter table if exists public.trade_proposals enable row level security;
 
 create policy "profiles_select_self_or_public" on public.profiles
   for select using (auth.uid() = id or account_status = 'active');
@@ -114,6 +151,22 @@ create policy "tx_buyer_create" on public.transaction_events
 create policy "reputation_read_all" on public.reputation_events
   for select using (true);
 
+create policy "profile_follows_read_all" on public.profile_follows
+  for select using (true);
+
+create policy "profile_follows_owner_write" on public.profile_follows
+  for all using (auth.uid() = follower_id) with check (auth.uid() = follower_id);
+
+create policy "trade_proposals_parties_read" on public.trade_proposals
+  for select using (auth.uid() = proposer_id or auth.uid() = recipient_id);
+
+create policy "trade_proposals_proposer_create" on public.trade_proposals
+  for insert with check (auth.uid() = proposer_id);
+
+create policy "trade_proposals_parties_update" on public.trade_proposals
+  for update using (auth.uid() = proposer_id or auth.uid() = recipient_id)
+  with check (auth.uid() = proposer_id or auth.uid() = recipient_id);
+
 -- -----------------------------------------------------------------
 -- Public beta tables used by Next.js route handlers (no auth lock-in)
 -- -----------------------------------------------------------------
@@ -129,6 +182,8 @@ create table if not exists public.inventory_entries (
   ),
   quantity integer not null check (quantity > 0),
   asking_price_ars numeric(12, 2),
+  available_for_trade boolean not null default false,
+  trade_notes text,
   created_at timestamptz not null default now()
 );
 
@@ -187,6 +242,24 @@ create table if not exists public.dispute_events (
 alter table if exists public.inventory_entries
   add column if not exists owner_id uuid references auth.users(id) on delete set null;
 
+alter table if exists public.inventory_entries
+  add column if not exists available_for_trade boolean not null default false;
+
+alter table if exists public.inventory_entries
+  add column if not exists trade_notes text;
+
+alter table if exists public.card_watches
+  add column if not exists public_wanted boolean not null default true;
+
+alter table if exists public.card_watches
+  add column if not exists notes text;
+
+alter table if exists public.trade_proposals
+  add column if not exists proposer_confirmed_at timestamptz;
+
+alter table if exists public.trade_proposals
+  add column if not exists recipient_confirmed_at timestamptz;
+
 alter table if exists public.profiles
   add column if not exists payment_provider text not null default 'mercado_pago' check (
     payment_provider in ('mercado_pago', 'bank_transfer', 'cash', 'other')
@@ -197,6 +270,30 @@ alter table if exists public.profiles
 
 alter table if exists public.profiles
   add column if not exists payment_instructions text;
+
+alter table if exists public.profiles
+  add column if not exists display_name text;
+
+alter table if exists public.profiles
+  add column if not exists bio text;
+
+alter table if exists public.profiles
+  add column if not exists location text;
+
+alter table if exists public.profiles
+  add column if not exists avatar_url text;
+
+alter table if exists public.profiles
+  add column if not exists favorite_game text;
+
+alter table if exists public.profiles
+  add column if not exists favorite_card text;
+
+alter table if exists public.profiles
+  add column if not exists instagram text;
+
+alter table if exists public.profiles
+  add column if not exists discord text;
 
 alter table if exists public.market_listings
   add column if not exists seller_id uuid references auth.users(id) on delete set null;
@@ -214,6 +311,14 @@ alter table if exists public.payment_events
 
 create index if not exists idx_inventory_entries_seller on public.inventory_entries(seller_handle);
 create index if not exists idx_inventory_entries_owner on public.inventory_entries(owner_id);
+create index if not exists idx_inventory_entries_trade on public.inventory_entries(owner_id, created_at desc) where available_for_trade = true;
+create index if not exists idx_profiles_username_search on public.profiles(username);
+create index if not exists idx_profiles_updated on public.profiles(updated_at desc);
+create index if not exists idx_profile_follows_following on public.profile_follows(following_id, created_at desc);
+create index if not exists idx_profile_follows_follower on public.profile_follows(follower_id, created_at desc);
+create index if not exists idx_trade_proposals_proposer on public.trade_proposals(proposer_id, created_at desc);
+create index if not exists idx_trade_proposals_recipient on public.trade_proposals(recipient_id, created_at desc);
+create index if not exists idx_trade_proposals_status on public.trade_proposals(status);
 create index if not exists idx_market_listings_status on public.market_listings(status);
 create index if not exists idx_market_listings_seller on public.market_listings(seller_handle);
 create index if not exists idx_market_listings_seller_id on public.market_listings(seller_id);

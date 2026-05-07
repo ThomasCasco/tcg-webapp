@@ -22,7 +22,11 @@ const conditions: CardCondition[] = [
   "damaged",
 ];
 
-export function InventoryCreateForm() {
+type InventoryCreateFormProps = {
+  defaultOpen?: boolean;
+};
+
+export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +35,7 @@ export function InventoryCreateForm() {
   const [customName, setCustomName] = useState("");
   const [customSet, setCustomSet] = useState("");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [availableForTrade, setAvailableForTrade] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,6 +62,8 @@ export function InventoryCreateForm() {
       condition: String(form.get("condition") ?? "near_mint"),
       quantity: Number(form.get("quantity") ?? 1),
       askingPriceArs: Number(form.get("askingPriceArs") ?? 0) || undefined,
+      availableForTrade,
+      tradeNotes: String(form.get("tradeNotes") ?? "").trim() || undefined,
     };
 
     try {
@@ -77,6 +84,7 @@ export function InventoryCreateForm() {
       setCustomName("");
       setCustomSet("");
       setPhotoUrl(null);
+      setAvailableForTrade(false);
       router.refresh();
     } catch (submitError) {
       setError(
@@ -89,12 +97,21 @@ export function InventoryCreateForm() {
 
   return (
     <Card padding="lg">
-      <div className="flex items-center gap-2">
-        <Plus className="h-5 w-5 text-[var(--color-accent-strong)]" />
-        <h2 className="text-h3">Agregar carta al inventario</h2>
-      </div>
+      <details open={defaultOpen} className="group">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+          <span className="flex items-center gap-2">
+            <Plus className="h-5 w-5 text-[var(--color-accent-strong)]" />
+            <span className="text-h3">Agregar carta al inventario</span>
+          </span>
+          <span className="text-caption font-medium text-[var(--color-accent-strong)] group-open:hidden">
+            Abrir
+          </span>
+          <span className="hidden text-caption font-medium text-[var(--color-ink-muted)] group-open:inline">
+            Cerrar
+          </span>
+        </summary>
 
-      <form onSubmit={onSubmit} className="mt-5 space-y-5">
+        <form onSubmit={onSubmit} className="mt-5 space-y-5">
         {/* ── Card identity (catalog picker + manual fallback) ── */}
         <div className="space-y-2">
           <FormField label="Carta" htmlFor="card-picker">
@@ -167,6 +184,32 @@ export function InventoryCreateForm() {
           </div>
         </div>
 
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-3">
+          <label className="flex cursor-pointer items-center gap-2 text-body-sm font-medium">
+            <input
+              type="checkbox"
+              checked={availableForTrade}
+              onChange={(e) => setAvailableForTrade(e.target.checked)}
+            />
+            Disponible para trade
+          </label>
+          {availableForTrade && (
+            <FormField
+              label="Notas de trade"
+              htmlFor="tradeNotes"
+              hint="Opcional. Ej: busco Charizard, prefiero CABA, escucho ofertas."
+              className="mt-3"
+            >
+              <Input
+                id="tradeNotes"
+                name="tradeNotes"
+                maxLength={240}
+                placeholder="Busco cartas de Gengar o Mew"
+              />
+            </FormField>
+          )}
+        </div>
+
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" loading={loading} size="md">
             Agregar al inventario
@@ -182,7 +225,8 @@ export function InventoryCreateForm() {
             </p>
           )}
         </div>
-      </form>
+        </form>
+      </details>
     </Card>
   );
 }
