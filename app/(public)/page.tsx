@@ -7,11 +7,12 @@ import { listListings } from "@/lib/server/repository";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import {
-  Wallet,
-  ShoppingBag,
-  ImagePlus,
-  CheckCircle,
+  ArrowLeftRight,
   ArrowRight,
+  CheckCircle,
+  Search,
+  ShoppingBag,
+  Wallet,
 } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
@@ -23,40 +24,46 @@ export default async function HomePage() {
   if (isSupabaseConfigured()) {
     try {
       const all = await listListings({ statuses: ["active"], onlyPublic: true });
-      featured = all.slice(0, 8);
+      featured = all.filter((listing) => listing.listingType !== "mystery_pack").slice(0, 8);
     } catch {
-      // fail silently — landing still renders
+      // Landing still renders without listings.
     }
   }
 
   return (
     <div className="flex flex-col">
-      {/* ── Hero ── */}
-      <section className="relative overflow-hidden border-b border-[var(--color-border-subtle)] bg-gradient-to-br from-[var(--color-accent-soft)] via-[var(--color-surface)] to-[var(--color-surface-elevated)]">
+      <section className="relative overflow-hidden border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
         <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-12 md:grid-cols-[1.1fr,0.9fr] md:gap-16 md:py-20">
           <div className="flex flex-col justify-center">
             <Chip variant="accent" size="sm" className="self-start">
-              Argentina · Pokemon TCG
+              Pokemon TCG en Argentina
             </Chip>
             <h1 className="mt-4 text-display-md leading-[1.05] text-[var(--color-ink)] md:text-display-lg">
-              Comprá y vendé cartas{" "}
-              <span className="text-[var(--color-accent-strong)]">sin vueltas</span>.
+              Compra, vende e intercambia cartas{" "}
+              <span className="text-[var(--color-accent-strong)]">Pokemon</span>.
             </h1>
             <p className="mt-5 max-w-xl text-body-lg text-[var(--color-ink-muted)]">
-              Marketplace argentino de Pokémon TCG con pago automático por Mercado Pago,
-              comisión del 1 % y envío en todo el país.
+              Un mercado local para coleccionistas: publicaciones con precio en pesos,
+              trades entre usuarios y pagos integrados con Mercado Pago cuando el vendedor
+              lo tiene conectado.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <Link href="/market">
                   <ShoppingBag className="h-5 w-5" />
-                  Explorar mercado
+                  Ver mercado
                 </Link>
               </Button>
               <Button asChild variant="secondary" size="lg">
+                <Link href="/trades">
+                  <ArrowLeftRight className="h-4 w-4" />
+                  Ver trades
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" size="lg">
                 <Link href={user ? "/inventory" : "/register"}>
-                  Empezar a vender
+                  Cargar cartas
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
@@ -65,35 +72,63 @@ export default async function HomePage() {
             <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-caption text-[var(--color-ink-muted)]">
               <span className="inline-flex items-center gap-1.5">
                 <CheckCircle className="h-4 w-4 text-[var(--color-success)]" />
-                Pago seguro Mercado Pago
+                Pago con Mercado Pago
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CheckCircle className="h-4 w-4 text-[var(--color-success)]" />
-                Comisión 1 %
+                Precios en pesos
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CheckCircle className="h-4 w-4 text-[var(--color-success)]" />
-                Envío + retiro
+                Envio o retiro
               </span>
             </div>
           </div>
 
-          {/* Decorative card stack */}
-          <div className="relative hidden md:block">
-            <div className="absolute -right-4 top-8 aspect-[3/4] w-40 rotate-6 rounded-2xl bg-gradient-to-br from-rose-500 to-purple-600 shadow-2xl" />
-            <div className="absolute right-32 top-0 aspect-[3/4] w-44 -rotate-6 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 shadow-2xl" />
-            <div className="relative aspect-[3/4] w-48 mx-auto rotate-2 rounded-2xl bg-gradient-to-br from-blue-500 via-cyan-400 to-emerald-400 shadow-2xl" />
+          <div className="grid content-center gap-3">
+            <Card padding="lg" className="shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="grid h-12 w-12 place-items-center rounded-[var(--radius-card)] bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]">
+                  <Search className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-overline text-[var(--color-ink-subtle)]">Busca</p>
+                  <p className="text-h3">Charizard ex, Mew, Pikachu...</p>
+                </div>
+              </div>
+            </Card>
+            <Card padding="lg" className="shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="grid h-12 w-12 place-items-center rounded-[var(--radius-card)] bg-[var(--color-info-soft)] text-[var(--color-info)]">
+                  <ShoppingBag className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-overline text-[var(--color-ink-subtle)]">Compra</p>
+                  <p className="text-h3">Reserva, paga y coordina entrega.</p>
+                </div>
+              </div>
+            </Card>
+            <Card padding="lg" className="shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="grid h-12 w-12 place-items-center rounded-[var(--radius-card)] bg-[var(--color-warning-soft)] text-[var(--color-warning)]">
+                  <ArrowLeftRight className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-overline text-[var(--color-ink-subtle)]">Intercambia</p>
+                  <p className="text-h3">Publica tus cartas para trade.</p>
+                </div>
+              </div>
+            </Card>
           </div>
         </div>
       </section>
 
-      {/* ── Featured listings ── */}
       <section className="mx-auto w-full max-w-7xl px-6 py-12">
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-overline text-[var(--color-ink-subtle)]">Recién publicadas</p>
+            <p className="text-overline text-[var(--color-ink-subtle)]">Recien publicadas</p>
             <h2 className="mt-1 text-h1 [font-family:var(--font-display)]">
-              Las últimas en el mercado
+              Ultimas cartas en el mercado
             </h2>
           </div>
           <Link
@@ -107,11 +142,11 @@ export default async function HomePage() {
         {featured.length === 0 ? (
           <Card padding="lg" className="mt-6 text-center">
             <p className="text-body-sm text-[var(--color-ink-muted)]">
-              Todavía no hay publicaciones. Sé el primero en{" "}
+              Todavia no hay cartas publicadas. Podes{" "}
               <Link href="/inventory" className="font-semibold underline">
                 cargar una carta
-              </Link>
-              .
+              </Link>{" "}
+              o explorar trades.
             </p>
           </Card>
         ) : (
@@ -128,44 +163,43 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* ── How it works (sellers) ── */}
       <section className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)]">
         <div className="mx-auto w-full max-w-7xl px-6 py-16">
           <div className="text-center">
-            <p className="text-overline text-[var(--color-ink-subtle)]">Para vendedores</p>
+            <p className="text-overline text-[var(--color-ink-subtle)]">Como funciona</p>
             <h2 className="mt-1 text-h1 [font-family:var(--font-display)]">
-              Vendé en tres pasos
+              Mercado y trades en un mismo lugar
             </h2>
             <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
-              Sin vendor friction. Foto, precio, publicar.
+              Pensado para comprar cartas, vender tu stock y encontrar intercambios.
             </p>
           </div>
 
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             <FeatureStep
               step="1"
-              icon={<ImagePlus className="h-6 w-6" />}
-              title="Cargá tu carta"
-              body="Buscala en nuestro catálogo o subí tu propia foto. Indicá la condición y el precio."
+              icon={<ShoppingBag className="h-6 w-6" />}
+              title="Explora el mercado"
+              body="Filtra por carta, precio, condicion y entrega. Todo esta centrado en Pokemon TCG."
             />
             <FeatureStep
               step="2"
               icon={<Wallet className="h-6 w-6" />}
-              title="Conectá Mercado Pago"
-              body="Una sola vez. Recibís los pagos directo en tu cuenta de MP cuando vendés."
+              title="Compra con Mercado Pago"
+              body="Si el vendedor tiene MP conectado, el pago se inicia desde la publicacion y queda asociado a la operacion."
             />
             <FeatureStep
               step="3"
-              icon={<ShoppingBag className="h-6 w-6" />}
-              title="Publicá y vendé"
-              body="El comprador paga al instante. Vos coordinás envío o retiro. Comisión 1 %."
+              icon={<ArrowLeftRight className="h-6 w-6" />}
+              title="Arma trades"
+              body="Marca cartas disponibles para intercambio y publica que cartas estas buscando."
             />
           </div>
 
           <div className="mt-10 flex justify-center">
             <Button asChild size="lg">
-              <Link href={user ? "/inventory" : "/register"}>
-                {user ? "Ir al inventario" : "Crear cuenta gratis"}
+              <Link href="/market">
+                Entrar al mercado
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

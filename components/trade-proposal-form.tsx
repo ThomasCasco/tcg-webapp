@@ -31,6 +31,12 @@ export function TradeProposalForm({
     const requestedInventoryIds = form.getAll("requestedInventoryIds").map(String);
     const message = String(form.get("message") ?? "").trim();
 
+    if (offeredInventoryIds.length === 0 || requestedInventoryIds.length === 0) {
+      setError("Elegi al menos una carta para ofrecer y una carta para pedir.");
+      setSuccess(null);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(null);

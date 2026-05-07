@@ -50,15 +50,14 @@ export default async function ListingDetailPage({
   const { listingId } = await params;
   const listing = await getListingById(listingId);
   if (!listing) notFound();
+  if (listing.listingType === "mystery_pack") notFound();
 
   const catalog = listing.catalogCardId
     ? await fetchCatalogCardById(listing.catalogCardId).catch(() => null)
     : null;
   const image = listing.imageUrl ?? catalog?.imageLarge ?? catalog?.imageSmall ?? null;
-  const isPack = listing.listingType === "mystery_pack";
-  const pokemonTypes = isPack
-    ? null
-    : await getPokemonTypesForCardTitle(listing.cardName);
+  const isPack = false;
+  const pokemonTypes = await getPokemonTypesForCardTitle(listing.cardName);
   const status = statusMeta[listing.status] ?? {
     label: listing.status,
     variant: "default" as const,
@@ -79,21 +78,13 @@ export default async function ListingDetailPage({
       <Card as="section" padding="none" className="overflow-hidden">
         <div className="grid gap-0 md:grid-cols-[minmax(280px,380px)_1fr]">
           <div className="relative aspect-[3/4] w-full overflow-hidden bg-[var(--color-surface-muted)] md:aspect-auto md:min-h-[520px]">
-            {image && !isPack ? (
+            {image ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={image}
                 alt={listing.cardName}
                 className="h-full w-full object-contain p-4"
               />
-            ) : isPack ? (
-              <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[var(--color-accent)] via-[#2b67a0] to-[#7a3f91] p-6 text-white">
-                <div className="text-center">
-                  <Package className="mx-auto h-14 w-14" />
-                  <p className="mt-4 text-overline text-white/80">Mystery Pack</p>
-                  <p className="mt-1 text-h3">{listing.packCardCount ?? "?"} cartas</p>
-                </div>
-              </div>
             ) : (
               <div className="grid h-full w-full place-items-center text-[var(--color-ink-subtle)]">
                 <div className="text-center">
@@ -108,7 +99,7 @@ export default async function ListingDetailPage({
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p className="text-overline text-[var(--color-ink-subtle)]">
-                  {isPack ? "Mystery pack" : listing.setName || "Set sin especificar"}
+                  {listing.setName || "Set sin especificar"}
                 </p>
                 <h1 className="mt-1 text-h1 [font-family:var(--font-display)] md:text-display-md">
                   {listing.cardName}

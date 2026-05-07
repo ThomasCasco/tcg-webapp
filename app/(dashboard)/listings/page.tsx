@@ -21,7 +21,8 @@ export default async function ListingsPage() {
   let loadError: string | null = null;
 
   try {
-    listings = await listListings({ sellerId: user.id });
+    const allListings = await listListings({ sellerId: user.id });
+    listings = allListings.filter((listing) => listing.listingType !== "mystery_pack");
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Failed to load listings.";
   }
@@ -33,7 +34,7 @@ export default async function ListingsPage() {
     <section className="space-y-5">
       <Card as="header" padding="lg">
         <p className="text-overline text-[var(--color-ink-subtle)]">
-          Paso 2 de 2 · Tus ofertas en el Mercado
+          Paso 2 de 2 - Tus cartas en el mercado
         </p>
         <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
           Publicaciones
@@ -41,19 +42,17 @@ export default async function ListingsPage() {
         <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
           Tus ofertas visibles en el{" "}
           <Link href="/market" className="underline">Mercado</Link>. Para publicar una
-          carta individual, cargala en{" "}
-          <Link href="/inventory" className="underline">Inventario</Link> y tocá
-          &quot;Publicar en Mercado&quot;. Acá podés publicar{" "}
-          <strong>Mystery Packs</strong> o administrar las publicaciones existentes.
-          Las subastas se gestionan desde{" "}
-          <Link href="/auctions" className="underline">Subastas</Link>.
+          carta, cargala en{" "}
+          <Link href="/inventory" className="underline">Inventario</Link> y toca
+          &quot;Publicar en Mercado&quot;. Los sobres estan pausados por ahora; esta pantalla
+          queda para administrar tus ventas activas y cerradas.
         </p>
       </Card>
 
       {!isSupabaseConfigured() ? (
         <Card as="article" padding="md" className="border-amber-300 bg-amber-50">
           <p className="text-sm text-amber-900">
-            Configurá Supabase para publicar en producción.
+            Configura Supabase para publicar en produccion.
           </p>
         </Card>
       ) : null}
@@ -77,9 +76,9 @@ export default async function ListingsPage() {
             title="Sin publicaciones activas"
             description={
               <>
-                Publicá una carta desde{" "}
+                Publica una carta desde{" "}
                 <Link href="/inventory" className="underline">Inventario</Link> o
-                creá un Mystery Pack arriba.
+                marca cartas disponibles para trade.
               </>
             }
             className="mt-4"

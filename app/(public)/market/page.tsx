@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { AuctionListingCard } from "@/components/auction-listing-card";
 import { MarketListingCard } from "@/components/market-listing-card";
-import { listAuctions, listListings } from "@/lib/server/repository";
+import { listListings } from "@/lib/server/repository";
 import { getPokemonTypesForCardTitle } from "@/lib/server/pokeapi";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
@@ -19,8 +18,6 @@ export const dynamic = "force-dynamic";
 const TABS = [
   { key: "all", label: "Todo" },
   { key: "cards", label: "Cartas" },
-  { key: "packs", label: "Packs" },
-  { key: "auctions", label: "Subastas" },
 ] as const;
 
 const CONDITIONS: CardCondition[] = [
@@ -79,7 +76,6 @@ export default async function MarketPage({
     sort = "recent",
   } = await searchParams;
   let listings: Awaited<ReturnType<typeof listListings>> = [];
-  let auctions: Awaited<ReturnType<typeof listAuctions>> = [];
   let loadError: string | null = null;
   const activeTab = TABS.some((item) => item.key === tab) ? tab : "all";
   const minPrice = Number(min);
@@ -88,10 +84,8 @@ export default async function MarketPage({
   const hasMax = Number.isFinite(maxPrice) && maxPrice > 0;
 
   try {
-    [listings, auctions] = await Promise.all([
-      listListings({ onlyPublic: true }),
-      listAuctions({ onlyPublic: true }),
-    ]);
+    listings = await listListings({ onlyPublic: true });
+    listings = listings.filter((listing) => listing.listingType !== "mystery_pack");
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Failed to load market listings.";
   }
@@ -99,59 +93,40 @@ export default async function MarketPage({
   const query = q.trim().toLowerCase();
   if (query) {
     listings = listings.filter((listing) =>
-      `${listing.cardName} ${listing.setName} ${listing.packTheme ?? ""}`
+      `${listing.cardName} ${listing.setName}`
         .toLowerCase()
         .includes(query),
-    );
-    auctions = auctions.filter((auction) =>
-      `${auction.cardName} ${auction.setName ?? ""}`.toLowerCase().includes(query),
     );
   }
 
   if (condition && isCondition(condition)) {
     listings = listings.filter((listing) => listing.condition === condition);
-    auctions = auctions.filter((auction) => auction.condition === condition);
   }
 
   if (hasMin) {
     listings = listings.filter((listing) => listing.priceArs >= minPrice);
-    auctions = auctions.filter((auction) => auction.currentPriceArs >= minPrice);
   }
 
   if (hasMax) {
     listings = listings.filter((listing) => listing.priceArs <= maxPrice);
-    auctions = auctions.filter((auction) => auction.currentPriceArs <= maxPrice);
   }
 
   if (delivery === "shipping") {
     listings = listings.filter((listing) => listing.offersShipping);
-    auctions = auctions.filter((auction) => auction.offersShipping);
   } else if (delivery === "pickup") {
     listings = listings.filter((listing) => listing.offersPickup);
-    auctions = auctions.filter((auction) => auction.offersPickup);
   }
 
-  if (activeTab === "packs") {
-    listings = listings.filter((l) => l.listingType === "mystery_pack");
-    auctions = [];
-  } else if (activeTab === "cards") {
+  if (activeTab === "cards") {
     listings = listings.filter((l) => l.listingType !== "mystery_pack");
-    auctions = [];
-  } else if (activeTab === "auctions") {
-    listings = [];
   }
 
   if (sort === "price_asc") {
     listings = [...listings].sort((a, b) => a.priceArs - b.priceArs);
-    auctions = [...auctions].sort((a, b) => a.currentPriceArs - b.currentPriceArs);
   } else if (sort === "price_desc") {
     listings = [...listings].sort((a, b) => b.priceArs - a.priceArs);
-    auctions = [...auctions].sort((a, b) => b.currentPriceArs - a.currentPriceArs);
   } else {
     listings = [...listings].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    auctions = [...auctions].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   }
@@ -159,14 +134,14 @@ export default async function MarketPage({
   const enriched = await Promise.all(
     listings.map(async (listing, index) => {
       const pokemonTypes =
-        listing.listingType === "mystery_pack" || index >= 24
+        index >= 24
           ? null
           : await getPokemonTypesForCardTitle(listing.cardName);
       return { listing, pokemonTypes };
     }),
   );
 
-  const total = enriched.length + auctions.length;
+  const total = enriched.length;
   const currentParams = {
     q,
     condition,
@@ -198,7 +173,7 @@ export default async function MarketPage({
           Mercado
         </h1>
         <p className="mt-1 hidden text-body-sm text-[var(--color-ink-muted)] md:block">
-          Cartas, packs y subastas publicados por la comunidad.
+          Cartas publicadas por la comunidad.
         </p>
 
         <form method="GET" className="mt-0 space-y-3 md:mt-4">
@@ -278,11 +253,11 @@ export default async function MarketPage({
               Formatos del mercado
             </p>
             <p className="text-caption text-[var(--color-ink-muted)]">
-              Venta directa, Mystery Packs, subastas con pujas e intercambios desde perfiles.
+              Venta directa e intercambios desde perfiles.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {["Venta directa", "Mystery Packs", "Subastas", "Trades"].map((label) => (
+            {["Venta directa", "Trades", "Mercado Pago"].map((label) => (
               <span
                 key={label}
                 className="rounded-full bg-[var(--color-accent-soft)] px-3 py-1 text-caption font-medium text-[var(--color-accent-strong)]"
@@ -320,13 +295,6 @@ export default async function MarketPage({
         />
       ) : (
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-          {auctions.map((auction) => (
-            <AuctionListingCard
-              key={auction.id}
-              auction={auction}
-              isLoggedIn={Boolean(user)}
-            />
-          ))}
           {enriched.map(({ listing, pokemonTypes }) => (
             <MarketListingCard
               key={listing.id}

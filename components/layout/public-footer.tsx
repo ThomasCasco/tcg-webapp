@@ -16,7 +16,8 @@ export function PublicFooter() {
             <span className="[font-family:var(--font-display)]">TCG.ar</span>
           </Link>
           <p className="mt-3 text-body-sm text-[var(--color-ink-muted)]">
-            El marketplace argentino de Pokemon TCG. Pago seguro vía Mercado Pago.
+            Mercado argentino de cartas Pokemon. Compras, ventas y trades con pagos
+            integrados a Mercado Pago.
           </p>
         </div>
 
@@ -37,11 +38,8 @@ export function PublicFooter() {
               </Link>
             </li>
             <li>
-              <Link
-                href="/market?tab=packs"
-                className="text-[var(--color-ink-muted)] hover:text-[var(--color-accent-strong)]"
-              >
-                Mystery packs
+              <Link href="/trades" className="text-[var(--color-ink-muted)] hover:text-[var(--color-accent-strong)]">
+                Trades
               </Link>
             </li>
           </ul>
@@ -78,7 +76,7 @@ export function PublicFooter() {
             </li>
             <li>
               <Link href="/terms" className="text-[var(--color-ink-muted)] hover:text-[var(--color-accent-strong)]">
-                Términos y condiciones
+                Terminos y condiciones
               </Link>
             </li>
             <li>
@@ -92,7 +90,7 @@ export function PublicFooter() {
 
       <div className="border-t border-[var(--color-border-subtle)] py-4">
         <p className="mx-auto max-w-7xl px-6 text-caption text-[var(--color-ink-subtle)]">
-          © {new Date().getFullYear()} TCG.ar — Marketplace de cartas Pokémon en Argentina.
+          (c) {new Date().getFullYear()} TCG.ar - Mercado de cartas Pokemon en Argentina.
         </p>
       </div>
     </footer>

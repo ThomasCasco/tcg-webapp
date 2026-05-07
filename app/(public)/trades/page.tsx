@@ -48,27 +48,35 @@ export default async function TradesPage({
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
-      <header className="rounded-[var(--radius-card)] bg-[var(--color-surface-elevated)] p-5 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <header className="rounded-[var(--radius-card)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] p-5 shadow-sm">
+        <div className="grid gap-4 lg:grid-cols-[1fr,auto] lg:items-end">
           <div>
-            <p className="text-overline text-[var(--color-ink-subtle)]">Comunidad</p>
-            <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">Trades</h1>
+            <Chip variant="accent" size="sm">Trades Pokemon</Chip>
+            <h1 className="mt-3 text-h1 [font-family:var(--font-display)]">
+              Intercambia cartas con otros coleccionistas
+            </h1>
             <p className="mt-2 max-w-2xl text-body-sm text-[var(--color-ink-muted)]">
-              Cartas que otros usuarios tienen para intercambiar y cartas que estan buscando.
+              Marca tus cartas disponibles, publica que estas buscando y encontra perfiles
+              con intereses compatibles antes de mandar una propuesta.
             </p>
           </div>
-          <Button asChild variant="secondary">
-            <Link href="/inventory">Marcar mis cartas</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2 lg:justify-end">
+            <Button asChild>
+              <Link href="/inventory">Marcar mis cartas</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/alerts">Publicar buscadas</Link>
+            </Button>
+          </div>
         </div>
 
-        <form method="GET" className="mt-4 flex gap-2">
+        <form method="GET" className="mt-5 flex gap-2">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-subtle)]" />
             <Input
               name="q"
               defaultValue={q}
-              placeholder="Buscar carta, set o nota..."
+              placeholder="Buscar carta, set o nota de trade..."
               className="pl-9"
             />
           </div>
@@ -92,15 +100,15 @@ export default async function TradesPage({
 
       <div className="grid gap-3 md:grid-cols-3">
         <Card padding="md">
-          <p className="text-overline text-[var(--color-ink-subtle)]">Perfiles</p>
+          <p className="text-overline text-[var(--color-ink-subtle)]">Perfiles activos</p>
           <p className="mt-1 text-2xl font-semibold">{profiles.length}</p>
         </Card>
         <Card padding="md">
-          <p className="text-overline text-[var(--color-ink-subtle)]">Para trade</p>
+          <p className="text-overline text-[var(--color-ink-subtle)]">Cartas para trade</p>
           <p className="mt-1 text-2xl font-semibold">{tradeCount}</p>
         </Card>
         <Card padding="md">
-          <p className="text-overline text-[var(--color-ink-subtle)]">Buscadas</p>
+          <p className="text-overline text-[var(--color-ink-subtle)]">Cartas buscadas</p>
           <p className="mt-1 text-2xl font-semibold">{wantedCount}</p>
         </Card>
       </div>
@@ -115,18 +123,18 @@ export default async function TradesPage({
         <section className="grid gap-4 lg:grid-cols-2">
           {profiles.map((profile) => (
             <Card key={profile.userId} as="article" padding="lg" className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-overline text-[var(--color-ink-subtle)]">Perfil</p>
+                  <p className="text-overline text-[var(--color-ink-subtle)]">Coleccionista</p>
                   <h2 className="text-h2">@{profile.username}</h2>
                 </div>
                 <Chip variant="info" size="sm">
-                  {profile.tradeCards.length} / {profile.wantedCards.length}
+                  {profile.tradeCards.length} ofrece / {profile.wantedCards.length} busca
                 </Chip>
               </div>
 
               <div>
-                <h3 className="mb-2 text-body-sm font-semibold">Tiene para trade</h3>
+                <h3 className="mb-2 text-body-sm font-semibold">Ofrece</h3>
                 {profile.tradeCards.length === 0 ? (
                   <p className="text-caption text-[var(--color-ink-muted)]">Sin cartas marcadas.</p>
                 ) : (
@@ -134,7 +142,7 @@ export default async function TradesPage({
                     {profile.tradeCards.slice(0, 6).map((card) => (
                       <div
                         key={card.id}
-                        className="flex gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-2"
+                        className="flex gap-3 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2"
                       >
                         <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-[var(--color-surface-elevated)]">
                           {card.imageUrl ? (
@@ -183,6 +191,10 @@ export default async function TradesPage({
                   </div>
                 )}
               </div>
+
+              <Button asChild variant="secondary" fullWidth>
+                <Link href={`/u/${profile.username}`}>Ver perfil</Link>
+              </Button>
             </Card>
           ))}
         </section>

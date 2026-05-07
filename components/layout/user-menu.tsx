@@ -33,7 +33,7 @@ const items = [
   { href: "/trade-proposals", label: "Propuestas de trade", icon: Scale },
   { href: "/inventory", label: "Inventario", icon: Layers },
   { href: "/listings", label: "Mis ventas", icon: Tag },
-  { href: "/transactions", label: "Mis compras", icon: Package },
+  { href: "/transactions", label: "Operaciones", icon: Package },
   { href: "/account", label: "Cobros (MP)", icon: Wallet },
   { href: "/disputes", label: "Disputas", icon: Scale },
 ];

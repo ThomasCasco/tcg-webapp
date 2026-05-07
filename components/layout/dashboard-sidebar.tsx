@@ -8,7 +8,6 @@ import {
   Tag,
   Package,
   Bell,
-  Gavel,
   Scale,
   Users,
   Wallet,
@@ -32,8 +31,7 @@ const sections: NavSection[] = [
       { href: "/trades", label: "Trades", icon: ArrowLeftRight },
       { href: "/profiles", label: "Perfiles", icon: Users },
       { href: "/trade-proposals", label: "Propuestas", icon: ArrowLeftRight },
-      { href: "/auctions", label: "Subastas", icon: Gavel },
-      { href: "/transactions", label: "Mis compras", icon: Package },
+      { href: "/transactions", label: "Operaciones", icon: Package },
     ],
   },
   {

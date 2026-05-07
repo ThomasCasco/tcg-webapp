@@ -76,7 +76,7 @@ export function TopBar({ user }: Props) {
                 inputMode="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar Charizard, Mew, packs..."
+                placeholder="Buscar Charizard, Mew, Paradox Rift..."
                 className={cn(
                   "h-10 w-full rounded-full border border-[var(--color-border-default)] bg-[var(--color-surface)] pl-9 pr-3 text-body-sm",
                   "outline-none placeholder:text-[var(--color-ink-subtle)]",

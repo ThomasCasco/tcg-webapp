@@ -18,7 +18,7 @@ const validConditions: CardCondition[] = [
   "damaged",
 ];
 
-const validListingTypes: ListingType[] = ["single", "mystery_pack"];
+const validListingTypes: ListingType[] = ["single"];
 
 type CreateListingPayload = {
   inventoryId?: string;
@@ -69,7 +69,9 @@ export async function GET(request: Request) {
       if (!user) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
-      const items = await listListings({ sellerId: user.id });
+      const items = (await listListings({ sellerId: user.id })).filter(
+        (listing) => listing.listingType !== "mystery_pack",
+      );
 
       return Response.json({
         items,
@@ -77,7 +79,9 @@ export async function GET(request: Request) {
       });
     }
 
-    const items = await listListings({ onlyPublic: true });
+    const items = (await listListings({ onlyPublic: true })).filter(
+      (listing) => listing.listingType !== "mystery_pack",
+    );
     return Response.json({
       items,
       total: items.length,
@@ -114,6 +118,13 @@ export async function POST(request: Request) {
     payload = (await request.json()) as CreateListingPayload;
   } catch {
     return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  if (payload.listingType === "mystery_pack") {
+    return Response.json(
+      { error: "Los sobres estan pausados por ahora." },
+      { status: 410 },
+    );
   }
 
   const listingType: ListingType =
@@ -155,22 +166,6 @@ export async function POST(request: Request) {
       { error: "quantity must be between 1 and 100." },
       { status: 400 },
     );
-  }
-
-  if (listingType === "mystery_pack") {
-    const count = payload.packCardCount ?? 0;
-    if (count <= 0 || count > 50) {
-      return Response.json(
-        { error: "packCardCount must be between 1 and 50." },
-        { status: 400 },
-      );
-    }
-    if (!payload.packDescription || payload.packDescription.trim().length < 20) {
-      return Response.json(
-        { error: "packDescription must have at least 20 characters." },
-        { status: 400 },
-      );
-    }
   }
 
   try {

@@ -1,13 +1,12 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingBag, ArrowLeftRight, Gavel, Layers, Tag } from "@/components/ui/icon";
+import { ShoppingBag, ArrowLeftRight, Layers, Tag } from "@/components/ui/icon";
 import { cn } from "@/lib/ui/cn";
 
 const items = [
   { href: "/market", label: "Mercado", icon: ShoppingBag },
   { href: "/trades", label: "Trades", icon: ArrowLeftRight },
-  { href: "/auctions", label: "Subastas", icon: Gavel },
   { href: "/inventory", label: "Inventario", icon: Layers },
   { href: "/listings", label: "Ventas", icon: Tag },
 ];

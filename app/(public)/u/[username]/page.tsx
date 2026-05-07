@@ -87,7 +87,7 @@ export default async function PublicUserPage({
           ))}
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Card padding="sm" variant="muted">
             <p className="text-overline text-[var(--color-ink-subtle)]">Para trade</p>
             <p className="mt-1 text-2xl font-semibold">{profile.tradeCount}</p>
@@ -114,6 +114,21 @@ export default async function PublicUserPage({
           myInventory={myInventory}
           targetTradeCards={tradeCards}
         />
+      ) : !user && tradeCards.length > 0 ? (
+        <Card padding="lg">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-overline text-[var(--color-ink-subtle)]">Trade</p>
+              <h2 className="mt-1 text-h3">Inicia sesion para proponer intercambio</h2>
+              <p className="mt-1 text-body-sm text-[var(--color-ink-muted)]">
+                Necesitas una cuenta y cartas cargadas en tu inventario para enviar una propuesta.
+              </p>
+            </div>
+            <Button asChild>
+              <Link href="/login">Ingresar</Link>
+            </Button>
+          </div>
+        </Card>
       ) : null}
 
       <nav className="flex gap-1 overflow-x-auto rounded-[var(--radius-card)] bg-[var(--color-surface-elevated)] p-1">
