@@ -47,8 +47,8 @@ export default async function InventoryPage() {
         <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
           Cargá acá las cartas que tenés físicamente. Es tu stock privado.
           Cuando estés listo, poné un precio y tocá <strong>Publicar en Mercado</strong> para
-          que otros usuarios puedan comprarla. Las subastas aparecen como proximo formato,
-          pero todavia no aceptan pujas.
+          que otros usuarios puedan comprarla. También podés{" "}
+          <strong>subastar</strong> cualquier carta desde el panel de la entrada.
         </p>
       </Card>
 

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { DisputeCreateForm } from "@/components/dispute-create-form";
+import Link from "next/link";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { listDisputesForUser } from "@/lib/server/repository";
 import { Card } from "@/components/ui/card";
@@ -30,9 +30,12 @@ export default async function DisputesPage() {
         <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
           Centro de resolución
         </h1>
+        <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
+          Para abrir una disputa, andá a{" "}
+          <Link href="/transactions" className="underline">tus transacciones</Link>{" "}
+          y tocá &quot;Abrir disputa&quot; en la operación afectada.
+        </p>
       </Card>
-
-      <DisputeCreateForm />
 
       {loadError ? (
         <Card as="article" padding="md" className="border-rose-300 bg-rose-50">
