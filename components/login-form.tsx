@@ -71,7 +71,7 @@ export function LoginForm() {
         Entrar
       </Button>
       <p className="text-center text-[0.8125rem] text-[var(--color-ink-muted)]">
-        ¿No tenés cuenta?{" "}
+        ¿No tenés cuenta pbt?{" "}
         <Link href="/register" className="text-[var(--color-accent-strong)] hover:underline">
           Crear cuenta
         </Link>
