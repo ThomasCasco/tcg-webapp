@@ -256,7 +256,7 @@ export function TransactionCard({ transaction, viewerUserId }: Props) {
       )}
 
       {panel === "verify" && (
-        <div className="mt-4 space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4">
+        <div className="mt-4 space-y-3 rounded-[var(--radius-card)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] p-4">
           <FormField
             label="ID de pago / comprobante"
             htmlFor={`payment-id-${transaction.transactionId}`}
@@ -283,7 +283,7 @@ export function TransactionCard({ transaction, viewerUserId }: Props) {
 
       {/* ── Ship panel ── */}
       {panel === "ship" && (
-        <div className="mt-4 space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4">
+        <div className="mt-4 space-y-3 rounded-[var(--radius-card)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] p-4">
           <FormField
             label="Número de tracking (opcional)"
             htmlFor={`tracking-${transaction.transactionId}`}
@@ -308,7 +308,7 @@ export function TransactionCard({ transaction, viewerUserId }: Props) {
 
       {/* ── Dispute panel ── */}
       {panel === "dispute" && (
-        <div className="mt-4 space-y-3 rounded-xl border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] p-4">
+        <div className="notice-danger mt-4 space-y-3 rounded-[var(--radius-card)] border p-4">
           <FormField
             label="Motivo"
             htmlFor={`dispute-reason-${transaction.transactionId}`}
@@ -358,7 +358,7 @@ export function TransactionCard({ transaction, viewerUserId }: Props) {
 
       {/* ── Logistics info (collapsed) ── */}
       {(transaction.offersPickup || transaction.offersShipping || transaction.deliveryAreaNotes) && (
-        <details className="mt-4 rounded-xl border border-[var(--color-border)] px-3 py-2">
+        <details className="mt-4 rounded-[var(--radius-card)] border border-[var(--color-border-default)] px-3 py-2">
           <summary className="cursor-pointer text-caption text-[var(--color-ink-muted)]">
             Detalles de entrega
           </summary>

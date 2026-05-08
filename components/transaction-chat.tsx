@@ -74,20 +74,20 @@ export function TransactionChat({ transactionId, viewerUserId }: Props) {
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-white/70 p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-black/55">
+    <div className="mt-4 rounded-[var(--radius-card)] border border-[var(--color-border-default)] bg-[var(--color-surface)] p-3">
+      <p className="text-overline text-[var(--color-ink-subtle)]">
         Chat de la operación
       </p>
-      <p className="mt-1 text-[11px] text-black/55">
+      <p className="mt-1 text-caption text-[var(--color-ink-muted)]">
         Solo vos y la otra parte. Coordiná envío, retiro o comprobantes. Se actualiza solo cada
         ~12 s o al enviar.
       </p>
 
-      <div className="mt-2 max-h-52 space-y-2 overflow-y-auto rounded-lg bg-black/[0.03] p-2 text-xs">
+      <div className="mt-2 max-h-52 space-y-2 overflow-y-auto rounded-[var(--radius-input)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] p-2 text-caption">
         {loading ? (
-          <p className="text-black/50">Cargando mensajes…</p>
+          <p className="text-[var(--color-ink-subtle)]">Cargando mensajes…</p>
         ) : items.length === 0 ? (
-          <p className="text-black/50">Todavía no hay mensajes. Escribí el primero.</p>
+          <p className="text-[var(--color-ink-subtle)]">Todavía no hay mensajes. Escribí el primero.</p>
         ) : (
           items.map((m) => {
             const mine = m.senderId === viewerUserId;
@@ -96,7 +96,7 @@ export function TransactionChat({ transactionId, viewerUserId }: Props) {
                 key={m.id}
                 className={`flex flex-col ${mine ? "items-end" : "items-start"}`}
               >
-                <span className="text-[10px] text-black/45">
+                <span className="text-[10px] text-[var(--color-ink-subtle)]">
                   {mine ? "Vos" : m.senderHandle} ·{" "}
                   {new Date(m.createdAt).toLocaleString("es-AR", {
                     dateStyle: "short",
@@ -107,7 +107,7 @@ export function TransactionChat({ transactionId, viewerUserId }: Props) {
                   className={`mt-0.5 max-w-[95%] rounded-lg px-2 py-1.5 ${
                     mine
                       ? "bg-[var(--color-accent)] text-white"
-                      : "bg-white text-black/85 ring-1 ring-[var(--color-border)]"
+                      : "bg-[var(--color-surface-elevated)] text-[var(--color-ink)] ring-1 ring-[var(--color-border-default)]"
                   }`}
                 >
                   {m.body}
@@ -124,18 +124,18 @@ export function TransactionChat({ transactionId, viewerUserId }: Props) {
           onChange={(e) => setText(e.target.value)}
           maxLength={2000}
           placeholder="Escribí un mensaje…"
-          className="min-w-0 flex-1 rounded-lg border border-[var(--color-border)] bg-white px-2 py-1.5 text-sm outline-none focus:border-[var(--color-accent)]"
+          className="min-w-0 flex-1 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-2 py-1.5 text-sm outline-none focus:border-[var(--color-accent)]"
         />
         <button
           type="submit"
           disabled={sending || !text.trim()}
-          className="shrink-0 rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-50"
+          className="shrink-0 rounded-[var(--radius-input)] bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-accent-strong)] disabled:opacity-50"
         >
           {sending ? "…" : "Enviar"}
         </button>
       </form>
 
-      {error ? <p className="mt-2 text-xs text-rose-700">{error}</p> : null}
+      {error ? <p className="mt-2 text-caption text-[var(--color-danger)]">{error}</p> : null}
     </div>
   );
 }

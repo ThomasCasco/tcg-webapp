@@ -148,7 +148,7 @@ export function ImageUploader({
   return (
     <div className={cn("space-y-2", className)}>
       {url ? (
-        <div className="relative aspect-[3/4] w-full max-w-[180px] overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
+        <div className="relative aspect-[3/4] w-full max-w-[180px] overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={url} alt="Vista previa" className="h-full w-full object-cover" />
           {uploading && (
@@ -180,7 +180,7 @@ export function ImageUploader({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="flex aspect-[3/4] w-full max-w-[180px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4 text-center transition-colors hover:border-[var(--color-accent)] hover:bg-[var(--color-accent-soft)]/40 disabled:opacity-60"
+          className="flex aspect-[3/4] w-full max-w-[180px] flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border-2 border-dashed border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] p-4 text-center transition-colors hover:border-[var(--color-accent)] hover:bg-[var(--color-accent-soft)]/40 disabled:opacity-60"
         >
           {uploading ? (
             <Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" />

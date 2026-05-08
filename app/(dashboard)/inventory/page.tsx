@@ -37,7 +37,7 @@ export default async function InventoryPage() {
 
   return (
     <section className="space-y-5">
-      <Card as="header" padding="lg">
+      <Card as="header" padding="lg" className="border-[var(--color-border-strong)]">
         <p className="text-overline text-[var(--color-ink-subtle)]">
           Paso 1 de 2 · Tu stock
         </p>
@@ -53,16 +53,16 @@ export default async function InventoryPage() {
       </Card>
 
       {!isSupabaseConfigured() ? (
-        <Card as="article" padding="md" className="border-amber-300 bg-amber-50">
-          <p className="text-sm text-amber-900">
+        <Card as="article" padding="md" className="notice-warning">
+          <p className="text-body-sm">
             Configurá las variables de Supabase para guardar datos reales.
           </p>
         </Card>
       ) : null}
 
       {loadError ? (
-        <Card as="article" padding="md" className="border-rose-300 bg-rose-50">
-          <p className="text-sm text-rose-900">Error de backend: {loadError}</p>
+        <Card as="article" padding="md" className="notice-danger">
+          <p className="text-body-sm">Error de backend: {loadError}</p>
         </Card>
       ) : null}
 

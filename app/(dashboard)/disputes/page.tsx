@@ -25,7 +25,7 @@ export default async function DisputesPage() {
 
   return (
     <section className="space-y-4">
-      <Card as="header" padding="lg">
+      <Card as="header" padding="lg" className="border-[var(--color-border-strong)]">
         <p className="text-overline text-[var(--color-ink-subtle)]">Disputas</p>
         <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
           Centro de resolución
@@ -38,8 +38,8 @@ export default async function DisputesPage() {
       </Card>
 
       {loadError ? (
-        <Card as="article" padding="md" className="border-rose-300 bg-rose-50">
-          <p className="text-sm text-rose-900">Error de backend: {loadError}</p>
+        <Card as="article" padding="md" className="notice-danger">
+          <p className="text-body-sm">Error de backend: {loadError}</p>
         </Card>
       ) : null}
 

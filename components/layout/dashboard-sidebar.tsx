@@ -61,7 +61,7 @@ export function DashboardSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:sticky md:top-16 md:flex md:h-[calc(100svh-4rem)] md:w-64 md:shrink-0 md:flex-col md:gap-6 md:overflow-y-auto md:border-r md:border-[var(--color-border-subtle)] md:bg-[var(--color-surface)] md:px-4 md:py-6">
+    <aside className="hidden md:sticky md:top-16 md:flex md:h-[calc(100svh-4rem)] md:w-64 md:shrink-0 md:flex-col md:gap-6 md:overflow-y-auto md:border-r md:border-[var(--color-border-strong)] md:bg-[var(--color-surface-elevated)]/70 md:px-4 md:py-6 md:backdrop-blur">
       <nav aria-label="Navegación principal" className="flex flex-col gap-6">
         {sections.map((section) => (
           <div key={section.label}>
@@ -78,7 +78,7 @@ export function DashboardSidebar() {
                       className={cn(
                         "group flex items-center gap-3 rounded-[var(--radius-input)] px-3 py-2 text-[0.9375rem] transition-colors",
                         active
-                          ? "bg-[var(--color-accent-soft)] font-semibold text-[var(--color-accent-strong)]"
+                          ? "bg-[var(--color-ink)] font-semibold text-[var(--color-ink-inverse)]"
                           : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
                       )}
                       aria-current={active ? "page" : undefined}
@@ -87,7 +87,7 @@ export function DashboardSidebar() {
                         className={cn(
                           "h-4 w-4 shrink-0 transition-colors",
                           active
-                            ? "text-[var(--color-accent-strong)]"
+                            ? "text-[var(--color-ink-inverse)]"
                             : "text-[var(--color-ink-subtle)] group-hover:text-[var(--color-ink)]",
                         )}
                         aria-hidden

@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 
 export function PublicHeader() {
   return (
-    <header className="sticky top-0 z-20 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)]/95 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3">
-        <Link href="/" className="text-h3 font-bold text-[var(--color-accent-strong)]">
+    <header className="sticky top-0 z-20 border-b border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)]/95 backdrop-blur">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
+        <Link href="/" className="text-h3 font-bold text-[var(--color-ink)] [font-family:var(--font-display)]">
           TCG.ar
         </Link>
         <nav className="flex items-center gap-2">

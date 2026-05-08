@@ -48,7 +48,7 @@ export default async function TradesPage({
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
-      <header className="rounded-[var(--radius-card)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] p-5 shadow-sm">
+      <header className="premium-header p-5">
         <div className="grid gap-4 lg:grid-cols-[1fr,auto] lg:items-end">
           <div>
             <Chip variant="accent" size="sm">Trades Pokemon</Chip>

@@ -22,7 +22,7 @@ export default async function TradeProposalsPage() {
 
   return (
     <section className="space-y-4">
-      <Card as="header" padding="lg">
+      <Card as="header" padding="lg" className="border-[var(--color-border-strong)]">
         <p className="text-overline text-[var(--color-ink-subtle)]">Trades</p>
         <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
           Propuestas de trade
@@ -33,8 +33,8 @@ export default async function TradeProposalsPage() {
       </Card>
 
       {loadError ? (
-        <Card padding="md" className="border-rose-300 bg-rose-50">
-          <p className="text-sm text-rose-900">Error: {loadError}</p>
+        <Card padding="md" className="notice-danger">
+          <p className="text-body-sm">Error: {loadError}</p>
         </Card>
       ) : null}
 

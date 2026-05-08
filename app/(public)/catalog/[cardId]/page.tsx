@@ -26,31 +26,31 @@ export default async function CatalogCardPage({
             <img
               src={card.imageLarge ?? card.imageSmall ?? ""}
               alt={card.name}
-              className="h-[320px] w-[220px] rounded-xl object-cover"
+              className="h-[320px] w-[220px] rounded-[var(--radius-card)] border border-[var(--color-border-default)] object-cover"
             />
           ) : (
-            <div className="grid h-[320px] w-[220px] place-items-center rounded-xl bg-black/10 text-sm text-black/50">
+            <div className="grid h-[320px] w-[220px] place-items-center rounded-[var(--radius-card)] border border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-body-sm text-[var(--color-ink-subtle)]">
               Sin imagen de catálogo
             </div>
           )}
 
           <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-black/55">
+            <p className="text-overline text-[var(--color-ink-subtle)]">
               {card.setName || "Set desconocido"}
             </p>
             <h1 className="mt-1 text-4xl [font-family:var(--font-display)]">{card.name}</h1>
-            <p className="mt-2 text-sm text-black/65">
+            <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
               Origen: {card.setName || "n/d"}
               {card.number ? ` · Nº ${card.number}` : ""}
               {card.setId ? ` · Set ${card.setId}` : ""}
             </p>
             {card.rarity ? (
-              <p className="mt-1 text-sm text-black/65">Rareza: {card.rarity}</p>
+              <p className="mt-1 text-body-sm text-[var(--color-ink-muted)]">Rareza: {card.rarity}</p>
             ) : null}
 
             {card.marketPriceEur ? (
-              <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-white/70 p-3 text-sm text-black/75">
-                <p className="font-semibold text-black/85">Referencia internacional</p>
+              <div className="mt-4 rounded-[var(--radius-card)] border border-[var(--color-border-default)] bg-[var(--color-surface)] p-3 text-body-sm text-[var(--color-ink-muted)]">
+                <p className="font-semibold text-[var(--color-ink)]">Referencia internacional</p>
                 <p className="mt-1">EUR {card.marketPriceEur.toFixed(2)} (Cardmarket)</p>
               </div>
             ) : null}

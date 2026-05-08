@@ -240,7 +240,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
 
       {/* ── Edit panel ── */}
       {panel === "edit" && (
-        <div className="mt-4 space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4">
+        <div className="mt-4 space-y-4 rounded-[var(--radius-card)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] p-4">
           <div className="grid gap-4 md:grid-cols-[auto,1fr]">
             <div>
               <p className="mb-2 text-caption font-medium">Foto</p>
@@ -307,7 +307,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
 
       {/* ── Publish panel ── */}
       {panel === "publish" && (
-        <div className="mt-4 space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4">
+        <div className="mt-4 space-y-4 rounded-[var(--radius-card)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] p-4">
           {!entry.askingPriceArs && (
             <FormField label="Precio ARS" htmlFor={`pub-price-${entry.id}`} required>
               <Input

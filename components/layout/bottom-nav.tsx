@@ -16,7 +16,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navegación principal"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-border-default)] bg-[var(--color-surface-elevated)]/95 backdrop-blur safe-pb md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)]/95 backdrop-blur safe-pb md:hidden"
     >
       <ul className="mx-auto flex max-w-md">
         {items.map(({ href, label, icon: Icon }) => {
@@ -28,7 +28,7 @@ export function BottomNav() {
                 className={cn(
                   "relative flex h-16 flex-col items-center justify-center gap-1 text-[0.6875rem] font-medium transition-colors",
                   active
-                    ? "text-[var(--color-accent-strong)]"
+                    ? "text-[var(--color-ink)]"
                     : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]",
                 )}
                 aria-current={active ? "page" : undefined}
@@ -37,7 +37,7 @@ export function BottomNav() {
                 {active && (
                   <span
                     aria-hidden
-                    className="absolute top-1.5 h-1 w-8 rounded-full bg-[var(--color-accent)]"
+                    className="absolute top-1.5 h-1 w-8 rounded-full bg-[var(--color-ink)]"
                   />
                 )}
                 <Icon className={cn("h-5 w-5 transition-transform", active && "scale-110")} aria-hidden />

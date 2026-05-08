@@ -2,8 +2,8 @@
 
 @theme {
   /* Surfaces */
-  --color-surface: #f5f5f2;
-  --color-surface-muted: #ededeb;
+  --color-surface: #f4f4f1;
+  --color-surface-muted: #ecece7;
   --color-surface-elevated: #ffffff;
   --color-surface-overlay: rgba(255, 255, 255, 0.98);
 
@@ -14,8 +14,8 @@
   --color-ink-inverse: #ffffff;
 
   /* Borders */
-  --color-border: #d8d8d2;
-  --color-border-default: #d8d8d2;
+  --color-border: #d5d5ce;
+  --color-border-default: #d5d5ce;
   --color-border-strong: #111111;
   --color-border-subtle: #e7e7e1;
 
@@ -57,8 +57,9 @@
   }
   body {
     margin: 0;
+    overflow-x: hidden;
     background:
-      linear-gradient(180deg, #ffffff 0%, var(--color-surface) 34rem),
+      linear-gradient(180deg, #ffffff 0%, var(--color-surface) 30rem),
       var(--color-surface);
     color: var(--color-ink);
     font-family: var(--font-body), "Segoe UI", sans-serif;
@@ -71,6 +72,38 @@
     border-radius: var(--radius-card);
     background: var(--color-surface-elevated);
     box-shadow: var(--shadow-card);
+  }
+
+  .surface-panel {
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-card);
+    background: var(--color-surface-elevated);
+    box-shadow: var(--shadow-card);
+  }
+
+  .premium-page {
+    background:
+      linear-gradient(180deg, #ffffff 0%, var(--color-surface) 24rem),
+      var(--color-surface);
+  }
+
+  .premium-header {
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-card);
+    background: var(--color-surface-elevated);
+    box-shadow: var(--shadow-card);
+  }
+
+  .notice-warning {
+    border-color: var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning-soft) 72%, white);
+    color: var(--color-warning);
+  }
+
+  .notice-danger {
+    border-color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger-soft) 72%, white);
+    color: var(--color-danger);
   }
 
   .muted { color: var(--color-ink-muted); }

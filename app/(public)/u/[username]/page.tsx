@@ -39,7 +39,7 @@ export default async function PublicUserPage({
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
-      <Card as="header" padding="lg" className="space-y-5">
+      <Card as="header" padding="lg" className="space-y-5 border-[var(--color-border-strong)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
             <Avatar

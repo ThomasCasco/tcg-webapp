@@ -13,11 +13,11 @@ export default function TermsPage() {
       <h1 className="mt-4 text-4xl [font-family:var(--font-display)]">
         Terminos y Condiciones
       </h1>
-      <p className="mt-2 text-sm text-black/60">
+      <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
         Borrador beta · Ultima revision: 2026-04-21
       </p>
 
-      <section className="prose prose-sm mt-6 max-w-none space-y-4 text-black/80">
+      <section className="surface-panel mt-6 max-w-none space-y-4 p-6 text-body-sm text-[var(--color-ink-muted)]">
         <h2 className="text-xl font-semibold">1. Que es este servicio</h2>
         <p>
           TCG Marketplace AR es un <strong>clasificado online</strong> que

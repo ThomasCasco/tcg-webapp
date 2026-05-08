@@ -138,7 +138,7 @@ export default async function TransactionsPage({
 
   return (
     <section className="space-y-4">
-      <Card as="header" padding="lg">
+      <Card as="header" padding="lg" className="border-[var(--color-border-strong)]">
         <p className="text-overline text-[var(--color-ink-subtle)]">Transacciones</p>
         <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
           Tus compras y ventas

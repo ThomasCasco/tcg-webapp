@@ -10,7 +10,7 @@ export interface DashboardShellProps {
 
 export function DashboardShell({ user, children }: DashboardShellProps) {
   return (
-    <div className="flex min-h-svh flex-col bg-[var(--color-surface)]">
+    <div className="premium-page flex min-h-svh flex-col">
       <TopBar user={user} />
       <div className="flex flex-1 md:flex-row">
         <DashboardSidebar />

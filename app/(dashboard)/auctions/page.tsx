@@ -11,7 +11,7 @@ export default async function AuctionsPage() {
 
   return (
     <section className="space-y-5">
-      <Card as="header" padding="lg">
+      <Card as="header" padding="lg" className="border-[var(--color-border-strong)]">
         <p className="text-overline text-[var(--color-ink-subtle)]">Formato pausado</p>
         <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
           Subastas
@@ -25,7 +25,7 @@ export default async function AuctionsPage() {
       <Card padding="lg">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-[var(--radius-card)] bg-[var(--color-warning-soft)] text-[var(--color-warning)]">
+            <div className="grid h-11 w-11 place-items-center rounded-[var(--radius-card)] border border-[var(--color-border-strong)] bg-[var(--color-ink)] text-[var(--color-ink-inverse)]">
               <Gavel className="h-5 w-5" />
             </div>
             <div>

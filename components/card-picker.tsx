@@ -180,7 +180,7 @@ export function CardPicker({
         </div>
 
         {setsOpen ? (
-          <div className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg">
+          <div className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-[var(--radius-card)] border border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-card-lg)]">
             <button
               type="button"
               onClick={() => pickSet(null)}
@@ -242,7 +242,7 @@ export function CardPicker({
         />
 
         {picked ? (
-          <div className="mt-2 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-2 text-sm">
+          <div className="mt-2 flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--color-border-default)] bg-[var(--color-surface)] p-2 text-sm">
             {picked.imageSmall ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
@@ -272,7 +272,7 @@ export function CardPicker({
         ) : null}
 
         {open && !picked ? (
-          <div className="absolute z-20 mt-1 max-h-96 w-full overflow-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg">
+          <div className="absolute z-20 mt-1 max-h-96 w-full overflow-auto rounded-[var(--radius-card)] border border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-card-lg)]">
             {loading ? (
               <div className="px-3 py-2 text-sm muted">Buscando...</div>
             ) : results.length === 0 ? (

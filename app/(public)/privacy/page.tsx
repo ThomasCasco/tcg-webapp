@@ -7,7 +7,7 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-5 px-4 py-8 md:py-12">
-      <Card as="header" padding="lg">
+      <Card as="header" padding="lg" className="border-[var(--color-border-strong)]">
         <p className="text-overline text-[var(--color-ink-subtle)]">Legal</p>
         <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
           Política de privacidad

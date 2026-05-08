@@ -177,7 +177,7 @@ export default async function MarketPage({
             </p>
           </div>
 
-          <div className="grid grid-cols-3 border border-[var(--color-border-strong)] bg-white text-center md:min-w-80">
+          <div className="grid w-full grid-cols-3 border border-[var(--color-border-strong)] bg-white text-center md:w-auto md:min-w-80">
             <MarketMetric value={`${total}`} label="resultados" />
             <MarketMetric value="ARS" label="moneda" />
             <MarketMetric value="TCG" label="foco" />
@@ -297,7 +297,7 @@ export default async function MarketPage({
           }
         />
       ) : (
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+        <section className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
           {enriched.map(({ listing, pokemonTypes }) => (
             <MarketListingCard
               key={listing.id}

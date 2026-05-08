@@ -22,7 +22,7 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
       as="article"
       variant={listing.status === "active" ? "interactive" : "default"}
       padding="none"
-      className="group flex flex-col overflow-hidden bg-white"
+      className="group min-w-0 flex flex-col overflow-hidden bg-white"
     >
       <Link
         href={`/market/${listing.id}`}
@@ -64,7 +64,7 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
 
       <div className="flex flex-1 flex-col gap-1.5 border-t border-[var(--color-border-subtle)] p-3">
         <Link href={`/market/${listing.id}`} className="group/link">
-          <p className="text-[1.0625rem] font-extrabold leading-tight text-[var(--color-ink)]">
+          <p className="truncate text-[1.0625rem] font-extrabold leading-tight text-[var(--color-ink)]">
             {formattedPrice}
           </p>
           <h3 className="mt-1 line-clamp-2 text-body-sm font-semibold text-[var(--color-ink)] group-hover/link:underline">

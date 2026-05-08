@@ -27,7 +27,7 @@ export default async function AlertsPage() {
   return (
     <section className="space-y-6">
       <NotificationsMarkReadOnMount ids={unreadIds} />
-      <Card as="header" padding="lg">
+      <Card as="header" padding="lg" className="border-[var(--color-border-strong)]">
         <p className="text-overline text-[var(--color-ink-subtle)]">
           Alertas de cartas
         </p>
@@ -43,8 +43,8 @@ export default async function AlertsPage() {
       <WatchlistManager />
 
       {loadError ? (
-        <Card as="article" padding="md" className="border-rose-300 bg-rose-50">
-          <p className="text-sm text-rose-900">Error: {loadError}</p>
+        <Card as="article" padding="md" className="notice-danger">
+          <p className="text-body-sm">Error: {loadError}</p>
         </Card>
       ) : null}
 
@@ -64,8 +64,10 @@ export default async function AlertsPage() {
             {notifications.map((notification) => (
               <li
                 key={notification.id}
-                className={`rounded-xl border border-[var(--color-border)] p-3 ${
-                  notification.readAt ? "bg-white/60" : "bg-[var(--color-warning-soft)]"
+                className={`rounded-[var(--radius-card)] border p-3 ${
+                  notification.readAt
+                    ? "border-[var(--color-border-default)] bg-[var(--color-surface-elevated)]"
+                    : "border-[var(--color-border-strong)] bg-[var(--color-surface)]"
                 }`}
               >
                 <p className="text-body-sm font-semibold">{notification.title}</p>
