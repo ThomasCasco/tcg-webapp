@@ -26,6 +26,18 @@ function requiredEnv(name: string): string {
   return value;
 }
 
+function mpPlatformToken(): string {
+  // Canonical name is MP_ACCESS_TOKEN (matches lib/server/mp-client.ts).
+  // MERCADO_PAGO_ACCESS_TOKEN is accepted as a fallback for backwards compat.
+  const value =
+    process.env.MP_ACCESS_TOKEN?.trim() ||
+    process.env.MERCADO_PAGO_ACCESS_TOKEN?.trim();
+  if (!value) {
+    throw new Error("Missing MP_ACCESS_TOKEN environment variable.");
+  }
+  return value;
+}
+
 async function parseJsonOrThrow(response: Response): Promise<Record<string, unknown>> {
   const payload = (await response.json().catch(() => null)) as Record<string, unknown> | null;
 
@@ -39,7 +51,7 @@ async function parseJsonOrThrow(response: Response): Promise<Record<string, unkn
 async function verifyMercadoPagoPayment(
   providerPaymentId: string,
 ): Promise<ProviderPaymentVerification> {
-  const token = requiredEnv("MERCADO_PAGO_ACCESS_TOKEN");
+  const token = mpPlatformToken();
 
   const response = await fetch(
     `https://api.mercadopago.com/v1/payments/${encodeURIComponent(providerPaymentId)}`,
