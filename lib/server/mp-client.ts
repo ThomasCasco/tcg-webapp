@@ -184,6 +184,71 @@ export async function getMpPayment(mpPaymentId: string): Promise<MpPaymentInfo> 
 }
 
 /**
+ * Find the most recent MP payment associated with an external_reference
+ * (= our transactionId). Used as a fallback when the webhook didn't fire
+ * or fired before the payment was approved.
+ *
+ * Uses the platform token. MP returns payments where the marketplace owner
+ * is also the collector OR where the marketplace owner is the platform
+ * authorizing the OAuth-connected seller.
+ *
+ * Returns null if no payment is found yet.
+ */
+export async function searchMpPaymentByExternalReference(
+  externalReference: string,
+): Promise<MpPaymentInfo | null> {
+  type RawSearchPayment = {
+    id: number;
+    status: string;
+    status_detail: string;
+    transaction_amount: number;
+    currency_id: string;
+    external_reference: string | null;
+    collector_id: number;
+    marketplace_fee: number | null;
+    preference_id?: string | null;
+    date_created?: string;
+  };
+  type RawSearchResponse = {
+    results?: RawSearchPayment[];
+    paging?: { total?: number };
+  };
+
+  const params = new URLSearchParams({
+    external_reference: externalReference,
+    sort: "date_created",
+    criteria: "desc",
+    limit: "10",
+  });
+
+  const raw = await mpFetch<RawSearchResponse>(
+    `/v1/payments/search?${params.toString()}`,
+    { method: "GET", token: platformToken() },
+  );
+
+  const results = raw.results ?? [];
+  if (results.length === 0) return null;
+
+  // Prefer an approved/accredited payment if any; otherwise return the most recent.
+  const approved = results.find((r) =>
+    ["approved", "accredited"].includes((r.status ?? "").toLowerCase()),
+  );
+  const pick = approved ?? results[0];
+
+  return {
+    id: pick.id,
+    status: pick.status,
+    statusDetail: pick.status_detail,
+    transactionAmount: pick.transaction_amount,
+    currencyId: pick.currency_id,
+    externalReference: pick.external_reference,
+    collectorId: pick.collector_id,
+    marketplaceFee: pick.marketplace_fee ?? 0,
+    preferenceId: pick.preference_id ?? null,
+  };
+}
+
+/**
  * Exchange OAuth authorization code for tokens.
  */
 export async function exchangeMpCode(code: string, redirectUri: string): Promise<MpTokenResult> {

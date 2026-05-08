@@ -16,16 +16,14 @@
 import { validateMpWebhookSignature, getMpPayment } from "@/lib/server/mp-client";
 import {
   getPaymentEventByExternalRef,
-  verifyTransaction,
-  setPaymentMpPaymentId,
   getUserProfile,
-  getMpPaymentValidationContext,
+  recordMpWebhookEvent,
 } from "@/lib/server/repository";
+import { reconcileMpTransaction } from "@/lib/server/mp-reconcile";
 import { sendPaymentConfirmedBuyer, sendSaleConfirmedSeller } from "@/lib/server/email";
 import { log } from "@/lib/server/logger";
 
 const PLATFORM_FEE_PERCENT = Number(process.env.PLATFORM_FEE_PERCENT ?? "1") / 100;
-const MONEY_TOLERANCE_ARS = 0.01;
 
 type MpWebhookBody = {
   action?: string;
@@ -44,8 +42,13 @@ export async function POST(request: Request): Promise<Response> {
     rawBody = await request.text();
     body = JSON.parse(rawBody) as MpWebhookBody;
   } catch {
-    // Bad JSON — return 200 so MP doesn't retry endlessly
     log.warn("MP webhook: invalid JSON body");
+    await recordMpWebhookEvent({
+      rawBody: "(unreadable)",
+      xSignature,
+      xRequestId,
+      outcome: "invalid_json",
+    });
     return Response.json({ ok: true });
   }
 
@@ -55,16 +58,39 @@ export async function POST(request: Request): Promise<Response> {
   const action = body?.action ?? "";
   const type = body?.type ?? "";
   if (type !== "payment" && action !== "payment.updated" && action !== "payment.created") {
+    await recordMpWebhookEvent({
+      rawBody,
+      xSignature,
+      xRequestId,
+      mpPaymentId: dataId || null,
+      outcome: "ignored",
+      outcomeReason: `type=${type} action=${action}`,
+    });
     return Response.json({ ok: true });
   }
 
   if (!dataId) {
+    await recordMpWebhookEvent({
+      rawBody,
+      xSignature,
+      xRequestId,
+      outcome: "ignored",
+      outcomeReason: "missing data.id",
+    });
     return Response.json({ ok: true });
   }
 
   if (!xSignature || !xRequestId) {
     if (process.env.NODE_ENV === "production") {
       log.warn("MP webhook: missing signature headers", { dataId });
+      await recordMpWebhookEvent({
+        rawBody,
+        xSignature,
+        xRequestId,
+        mpPaymentId: dataId,
+        outcome: "invalid_signature",
+        outcomeReason: "missing signature headers",
+      });
       return Response.json({ error: "Missing signature" }, { status: 401 });
     }
     log.warn("MP webhook: missing signature headers (dev mode)", { dataId });
@@ -77,12 +103,28 @@ export async function POST(request: Request): Promise<Response> {
       });
       if (!valid) {
         log.warn("MP webhook: invalid signature", { dataId });
+        await recordMpWebhookEvent({
+          rawBody,
+          xSignature,
+          xRequestId,
+          mpPaymentId: dataId,
+          outcome: "invalid_signature",
+          outcomeReason: "HMAC mismatch",
+        });
         return Response.json({ error: "Invalid signature" }, { status: 401 });
       }
     } catch (err) {
       // If MP_WEBHOOK_SECRET is not set, skip signature check in dev
       if (process.env.NODE_ENV === "production") {
         log.error("MP webhook: signature validation error", { error: String(err) });
+        await recordMpWebhookEvent({
+          rawBody,
+          xSignature,
+          xRequestId,
+          mpPaymentId: dataId,
+          outcome: "invalid_signature",
+          outcomeReason: err instanceof Error ? err.message : String(err),
+        });
         return Response.json({ error: "Signature error" }, { status: 500 });
       }
       log.warn("MP webhook: skipping signature check (dev mode)", { reason: String(err) });
@@ -95,143 +137,89 @@ export async function POST(request: Request): Promise<Response> {
     mpPayment = await getMpPayment(dataId);
   } catch (err) {
     log.error("MP webhook: failed to fetch payment", { dataId, error: String(err) });
-    // Return 200 — we don't want MP to hammer us for transient errors
+    await recordMpWebhookEvent({
+      rawBody,
+      xSignature,
+      xRequestId,
+      mpPaymentId: dataId,
+      outcome: "fetch_failed",
+      outcomeReason: err instanceof Error ? err.message : String(err),
+    });
     return Response.json({ ok: true });
   }
 
   const externalRef = mpPayment.externalReference;
   if (!externalRef) {
     log.warn("MP webhook: payment has no external_reference", { dataId });
+    await recordMpWebhookEvent({
+      rawBody,
+      xSignature,
+      xRequestId,
+      mpPaymentId: dataId,
+      outcome: "ignored",
+      outcomeReason: "payment has no external_reference",
+    });
     return Response.json({ ok: true });
   }
 
-  // Find the payment_event by external_reference (= transactionId)
-  let paymentEvent: Awaited<ReturnType<typeof getPaymentEventByExternalRef>>;
-  try {
-    paymentEvent = await getPaymentEventByExternalRef(externalRef);
-  } catch (err) {
-    log.error("MP webhook: DB lookup failed", { externalRef, error: String(err) });
+  // Reconcile via the shared module (same path used by the post-redirect fallback).
+  const outcome = await reconcileMpTransaction({
+    transactionId: externalRef,
+    mpPaymentId: dataId,
+  });
+
+  await recordMpWebhookEvent({
+    rawBody,
+    xSignature,
+    xRequestId,
+    mpPaymentId: dataId,
+    transactionId: externalRef,
+    outcome: outcome.kind,
+    outcomeReason: outcome.kind === "verified" ? null : outcome.reason,
+  });
+
+  if (outcome.kind === "blocked") {
+    log.error("MP webhook: hard validation blocked verification", {
+      dataId,
+      transactionId: externalRef,
+      reason: outcome.reason,
+    });
     return Response.json({ ok: true });
   }
 
-  if (!paymentEvent) {
+  if (outcome.kind === "not_found") {
     log.warn("MP webhook: no payment_event for external_reference", { externalRef });
     return Response.json({ ok: true });
   }
 
-  // Stamp mp_payment_id (idempotent)
-  try {
-    await setPaymentMpPaymentId({
-      transactionId: paymentEvent.transactionId,
-      mpPaymentId: dataId,
-    });
-  } catch (err) {
-    log.error("MP webhook: setPaymentMpPaymentId failed", { error: String(err) });
-  }
-
-  // Only proceed if payment is approved
-  const approved = ["approved", "accredited"].includes(mpPayment.status.toLowerCase());
-  if (!approved) {
-    log.info("MP webhook: payment not approved", {
+  if (outcome.kind === "still_pending") {
+    log.info("MP webhook: still pending", {
       dataId,
+      transactionId: externalRef,
       status: mpPayment.status,
-      externalRef,
+      reason: outcome.reason,
     });
     return Response.json({ ok: true });
   }
 
-  try {
-    await assertMpPaymentMatchesTransaction(paymentEvent.transactionId, mpPayment);
-  } catch (err) {
-    log.error("MP webhook: payment validation failed", {
-      dataId,
-      transactionId: paymentEvent.transactionId,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return Response.json({ ok: true });
-  }
-
-  // Verify transaction (bypasses buyer ownership check — this is a server-side call)
-  let verified: Awaited<ReturnType<typeof verifyTransaction>>;
-  try {
-    verified = await verifyTransaction({
-      transactionId: paymentEvent.transactionId,
-      bypassOwnership: true,
-      provider: "mercado_pago",
-      providerPaymentId: dataId,
-      providerStatus: mpPayment.status,
-    });
-  } catch (err) {
-    log.error("MP webhook: verifyTransaction failed", {
-      transactionId: paymentEvent.transactionId,
-      error: String(err),
-    });
-    return Response.json({ ok: true });
-  }
-
+  // verified — fire-and-forget emails
   log.info("MP webhook: transaction verified", {
-    transactionId: paymentEvent.transactionId,
-    verificationStatus: verified.payment.verificationStatus,
+    transactionId: externalRef,
+    mpPaymentId: outcome.mpPaymentId,
   });
 
-  // Send email notifications (fire-and-forget, don't fail the webhook)
-  void sendEmailsAfterPayment({
-    paymentEvent: verified.payment,
-    priceArs: mpPayment.transactionAmount,
-    platformFeeArs: mpPayment.marketplaceFee,
-  }).catch((err) => {
-    log.error("MP webhook: email send failed", { error: String(err) });
-  });
+  const paymentEvent = await getPaymentEventByExternalRef(externalRef);
+  if (paymentEvent) {
+    void sendEmailsAfterPayment({
+      paymentEvent,
+      priceArs: mpPayment.transactionAmount,
+      platformFeeArs: mpPayment.marketplaceFee,
+    }).catch((err) => {
+      log.error("MP webhook: email send failed", { error: String(err) });
+    });
+  }
 
   return Response.json({ ok: true });
-}
-
-async function assertMpPaymentMatchesTransaction(
-  transactionId: string,
-  mpPayment: Awaited<ReturnType<typeof getMpPayment>>,
-): Promise<void> {
-  const expected = await getMpPaymentValidationContext(transactionId);
-  if (!expected) {
-    throw new Error("Missing expected payment context.");
-  }
-
-  const expectedAmount = Number(expected.expectedAmountArs);
-  if (Math.abs(mpPayment.transactionAmount - expectedAmount) > MONEY_TOLERANCE_ARS) {
-    throw new Error(
-      `Amount mismatch: expected ${expectedAmount}, got ${mpPayment.transactionAmount}.`,
-    );
-  }
-
-  if (mpPayment.currencyId !== expected.expectedCurrencyId) {
-    throw new Error(
-      `Currency mismatch: expected ${expected.expectedCurrencyId}, got ${mpPayment.currencyId}.`,
-    );
-  }
-
-  if (String(mpPayment.collectorId) !== expected.expectedSellerMpUserId) {
-    throw new Error(
-      `Collector mismatch: expected ${expected.expectedSellerMpUserId}, got ${mpPayment.collectorId}.`,
-    );
-  }
-
-  if (
-    expected.expectedPreferenceId &&
-    mpPayment.preferenceId &&
-    mpPayment.preferenceId !== expected.expectedPreferenceId
-  ) {
-    throw new Error(
-      `Preference mismatch: expected ${expected.expectedPreferenceId}, got ${mpPayment.preferenceId}.`,
-    );
-  }
-
-  if (
-    typeof expected.expectedPlatformFeeArs === "number" &&
-    Math.abs(mpPayment.marketplaceFee - expected.expectedPlatformFeeArs) > MONEY_TOLERANCE_ARS
-  ) {
-    throw new Error(
-      `Platform fee mismatch: expected ${expected.expectedPlatformFeeArs}, got ${mpPayment.marketplaceFee}.`,
-    );
-  }
 }
 
 async function sendEmailsAfterPayment(opts: {

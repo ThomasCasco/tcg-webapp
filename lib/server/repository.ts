@@ -2777,6 +2777,92 @@ export async function getMpPaymentValidationContext(
   };
 }
 
+export type MpWebhookEventOutcome =
+  | "verified"
+  | "still_pending"
+  | "blocked"
+  | "not_found"
+  | "invalid_signature"
+  | "invalid_json"
+  | "ignored"
+  | "fetch_failed";
+
+/**
+ * Persist a single MP webhook attempt for audit/debugging.
+ * Failures here are swallowed — never let auditing break the webhook.
+ */
+export async function recordMpWebhookEvent(input: {
+  rawBody: string;
+  xSignature?: string | null;
+  xRequestId?: string | null;
+  mpPaymentId?: string | null;
+  transactionId?: string | null;
+  outcome: MpWebhookEventOutcome;
+  outcomeReason?: string | null;
+}): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const client = getSupabaseAdminClient();
+    await client.from("mp_webhook_events").insert({
+      raw_body: input.rawBody,
+      x_signature: input.xSignature ?? null,
+      x_request_id: input.xRequestId ?? null,
+      mp_payment_id: input.mpPaymentId ?? null,
+      transaction_id: input.transactionId ?? null,
+      outcome: input.outcome,
+      outcome_reason: input.outcomeReason ?? null,
+    });
+  } catch {
+    // Never let audit failures break the webhook.
+  }
+}
+
+export type PendingMpReconcileRow = {
+  transactionId: string;
+  mpPreferenceId: string | null;
+  createdAt: string;
+};
+
+/**
+ * List `payment_event` rows that:
+ *   - are still in `pending_review`,
+ *   - have a Mercado Pago checkout in flight (mp_preference_id set),
+ *   - were created in the last `windowHours` hours.
+ *
+ * Used by the reconciliation cron to retry verification when the webhook
+ * never closed the loop.
+ */
+export async function listPendingMpReconciliations(
+  windowHours = 48,
+): Promise<PendingMpReconcileRow[]> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  const sinceIso = new Date(Date.now() - windowHours * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await client
+    .from(PAYMENTS_TABLE)
+    .select("transaction_id, mp_preference_id, created_at")
+    .eq("provider", "mercado_pago")
+    .eq("verification_status", "pending_review")
+    .not("mp_preference_id", "is", null)
+    .gte("created_at", sinceIso)
+    .order("created_at", { ascending: true })
+    .limit(200);
+
+  if (error) throw new Error(error.message);
+
+  return ((data ?? []) as Array<{
+    transaction_id: string;
+    mp_preference_id: string | null;
+    created_at: string;
+  }>).map((row) => ({
+    transactionId: row.transaction_id,
+    mpPreferenceId: row.mp_preference_id,
+    createdAt: row.created_at,
+  }));
+}
+
 /**
  * Get a payment_event by mp_payment_id (set after webhook fires).
  */

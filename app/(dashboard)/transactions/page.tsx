@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { TransactionCard } from "@/components/transaction-card";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { listTransactionsForUser } from "@/lib/server/repository";
+import { reconcileMpTransaction } from "@/lib/server/mp-reconcile";
+import { log } from "@/lib/server/logger";
 import type {
   FulfillmentStatus,
   PaymentEventWithListing,
@@ -77,6 +79,8 @@ export default async function TransactionsPage({
     payment?: string;
     fulfillment?: string;
     q?: string;
+    mp_status?: string;
+    tx?: string;
   }>;
 }) {
   const user = await getAuthenticatedUser();
@@ -89,7 +93,42 @@ export default async function TransactionsPage({
     payment: rawPayment = "all",
     fulfillment: rawFulfillment = "all",
     q = "",
+    mp_status: mpStatus,
+    tx: mpTx,
   } = await searchParams;
+
+  // Post-MP-redirect fallback: if MP sent the buyer back here with
+  // ?mp_status=success&tx=..., reconcile the transaction against MP directly
+  // instead of waiting for the webhook. Closes the gap when the webhook never
+  // reached us (unreachable APP_URL, signature misconfig, transient failure).
+  let postRedirectMessage: { kind: "ok" | "warn" | "err"; text: string } | null = null;
+  if (mpStatus === "success" && mpTx && mpTx.length >= 6) {
+    try {
+      const outcome = await reconcileMpTransaction({ transactionId: mpTx });
+      if (outcome.kind === "verified") {
+        postRedirectMessage = { kind: "ok", text: "Pago verificado correctamente." };
+      } else if (outcome.kind === "still_pending") {
+        postRedirectMessage = {
+          kind: "warn",
+          text: "Mercado Pago todavía no confirmó el pago. Suele tardar unos segundos; recargá esta página en un momento.",
+        };
+      } else if (outcome.kind === "blocked") {
+        postRedirectMessage = {
+          kind: "err",
+          text: `No pudimos verificar automáticamente: ${outcome.reason}. Revisá la transacción manualmente.`,
+        };
+      }
+    } catch (err) {
+      log.error("transactions page: reconcile failed", {
+        tx: mpTx,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      postRedirectMessage = {
+        kind: "err",
+        text: "Hubo un problema al verificar el pago. Probá refrescar la página.",
+      };
+    }
+  }
 
   const role = parseRole(rawRole);
   const payment = parsePayment(rawPayment);
@@ -152,6 +191,32 @@ export default async function TransactionsPage({
       {loadError && (
         <Card as="article" padding="md" className="border-[var(--color-danger)] bg-[var(--color-danger-soft)]">
           <p className="text-body-sm text-[var(--color-danger)]">Error: {loadError}</p>
+        </Card>
+      )}
+
+      {postRedirectMessage && (
+        <Card
+          as="article"
+          padding="md"
+          className={
+            postRedirectMessage.kind === "ok"
+              ? "border-[var(--color-success)] bg-[var(--color-success-soft)]"
+              : postRedirectMessage.kind === "warn"
+                ? "border-[var(--color-warning)] bg-[var(--color-warning-soft)]"
+                : "border-[var(--color-danger)] bg-[var(--color-danger-soft)]"
+          }
+        >
+          <p
+            className={`text-body-sm ${
+              postRedirectMessage.kind === "ok"
+                ? "text-[var(--color-success)]"
+                : postRedirectMessage.kind === "warn"
+                  ? "text-[var(--color-ink)]"
+                  : "text-[var(--color-danger)]"
+            }`}
+          >
+            {postRedirectMessage.text}
+          </p>
         </Card>
       )}
 
