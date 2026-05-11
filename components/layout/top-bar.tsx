@@ -41,10 +41,13 @@ export function TopBar({ user }: Props) {
     else router.push("/market");
   }
 
-  const showSearch =
-    !pathname?.startsWith("/login") &&
-    !pathname?.startsWith("/register") &&
-    pathname !== "/market";
+  const hideSearch =
+    pathname?.startsWith("/login") ||
+    pathname?.startsWith("/register") ||
+    pathname === "/market";
+
+  const showNav =
+    !pathname?.startsWith("/login") && !pathname?.startsWith("/register");
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)]/95 backdrop-blur">
@@ -63,7 +66,7 @@ export function TopBar({ user }: Props) {
         </Link>
 
         {/* ── Search ── */}
-        {showSearch && (
+        {!hideSearch && (
           <form
             onSubmit={onSearch}
             className="hidden flex-1 items-center md:flex"
@@ -88,8 +91,11 @@ export function TopBar({ user }: Props) {
           </form>
         )}
 
+        {/* When search is hidden, push nav + actions to the right */}
+        {hideSearch && <div className="hidden flex-1 md:block" />}
+
         {/* ── Actions ── */}
-        {showSearch && (
+        {showNav && (
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegacion publica">
             <Link
               href="/market"
