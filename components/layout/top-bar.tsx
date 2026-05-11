@@ -12,21 +12,50 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Search, ShoppingBag } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { UserMenu } from "@/components/layout/user-menu";
 import { cn } from "@/lib/ui/cn";
 
+type AuthUser = { username: string; email?: string };
+
 type Props = {
-  user: { username: string; email?: string } | null;
+  user: AuthUser | null;
 };
 
-export function TopBar({ user }: Props) {
+export function TopBar({ user: initialUser }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
+  const [user, setUser] = useState<AuthUser | null>(initialUser);
+
+  // The (public) layout RSC payload can get cached stale by the client router
+  // cache when navigating between static segments — so the prop sometimes
+  // arrives as `null` even when the user is logged in. Re-verify against the
+  // server on every navigation; the initial prop seeds the first render to
+  // avoid a logged-out flash.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const fetched = (data?.user ?? null) as AuthUser | null;
+        setUser((prev) => {
+          if (!prev && !fetched) return prev;
+          if (prev && fetched && prev.username === fetched.username) return prev;
+          return fetched;
+        });
+      })
+      .catch(() => {
+        // silent — keep whatever state we had
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
