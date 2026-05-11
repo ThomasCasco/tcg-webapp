@@ -183,21 +183,72 @@ export function TransactionCard({ transaction, viewerUserId }: Props) {
 
       {!isPaid && isBuyer && (
         <div className="mt-4 rounded-[var(--radius-card)] border border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)] p-3">
+          {transaction.provider === "mercado_pago" ? (
+            <>
+              <p className="text-body-sm font-semibold text-[var(--color-ink)]">
+                Esperando confirmación de Mercado Pago
+              </p>
+              <p className="mt-1 text-caption text-[var(--color-ink-muted)]">
+                Si ya pagaste, se acredita en segundos automáticamente. Si volviste
+                desde MP y no se verificó, cargá el ID de pago manualmente.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-body-sm font-semibold text-[var(--color-ink)]">
+                Pago pendiente (P2P)
+              </p>
+              <p className="mt-1 text-caption text-[var(--color-ink-muted)]">
+                Coordiná el pago con el vendedor por el chat (alias, CBU o lo que
+                tenga). Cuando transfieras, cargá el ID/comprobante acá para que
+                quede registrado.
+              </p>
+            </>
+          )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setPanel(panel === "verify" ? "none" : "verify")}
+              disabled={busy}
+            >
+              <CreditCard className="h-4 w-4" />
+              {transaction.provider === "mercado_pago"
+                ? "Cargar ID de pago"
+                : "Confirmar transferencia"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setPanel(panel === "chat" ? "none" : "chat")}
+              disabled={busy}
+            >
+              <MessageCircle className="h-4 w-4" />
+              Chat con el vendedor
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {!isPaid && !isBuyer && (
+        <div className="mt-4 rounded-[var(--radius-card)] border border-[var(--color-info)]/30 bg-[var(--color-info-soft)] p-3">
           <p className="text-body-sm font-semibold text-[var(--color-ink)]">
-            Pago pendiente de verificación
+            Esperando que el comprador pague
           </p>
           <p className="mt-1 text-caption text-[var(--color-ink-muted)]">
-            Si pagaste por Mercado Pago o transferencia, cargá el ID/comprobante para cerrar la compra.
+            {transaction.provider === "mercado_pago"
+              ? "El comprador fue al checkout de MP. Vas a recibir aviso cuando se acredite."
+              : "Pasale tu alias o CBU por el chat para que pueda transferirte. Confirmá cuando recibas el pago."}
           </p>
           <Button
             size="sm"
             variant="secondary"
             className="mt-3"
-            onClick={() => setPanel(panel === "verify" ? "none" : "verify")}
+            onClick={() => setPanel(panel === "chat" ? "none" : "chat")}
             disabled={busy}
           >
-            <CreditCard className="h-4 w-4" />
-            Verificar pago
+            <MessageCircle className="h-4 w-4" />
+            Chat con el comprador
           </Button>
         </div>
       )}

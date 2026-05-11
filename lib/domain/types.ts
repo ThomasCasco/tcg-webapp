@@ -66,7 +66,12 @@ export interface InventoryEntry {
 
 export type ListingType = "single" | "mystery_pack";
 
-export type AuctionStatus = "active" | "ended" | "cancelled" | "settled";
+export type AuctionStatus =
+  | "scheduled"
+  | "active"
+  | "ended"
+  | "cancelled"
+  | "settled";
 
 export interface Listing {
   id: string;
@@ -95,6 +100,12 @@ export interface Listing {
   offersPickup?: boolean;
   /** Dónde y cómo: zona de retiro, couriers, costos, horarios. */
   deliveryAreaNotes?: string;
+  /**
+   * True si el vendedor tiene Mercado Pago conectado.
+   * Cuando es true, el flujo de pago es automatico (checkout MP).
+   * Cuando es false/undefined, el flujo es P2P (alias/CBU/coordinacion manual).
+   */
+  sellerMpConnected?: boolean;
 }
 
 /** Transacción + datos de la publicación para la UI de seguimiento. */
@@ -153,6 +164,18 @@ export interface AuctionListing {
   offersShipping?: boolean;
   offersPickup?: boolean;
   deliveryAreaNotes?: string;
+  /** Suscripciones a "avisame cuando empiece" (solo cuando aplica). */
+  subscriberCount?: number;
+  /** true si el viewer actual está suscripto (lo setea el server al cargar). */
+  viewerSubscribed?: boolean;
+}
+
+export interface AuctionSubscription {
+  id: string;
+  auctionId: string;
+  userId: string;
+  createdAt: string;
+  notifiedAt?: string;
 }
 
 export interface AuctionBid {

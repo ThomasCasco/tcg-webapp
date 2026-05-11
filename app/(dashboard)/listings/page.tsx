@@ -34,18 +34,18 @@ export default async function ListingsPage() {
     <section className="space-y-5">
       <Card as="header" padding="lg">
         <p className="text-overline text-[var(--color-ink-subtle)]">
-          Paso 2 de 2 - Tus cartas en el mercado
+          Paso 2 de 2 · Tus cartas en el mercado
         </p>
         <h1 className="mt-1 text-h1 [font-family:var(--font-display)]">
           Publicaciones
         </h1>
         <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
           Tus ofertas visibles en el{" "}
-          <Link href="/market" className="underline">Mercado</Link>. Para publicar una
-          carta, cargala en{" "}
-          <Link href="/inventory" className="underline">Inventario</Link> y toca
-          &quot;Publicar en Mercado&quot;. Los sobres estan pausados por ahora; esta pantalla
-          queda para administrar tus ventas activas y cerradas.
+          <Link href="/market" className="underline">Mercado</Link>. Para publicar
+          una carta a precio fijo, cargala en{" "}
+          <Link href="/inventory" className="underline">Inventario</Link> y tocá
+          &quot;Publicar en Mercado&quot;. Si preferís subastarla, andá a{" "}
+          <Link href="/my-auctions" className="underline">Mis subastas</Link>.
         </p>
       </Card>
 

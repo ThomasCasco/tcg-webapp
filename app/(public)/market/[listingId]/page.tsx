@@ -153,6 +153,25 @@ export default async function ListingDetailPage({
                 <span className="font-semibold">@{listing.sellerHandle}</span>
                 <Chip size="sm" variant="info">Perfil activo</Chip>
               </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[var(--color-ink-subtle)]">Forma de pago:</span>
+                {listing.sellerMpConnected ? (
+                  <Chip size="sm" variant="success" title="Verificación automática por Mercado Pago">
+                    <CreditCard className="h-3 w-3" />
+                    Mercado Pago automático
+                  </Chip>
+                ) : (
+                  <Chip size="sm" variant="warning" title="Pago coordinado fuera de la plataforma">
+                    Pago P2P (alias/CBU)
+                  </Chip>
+                )}
+                <Link
+                  href="/how-it-works#pagos"
+                  className="text-caption font-semibold text-[var(--color-accent-strong)] underline"
+                >
+                  ¿Qué es esto?
+                </Link>
+              </div>
               {catalog ? (
                 <div className="text-caption text-[var(--color-ink-muted)]">
                   {catalog.setName || listing.setName}
@@ -165,7 +184,10 @@ export default async function ListingDetailPage({
             <div className="flex flex-wrap gap-2">
               {listing.status === "active" ? (
                 user ? (
-                  <ReserveListingButton listingId={listing.id} />
+                  <ReserveListingButton
+                    listingId={listing.id}
+                    sellerMpConnected={listing.sellerMpConnected}
+                  />
                 ) : (
                   <Button asChild>
                     <Link href="/login">Iniciá sesión para reservar</Link>
@@ -215,31 +237,43 @@ export default async function ListingDetailPage({
       <Card as="section" padding="lg">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-[var(--color-accent-strong)]" />
-          <p className="text-overline text-[var(--color-ink-subtle)]">Compra segura</p>
+          <p className="text-overline text-[var(--color-ink-subtle)]">
+            Cómo va a ser la compra
+          </p>
         </div>
         <ol className="mt-3 grid gap-3 md:grid-cols-3">
           <li className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-4">
             <CheckCircle className="h-5 w-5 text-[var(--color-accent)]" />
-            <p className="mt-2 text-body-sm font-semibold">Reservás</p>
+            <p className="mt-2 text-body-sm font-semibold">1. Reservás</p>
             <p className="mt-0.5 text-caption text-[var(--color-ink-muted)]">
-              La publicación queda en pago pendiente a tu nombre.
+              La publicación queda en pago pendiente a tu nombre por 24 h.
             </p>
           </li>
           <li className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-4">
             <CreditCard className="h-5 w-5 text-[var(--color-accent)]" />
-            <p className="mt-2 text-body-sm font-semibold">Pagás al vendedor</p>
+            <p className="mt-2 text-body-sm font-semibold">
+              2. {listing.sellerMpConnected ? "Pagás por Mercado Pago" : "Coordinás el pago"}
+            </p>
             <p className="mt-0.5 text-caption text-[var(--color-ink-muted)]">
-              Mercado Pago automático si está conectado, o coordinación P2P.
+              {listing.sellerMpConnected
+                ? "Te abrimos el checkout de MP. Apenas confirma el pago, se verifica solo."
+                : "El vendedor te pasa alias o CBU. Transferís y avisás por el chat."}
             </p>
           </li>
           <li className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-4">
             <Truck className="h-5 w-5 text-[var(--color-accent)]" />
-            <p className="mt-2 text-body-sm font-semibold">Seguís la entrega</p>
+            <p className="mt-2 text-body-sm font-semibold">3. Seguís la entrega</p>
             <p className="mt-0.5 text-caption text-[var(--color-ink-muted)]">
               Chat, tracking y disputa quedan asociados a la operación.
             </p>
           </li>
         </ol>
+        {!listing.sellerMpConnected ? (
+          <p className="mt-3 rounded-[var(--radius-input)] border border-[var(--color-warning)] bg-[var(--color-warning-soft)] p-3 text-caption text-[var(--color-warning)]">
+            Como no hay MP, nuestra plataforma no verifica el pago automáticamente.
+            Revisá la reputación del vendedor antes de transferir y guardá comprobante.
+          </p>
+        ) : null}
       </Card>
     </main>
   );

@@ -9,6 +9,8 @@ import { isSupabaseConfigured } from "@/lib/server/supabase";
 import {
   ArrowLeftRight,
   ArrowRight,
+  Gavel,
+  Info,
   Package,
   Scale,
   ShoppingBag,
@@ -60,15 +62,26 @@ export default async function HomePage() {
                 size="lg"
                 className="border-white bg-transparent text-white hover:bg-white hover:text-black"
               >
+                <Link href="/auctions">
+                  <Gavel className="h-4 w-4" />
+                  Subastas
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="secondary"
+                size="lg"
+                className="border-white bg-transparent text-white hover:bg-white hover:text-black"
+              >
                 <Link href="/trades">
                   <ArrowLeftRight className="h-4 w-4" />
                   Ver trades
                 </Link>
               </Button>
               <Button asChild variant="ghost" size="lg" className="text-white hover:bg-white/10">
-                <Link href={user ? "/inventory" : "/register"}>
-                  Publicar carta
-                  <ArrowRight className="h-4 w-4" />
+                <Link href="/how-it-works">
+                  <Info className="h-4 w-4" />
+                  Cómo funciona
                 </Link>
               </Button>
             </div>
@@ -241,11 +254,17 @@ export default async function HomePage() {
             />
           </div>
 
-          <div className="mt-10 flex">
+          <div className="mt-10 flex flex-wrap gap-3">
             <Button asChild size="lg">
               <Link href="/market">
                 Entrar al mercado
                 <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="secondary">
+              <Link href="/how-it-works">
+                <Info className="h-4 w-4" />
+                Leer la guía completa
               </Link>
             </Button>
           </div>
