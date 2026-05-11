@@ -214,6 +214,7 @@ export interface SocialProfile {
   badges: string[];
   joinedAt?: string;
   updatedAt: string;
+  onboardingCompletedAt?: string;
 }
 
 export interface PublicProfileDetail {
@@ -255,6 +256,10 @@ export interface PaymentEvent {
   id: string;
   transactionId: string;
   listingId: string;
+  /** Set when the transaction originated from an auction (listing is empty). */
+  auctionId?: string;
+  sellerId?: string;
+  sellerHandle?: string;
   buyerId?: string;
   buyerHandle: string;
   provider: PaymentProvider;
@@ -264,6 +269,44 @@ export interface PaymentEvent {
   fulfillmentStatus?: FulfillmentStatus;
   shippingTracking?: string;
   checkedAt: string;
+  createdAt: string;
+}
+
+// ─── CLAIMS ────────────────────────────────────────────────────────────────
+
+export type ClaimSessionStatus = "draft" | "active" | "ended";
+export type ClaimCardStatus = "pending" | "available" | "claimed" | "skipped";
+
+export interface ClaimSession {
+  id: string;
+  sellerId: string;
+  sellerHandle: string;
+  title: string;
+  description?: string;
+  status: ClaimSessionStatus;
+  createdAt: string;
+  endedAt?: string;
+  cards?: ClaimSessionCard[];
+  /** Derived: count of pending + available cards remaining. */
+  remainingCount?: number;
+  /** Derived: count of claimed cards. */
+  claimedCount?: number;
+}
+
+export interface ClaimSessionCard {
+  id: string;
+  sessionId: string;
+  inventoryEntryId?: string;
+  cardName: string;
+  setName?: string;
+  imageUrl?: string;
+  condition: CardCondition;
+  priceArs: number;
+  orderIndex: number;
+  status: ClaimCardStatus;
+  claimedByUserId?: string;
+  claimedByHandle?: string;
+  claimedAt?: string;
   createdAt: string;
 }
 

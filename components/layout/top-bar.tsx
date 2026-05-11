@@ -114,6 +114,17 @@ export function TopBar({ user }: Props) {
               Subastas
             </Link>
             <Link
+              href="/claims"
+              className={cn(
+                "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
+                pathname === "/claims"
+                  ? "bg-[var(--color-ink)] text-[var(--color-ink-inverse)]"
+                  : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
+              )}
+            >
+              Claims
+            </Link>
+            <Link
               href="/trades"
               className={cn(
                 "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",

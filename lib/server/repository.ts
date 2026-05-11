@@ -4,6 +4,10 @@ import type {
   AuctionBid,
   AuctionListing,
   AuctionStatus,
+  ClaimSession,
+  ClaimSessionCard,
+  ClaimCardStatus,
+  ClaimSessionStatus,
   DisputeEvent,
   DisputeStatus,
   FulfillmentStatus,
@@ -41,8 +45,10 @@ const PROFILE_FOLLOWS_TABLE = "profile_follows";
 const TRADE_PROPOSALS_TABLE = "trade_proposals";
 const AUCTIONS_TABLE = "auction_listings";
 const AUCTION_BIDS_TABLE = "auction_bids";
+const CLAIM_SESSIONS_TABLE = "claim_sessions";
+const CLAIM_CARDS_TABLE = "claim_session_cards";
 const SOCIAL_PROFILE_SELECT =
-  "id,username,display_name,bio,location,avatar_url,favorite_game,favorite_card,instagram,discord,whatsapp,payment_provider,payment_alias,payment_instructions,created_at,updated_at";
+  "id,username,display_name,bio,location,avatar_url,favorite_game,favorite_card,instagram,discord,whatsapp,payment_provider,payment_alias,payment_instructions,onboarding_completed_at,created_at,updated_at";
 
 const SUCCESS_PROVIDER_STATUSES = new Set(["approved", "accredited", "succeeded"]);
 
@@ -121,7 +127,10 @@ type ChatMessageRow = {
 type PaymentRow = {
   id: string;
   transaction_id: string;
-  listing_id: string;
+  listing_id: string | null;
+  auction_id?: string | null;
+  seller_id?: string | null;
+  seller_handle?: string | null;
   buyer_id: string | null;
   buyer_handle: string;
   provider: PaymentProvider;
@@ -135,6 +144,34 @@ type PaymentRow = {
   platform_fee_ars?: number | null;
   mp_payment_id?: string | null;
   checked_at: string;
+  created_at: string;
+};
+
+type ClaimSessionRow = {
+  id: string;
+  seller_id: string;
+  seller_handle: string;
+  title: string;
+  description: string | null;
+  status: ClaimSessionStatus;
+  created_at: string;
+  ended_at: string | null;
+};
+
+type ClaimCardRow = {
+  id: string;
+  session_id: string;
+  inventory_entry_id: string | null;
+  card_name: string;
+  set_name: string | null;
+  image_url: string | null;
+  condition: CardCondition;
+  price_ars: number;
+  order_index: number;
+  status: ClaimCardStatus;
+  claimed_by_user_id: string | null;
+  claimed_by_handle: string | null;
+  claimed_at: string | null;
   created_at: string;
 };
 
@@ -165,6 +202,7 @@ type ProfileRow = {
   payment_provider: SellerPaymentProvider | null;
   payment_alias: string | null;
   payment_instructions: string | null;
+  onboarding_completed_at?: string | null;
   created_at?: string | null;
   updated_at: string;
 };
@@ -451,7 +489,10 @@ function mapPaymentRow(row: PaymentRow): PaymentEvent {
   return {
     id: row.id,
     transactionId: row.transaction_id,
-    listingId: row.listing_id,
+    listingId: row.listing_id ?? "",
+    auctionId: row.auction_id ?? undefined,
+    sellerId: row.seller_id ?? undefined,
+    sellerHandle: row.seller_handle ?? undefined,
     buyerId: row.buyer_id ?? undefined,
     buyerHandle: row.buyer_handle,
     provider: row.provider,
@@ -461,6 +502,44 @@ function mapPaymentRow(row: PaymentRow): PaymentEvent {
     fulfillmentStatus: row.fulfillment_status,
     shippingTracking: row.shipping_tracking ?? undefined,
     checkedAt: row.checked_at,
+    createdAt: row.created_at,
+  };
+}
+
+function mapClaimSessionRow(row: ClaimSessionRow, cards?: ClaimCardRow[]): ClaimSession {
+  const mappedCards = cards?.map(mapClaimCardRow);
+  const remaining = mappedCards?.filter((c) => c.status === "pending" || c.status === "available").length ?? 0;
+  const claimed = mappedCards?.filter((c) => c.status === "claimed").length ?? 0;
+  return {
+    id: row.id,
+    sellerId: row.seller_id,
+    sellerHandle: row.seller_handle,
+    title: row.title,
+    description: row.description ?? undefined,
+    status: row.status,
+    createdAt: row.created_at,
+    endedAt: row.ended_at ?? undefined,
+    cards: mappedCards,
+    remainingCount: remaining,
+    claimedCount: claimed,
+  };
+}
+
+function mapClaimCardRow(row: ClaimCardRow): ClaimSessionCard {
+  return {
+    id: row.id,
+    sessionId: row.session_id,
+    inventoryEntryId: row.inventory_entry_id ?? undefined,
+    cardName: row.card_name,
+    setName: row.set_name ?? undefined,
+    imageUrl: row.image_url ?? undefined,
+    condition: row.condition,
+    priceArs: row.price_ars,
+    orderIndex: row.order_index,
+    status: row.status,
+    claimedByUserId: row.claimed_by_user_id ?? undefined,
+    claimedByHandle: row.claimed_by_handle ?? undefined,
+    claimedAt: row.claimed_at ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -574,6 +653,7 @@ function mapSocialProfile(
     badges,
     joinedAt: row.created_at ?? undefined,
     updatedAt: row.updated_at,
+    onboardingCompletedAt: row.onboarding_completed_at ?? undefined,
   };
 }
 
@@ -1868,7 +1948,66 @@ export async function closeAuction(input: {
     .single();
 
   if (error || !data) throw new Error(error?.message ?? "No se pudo cerrar la subasta.");
-  return mapAuctionRow(data as AuctionRow);
+  const closed = data as AuctionRow;
+
+  // If there's a winner, create a pending transaction and notify both parties.
+  if (closed.winner_id && closed.winner_handle && nextStatus === "ended") {
+    const sellerProfile = closed.seller_id
+      ? await client
+          .from(PROFILES_TABLE)
+          .select("payment_provider,payment_alias,payment_instructions")
+          .eq("id", closed.seller_id)
+          .maybeSingle()
+          .then((res) => res.data as { payment_provider: SellerPaymentProvider | null } | null)
+      : null;
+
+    const provider = resolveTransactionProviderFromSellerPayment(
+      sellerProfile?.payment_provider ?? undefined,
+    );
+    const transactionId = `tx_auction_${Date.now()}`;
+    const now = new Date().toISOString();
+
+    await client.from(PAYMENTS_TABLE).insert({
+      transaction_id: transactionId,
+      listing_id: null,
+      auction_id: closed.id,
+      seller_id: closed.seller_id,
+      seller_handle: closed.seller_handle,
+      buyer_id: closed.winner_id,
+      buyer_handle: closed.winner_handle,
+      provider,
+      provider_payment_id: null,
+      provider_status: "pending",
+      verification_status: "pending_review",
+      fulfillment_status: "pending",
+      shipping_tracking: null,
+      checked_at: now,
+      created_at: now,
+    });
+
+    const winnerAmount = `ARS ${Math.round(Number(closed.current_price_ars)).toLocaleString("es-AR")}`;
+    const notifications = [
+      {
+        user_id: closed.winner_id,
+        type: "transaction_update" as const,
+        title: "¡Ganaste la subasta!",
+        body: `Ganaste ${closed.card_name} por ${winnerAmount}. Coordiná el pago con @${closed.seller_handle}.`,
+        link_path: `/transactions`,
+      },
+    ];
+    if (closed.seller_id) {
+      notifications.push({
+        user_id: closed.seller_id,
+        type: "transaction_update" as const,
+        title: "Subasta terminada",
+        body: `Tu subasta de ${closed.card_name} fue ganada por @${closed.winner_handle} (${winnerAmount}).`,
+        link_path: `/transactions`,
+      });
+    }
+    await client.from(NOTIFICATIONS_TABLE).insert(notifications);
+  }
+
+  return mapAuctionRow(closed);
 }
 
 export async function listListings(options?: {
@@ -2332,30 +2471,33 @@ export async function listTransactionsForUser(userId: string): Promise<PaymentEv
     throw new Error(byBuyerError.message);
   }
 
-  const { data: sellerListings, error: sellerListingsError } = await client
+  // Seller-side: fetch by seller_id column (covers both listing and auction transactions)
+  const { data: sellerPayments, error: sellerPaymentsError } = await client
+    .from(PAYMENTS_TABLE)
+    .select("*")
+    .eq("seller_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (sellerPaymentsError) throw new Error(sellerPaymentsError.message);
+  let bySeller: PaymentRow[] = (sellerPayments ?? []) as PaymentRow[];
+
+  // Legacy fallback: also pick up old rows where seller_id wasn't backfilled
+  const { data: sellerListings } = await client
     .from(LISTINGS_TABLE)
     .select("id")
     .eq("seller_id", userId);
 
-  if (sellerListingsError) {
-    throw new Error(sellerListingsError.message);
-  }
+  const legacyListingIds = (sellerListings ?? [])
+    .map((row) => (row as { id: string }).id)
+    .filter((id) => !bySeller.some((p) => p.listing_id === id));
 
-  const listingIds = (sellerListings ?? []).map((row) => (row as { id: string }).id);
-
-  let bySeller: PaymentRow[] = [];
-  if (listingIds.length > 0) {
-    const { data: sellerPayments, error: sellerPaymentsError } = await client
+  if (legacyListingIds.length > 0) {
+    const { data: legacyPayments } = await client
       .from(PAYMENTS_TABLE)
       .select("*")
-      .in("listing_id", listingIds)
+      .in("listing_id", legacyListingIds)
       .order("created_at", { ascending: false });
-
-    if (sellerPaymentsError) {
-      throw new Error(sellerPaymentsError.message);
-    }
-
-    bySeller = (sellerPayments ?? []) as PaymentRow[];
+    bySeller = [...bySeller, ...((legacyPayments ?? []) as PaymentRow[])];
   }
 
   const merged = new Map<string, PaymentRow>();
@@ -2367,22 +2509,6 @@ export async function listTransactionsForUser(userId: string): Promise<PaymentEv
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .map(mapPaymentRow);
 
-  const lids = [...new Set(payments.map((p) => p.listingId))];
-  if (lids.length === 0) {
-    return payments.map((p) => ({ ...p }));
-  }
-
-  const { data: listingRows, error: lrError } = await client
-    .from(LISTINGS_TABLE)
-    .select(
-      "id, card_name, set_name, seller_handle, offers_shipping, offers_pickup, delivery_area_notes",
-    )
-    .in("id", lids);
-
-  if (lrError) {
-    throw new Error(lrError.message);
-  }
-
   type ListingMeta = {
     cardName: string;
     setName: string;
@@ -2392,34 +2518,54 @@ export async function listTransactionsForUser(userId: string): Promise<PaymentEv
     deliveryAreaNotes?: string;
   };
 
-  const byListing = new Map<string, ListingMeta>();
-  for (const raw of listingRows ?? []) {
-    const row = raw as {
-      id: string;
-      card_name: string;
-      set_name: string;
-      seller_handle: string;
-      offers_shipping?: boolean | null;
-      offers_pickup?: boolean | null;
-      delivery_area_notes?: string | null;
-    };
-    byListing.set(row.id, {
-      cardName: row.card_name,
-      setName: row.set_name,
-      sellerHandle: row.seller_handle,
-      offersShipping: Boolean(row.offers_shipping),
-      offersPickup: Boolean(row.offers_pickup),
-      deliveryAreaNotes: row.delivery_area_notes?.trim() || undefined,
-    });
+  const byListingId = new Map<string, ListingMeta>();
+  const byAuctionId = new Map<string, ListingMeta>();
+
+  const lids = [...new Set(payments.map((p) => p.listingId).filter(Boolean))];
+  if (lids.length > 0) {
+    const { data: listingRows } = await client
+      .from(LISTINGS_TABLE)
+      .select("id, card_name, set_name, seller_handle, offers_shipping, offers_pickup, delivery_area_notes")
+      .in("id", lids);
+    for (const raw of listingRows ?? []) {
+      const row = raw as { id: string; card_name: string; set_name: string; seller_handle: string; offers_shipping?: boolean | null; offers_pickup?: boolean | null; delivery_area_notes?: string | null };
+      byListingId.set(row.id, {
+        cardName: row.card_name,
+        setName: row.set_name,
+        sellerHandle: row.seller_handle,
+        offersShipping: Boolean(row.offers_shipping),
+        offersPickup: Boolean(row.offers_pickup),
+        deliveryAreaNotes: row.delivery_area_notes?.trim() || undefined,
+      });
+    }
+  }
+
+  const aids = [...new Set(payments.map((p) => p.auctionId).filter((id): id is string => Boolean(id)))];
+  if (aids.length > 0) {
+    const { data: auctionRows } = await client
+      .from(AUCTIONS_TABLE)
+      .select("id, card_name, set_name, seller_handle, offers_shipping, offers_pickup, delivery_area_notes")
+      .in("id", aids);
+    for (const raw of auctionRows ?? []) {
+      const row = raw as { id: string; card_name: string; set_name: string | null; seller_handle: string; offers_shipping?: boolean | null; offers_pickup?: boolean | null; delivery_area_notes?: string | null };
+      byAuctionId.set(row.id, {
+        cardName: row.card_name,
+        setName: row.set_name ?? "",
+        sellerHandle: row.seller_handle,
+        offersShipping: Boolean(row.offers_shipping),
+        offersPickup: Boolean(row.offers_pickup),
+        deliveryAreaNotes: row.delivery_area_notes?.trim() || undefined,
+      });
+    }
   }
 
   return payments.map((p) => {
-    const meta = byListing.get(p.listingId);
+    const meta = (p.auctionId ? byAuctionId.get(p.auctionId) : undefined) ?? byListingId.get(p.listingId);
     return {
       ...p,
       listingCardName: meta?.cardName,
       listingSetName: meta?.setName,
-      listingSellerHandle: meta?.sellerHandle,
+      listingSellerHandle: meta?.sellerHandle ?? p.sellerHandle,
       offersShipping: meta?.offersShipping,
       offersPickup: meta?.offersPickup,
       deliveryAreaNotes: meta?.deliveryAreaNotes,
@@ -3163,4 +3309,340 @@ export async function getUserProfile(
     email: emailResult.data.user.email ?? null,
     username,
   };
+}
+
+// ─── CLAIM SESSIONS ────────────────────────────────────────────────────────
+
+export type CreateClaimSessionInput = {
+  sellerId: string;
+  sellerHandle: string;
+  title: string;
+  description?: string;
+  cards: Array<{
+    inventoryEntryId?: string;
+    cardName: string;
+    setName?: string;
+    imageUrl?: string;
+    condition: CardCondition;
+    priceArs: number;
+  }>;
+};
+
+export async function createClaimSession(input: CreateClaimSessionInput): Promise<ClaimSession> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  const { data: session, error: sessionError } = await client
+    .from(CLAIM_SESSIONS_TABLE)
+    .insert({
+      seller_id: input.sellerId,
+      seller_handle: input.sellerHandle,
+      title: input.title.trim(),
+      description: input.description?.trim() || null,
+      status: "draft",
+      created_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (sessionError || !session) throw new Error(sessionError?.message ?? "No se pudo crear la sesión.");
+  const sessionRow = session as ClaimSessionRow;
+
+  if (input.cards.length > 0) {
+    const cardInserts = input.cards.map((card, i) => ({
+      session_id: sessionRow.id,
+      inventory_entry_id: card.inventoryEntryId ?? null,
+      card_name: card.cardName.trim(),
+      set_name: card.setName?.trim() || null,
+      image_url: card.imageUrl?.trim() || null,
+      condition: card.condition,
+      price_ars: Math.max(0, Math.round(card.priceArs)),
+      order_index: i,
+      status: "pending" as ClaimCardStatus,
+      created_at: new Date().toISOString(),
+    }));
+
+    const { data: cardRows, error: cardError } = await client
+      .from(CLAIM_CARDS_TABLE)
+      .insert(cardInserts)
+      .select("*");
+
+    if (cardError) throw new Error(cardError.message);
+    return mapClaimSessionRow(sessionRow, (cardRows ?? []) as ClaimCardRow[]);
+  }
+
+  return mapClaimSessionRow(sessionRow, []);
+}
+
+export async function listClaimSessions(options?: {
+  sellerId?: string;
+  status?: ClaimSessionStatus[];
+}): Promise<ClaimSession[]> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  let query = client
+    .from(CLAIM_SESSIONS_TABLE)
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (options?.sellerId) query = query.eq("seller_id", options.sellerId);
+  if (options?.status) query = query.in("status", options.status);
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+
+  const sessions = ((data ?? []) as ClaimSessionRow[]);
+  if (sessions.length === 0) return [];
+
+  const sessionIds = sessions.map((s) => s.id);
+  const { data: cardData, error: cardError } = await client
+    .from(CLAIM_CARDS_TABLE)
+    .select("*")
+    .in("session_id", sessionIds)
+    .order("order_index", { ascending: true });
+
+  if (cardError) throw new Error(cardError.message);
+  const allCards = (cardData ?? []) as ClaimCardRow[];
+  const cardsBySession = new Map<string, ClaimCardRow[]>();
+  for (const card of allCards) {
+    if (!cardsBySession.has(card.session_id)) cardsBySession.set(card.session_id, []);
+    cardsBySession.get(card.session_id)!.push(card);
+  }
+
+  return sessions.map((s) => mapClaimSessionRow(s, cardsBySession.get(s.id) ?? []));
+}
+
+export async function getClaimSession(sessionId: string): Promise<ClaimSession | null> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  const { data: session, error: sessionError } = await client
+    .from(CLAIM_SESSIONS_TABLE)
+    .select("*")
+    .eq("id", sessionId)
+    .maybeSingle();
+
+  if (sessionError) throw new Error(sessionError.message);
+  if (!session) return null;
+
+  const { data: cards, error: cardsError } = await client
+    .from(CLAIM_CARDS_TABLE)
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("order_index", { ascending: true });
+
+  if (cardsError) throw new Error(cardsError.message);
+
+  return mapClaimSessionRow(session as ClaimSessionRow, (cards ?? []) as ClaimCardRow[]);
+}
+
+export async function startClaimSession(input: {
+  sessionId: string;
+  sellerUserId: string;
+}): Promise<ClaimSession> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  const { data: existing, error } = await client
+    .from(CLAIM_SESSIONS_TABLE)
+    .select("*")
+    .eq("id", input.sessionId)
+    .single();
+
+  if (error || !existing) throw new Error(error?.message ?? "Sesión no encontrada.");
+  const session = existing as ClaimSessionRow;
+  if (session.seller_id !== input.sellerUserId) throw new Error("Sin permiso.");
+  if (session.status !== "draft") throw new Error("La sesión ya fue iniciada.");
+
+  const { data: firstCard, error: firstCardError } = await client
+    .from(CLAIM_CARDS_TABLE)
+    .select("*")
+    .eq("session_id", input.sessionId)
+    .eq("status", "pending")
+    .order("order_index", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (firstCardError) throw new Error(firstCardError.message);
+  if (!firstCard) throw new Error("La sesión no tiene cartas.");
+
+  await client
+    .from(CLAIM_CARDS_TABLE)
+    .update({ status: "available" })
+    .eq("id", (firstCard as ClaimCardRow).id);
+
+  const { data: updatedSession } = await client
+    .from(CLAIM_SESSIONS_TABLE)
+    .update({ status: "active" })
+    .eq("id", input.sessionId)
+    .select("*")
+    .single();
+
+  const updated = (updatedSession ?? session) as ClaimSessionRow;
+  const session_result = await getClaimSession(input.sessionId);
+  return session_result ?? mapClaimSessionRow(updated);
+}
+
+export async function advanceClaimCard(input: {
+  sessionId: string;
+  sellerUserId: string;
+  skipCurrent?: boolean;
+}): Promise<ClaimSession> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  const { data: sessionData } = await client
+    .from(CLAIM_SESSIONS_TABLE)
+    .select("*")
+    .eq("id", input.sessionId)
+    .single();
+
+  if (!sessionData) throw new Error("Sesión no encontrada.");
+  const session = sessionData as ClaimSessionRow;
+  if (session.seller_id !== input.sellerUserId) throw new Error("Sin permiso.");
+  if (session.status !== "active") throw new Error("La sesión no está activa.");
+
+  if (input.skipCurrent) {
+    await client
+      .from(CLAIM_CARDS_TABLE)
+      .update({ status: "skipped" })
+      .eq("session_id", input.sessionId)
+      .eq("status", "available");
+  }
+
+  const { data: nextCard } = await client
+    .from(CLAIM_CARDS_TABLE)
+    .select("*")
+    .eq("session_id", input.sessionId)
+    .eq("status", "pending")
+    .order("order_index", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!nextCard) {
+    await client
+      .from(CLAIM_SESSIONS_TABLE)
+      .update({ status: "ended", ended_at: new Date().toISOString() })
+      .eq("id", input.sessionId);
+  } else {
+    await client
+      .from(CLAIM_CARDS_TABLE)
+      .update({ status: "available" })
+      .eq("id", (nextCard as ClaimCardRow).id);
+  }
+
+  const result = await getClaimSession(input.sessionId);
+  return result!;
+}
+
+export async function claimCard(input: {
+  sessionId: string;
+  cardId: string;
+  userId: string;
+  userHandle: string;
+}): Promise<ClaimSessionCard> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  const { data: sessionData } = await client
+    .from(CLAIM_SESSIONS_TABLE)
+    .select("seller_id, seller_handle, status")
+    .eq("id", input.sessionId)
+    .single();
+
+  if (!sessionData) throw new Error("Sesión no encontrada.");
+  const session = sessionData as { seller_id: string; seller_handle: string; status: string };
+  if (session.status !== "active") throw new Error("La sesión no está activa.");
+  if (session.seller_id === input.userId) throw new Error("No podés claimear tus propias cartas.");
+
+  const now = new Date().toISOString();
+  const { data: updated, error } = await client
+    .from(CLAIM_CARDS_TABLE)
+    .update({
+      status: "claimed",
+      claimed_by_user_id: input.userId,
+      claimed_by_handle: input.userHandle,
+      claimed_at: now,
+    })
+    .eq("id", input.cardId)
+    .eq("session_id", input.sessionId)
+    .eq("status", "available")
+    .select("*")
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!updated) throw new Error("La carta ya fue claimada por otra persona.");
+
+  const card = mapClaimCardRow(updated as ClaimCardRow);
+
+  const notifs = [
+    {
+      user_id: session.seller_id,
+      type: "system" as const,
+      title: "¡Claimaron una carta!",
+      body: `@${input.userHandle} claimó ${card.cardName}${card.priceArs > 0 ? ` por ARS ${card.priceArs.toLocaleString("es-AR")}` : " (free)"}. Coordiná la entrega.`,
+      link_path: `/my-claims/${input.sessionId}`,
+    },
+    {
+      user_id: input.userId,
+      type: "system" as const,
+      title: card.priceArs > 0 ? `Claiméaste ${card.cardName}` : `¡${card.cardName} es tuya!`,
+      body: card.priceArs > 0
+        ? `Coordiná el pago de ARS ${card.priceArs.toLocaleString("es-AR")} con @${session.seller_handle}.`
+        : `Coordiná la entrega con @${session.seller_handle}.`,
+      link_path: `/claims/${input.sessionId}`,
+    },
+  ];
+  await client.from(NOTIFICATIONS_TABLE).insert(notifs);
+
+  await advanceClaimCard({
+    sessionId: input.sessionId,
+    sellerUserId: session.seller_id,
+    skipCurrent: false,
+  });
+
+  return card;
+}
+
+export async function endClaimSession(input: {
+  sessionId: string;
+  sellerUserId: string;
+}): Promise<ClaimSession> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  const { data: sessionData } = await client
+    .from(CLAIM_SESSIONS_TABLE)
+    .select("seller_id, status")
+    .eq("id", input.sessionId)
+    .single();
+
+  if (!sessionData) throw new Error("Sesión no encontrada.");
+  const session = sessionData as { seller_id: string; status: string };
+  if (session.seller_id !== input.sellerUserId) throw new Error("Sin permiso.");
+  if (session.status === "ended") throw new Error("La sesión ya terminó.");
+
+  await client
+    .from(CLAIM_SESSIONS_TABLE)
+    .update({ status: "ended", ended_at: new Date().toISOString() })
+    .eq("id", input.sessionId);
+
+  await client
+    .from(CLAIM_CARDS_TABLE)
+    .update({ status: "skipped" })
+    .eq("session_id", input.sessionId)
+    .eq("status", "available");
+
+  const result = await getClaimSession(input.sessionId);
+  return result!;
+}
+
+export async function completeOnboarding(userId: string): Promise<void> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  await client
+    .from(PROFILES_TABLE)
+    .update({ onboarding_completed_at: new Date().toISOString() })
+    .eq("id", userId);
 }

@@ -38,6 +38,7 @@ const items = [
   { href: "/inventory", label: "Inventario", icon: Layers },
   { href: "/listings", label: "Mis ventas", icon: Tag },
   { href: "/my-auctions", label: "Mis subastas", icon: Gavel },
+  { href: "/my-claims", label: "Mis claims", icon: Layers },
   { href: "/transactions", label: "Operaciones", icon: Package },
   { href: "/account", label: "Cobros (MP)", icon: Wallet },
   { href: "/disputes", label: "Disputas", icon: Scale },
