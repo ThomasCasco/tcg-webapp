@@ -5,6 +5,7 @@ import {
   ShoppingBag,
   ArrowLeftRight,
   Layers,
+  ListChecks,
   Tag,
   Package,
   Bell,
@@ -39,6 +40,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/market", label: "Mercado", icon: ShoppingBag },
       { href: "/auctions", label: "Subastas", icon: Gavel },
+      { href: "/claims", label: "Claims", icon: ListChecks },
       { href: "/trades", label: "Trades", icon: ArrowLeftRight },
       { href: "/profiles", label: "Perfiles", icon: Users },
       { href: "/trade-proposals", label: "Propuestas", icon: ArrowLeftRight },
@@ -51,6 +53,7 @@ const sections: NavSection[] = [
       { href: "/inventory", label: "Inventario", icon: Layers },
       { href: "/listings", label: "Mis ventas", icon: Tag },
       { href: "/my-auctions", label: "Mis subastas", icon: Gavel },
+      { href: "/my-claims", label: "Mis claims", icon: ListChecks },
     ],
   },
   {

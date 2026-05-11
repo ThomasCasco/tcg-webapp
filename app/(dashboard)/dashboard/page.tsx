@@ -75,6 +75,13 @@ export default async function DashboardHomePage() {
     listNotificationsForUser(user.id, { unreadOnly: true, limit: 1 }).catch(() => []),
   ]);
 
+  // Redirect brand-new users to onboarding wizard
+  const isNewUser =
+    !profile?.displayName &&
+    !profile?.avatarUrl &&
+    !profile?.onboardingCompletedAt;
+  if (isNewUser) redirect("/onboarding");
+
   const hasProfile = Boolean(profile?.displayName || profile?.bio);
   const hasAvatar = Boolean(profile?.avatarUrl);
   const hasMp = mpStatus.mpConnected;
@@ -180,6 +187,7 @@ export default async function DashboardHomePage() {
           links={[
             { href: "/market", label: "Mercado" },
             { href: "/auctions", label: "Subastas" },
+            { href: "/claims", label: "Claims en vivo" },
             { href: "/alerts", label: "Mis alertas" },
             { href: "/transactions", label: `Mis compras${pendingTransactions ? ` (${pendingTransactions})` : ""}` },
           ]}
@@ -193,6 +201,7 @@ export default async function DashboardHomePage() {
             { href: "/inventory", label: `Inventario (${inventory.length})` },
             { href: "/listings", label: `Mis ventas (${myListings.length})` },
             { href: "/my-auctions", label: `Mis subastas${myAuctions.length ? ` (${myAuctions.length})` : ""}` },
+            { href: "/my-claims", label: "Mis claims" },
             { href: "/account", label: "Cobros y MP" },
           ]}
         />

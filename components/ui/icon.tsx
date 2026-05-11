@@ -48,6 +48,10 @@ export {
   Users,
   Wallet,
   X,
+  SkipForward,
+  Zap,
+  PlayCircle,
+  ListChecks,
 } from "lucide-react";
 
 export type { LucideIcon } from "lucide-react";
