@@ -16,17 +16,17 @@ const bodyFont = Manrope({
 
 export const metadata: Metadata = {
   title: {
-    default: "TCG.ar - Marketplace de Pokemon TCG en Argentina",
+    default: "TCG.ar - Tu Marketplace Pokemon TCG en Argentina",
     template: "%s | TCG.ar",
   },
   description:
-    "Compra, vende y tradea cartas Pokemon TCG en Argentina. Precios en pesos, pagos con Mercado Pago, envio o retiro.",
+    "El marketplace de Pokemon TCG para coleccionistas argentinos. Compra, vende y tradea con confianza. Precios en pesos y pagos con Mercado Pago.",
   applicationName: "TCG.ar",
-  keywords: ["pokemon", "tcg", "cartas", "marketplace", "argentina", "mercado pago", "trading cards"],
+  keywords: ["pokemon", "tcg", "marketplace", "argentina", "mercado pago", "trading cards", "coleccionismo"],
   openGraph: {
-    title: "TCG.ar - Marketplace de Pokemon TCG en Argentina",
+    title: "TCG.ar - Tu Marketplace Pokemon TCG en Argentina",
     description:
-      "El marketplace de cartas Pokemon para coleccionistas en Argentina. Compra, vende y tradea con confianza.",
+      "El marketplace de Pokemon TCG para coleccionistas argentinos. Compra, vende y tradea con confianza.",
     type: "website",
     locale: "es_AR",
   },
