@@ -6,7 +6,7 @@ import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Filter, Search, ShoppingBag } from "@/components/ui/icon";
+import { Search, SlidersHorizontal, Sparkles, ArrowUpDown } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/ui/cn";
@@ -16,8 +16,8 @@ import type { CardCondition } from "@/lib/domain/types";
 export const dynamic = "force-dynamic";
 
 const TABS = [
-  { key: "all", label: "Todo" },
-  { key: "cards", label: "Cartas" },
+  { key: "all", label: "Todas" },
+  { key: "cards", label: "Singles" },
 ] as const;
 
 const CONDITIONS: CardCondition[] = [
@@ -27,6 +27,12 @@ const CONDITIONS: CardCondition[] = [
   "moderately_played",
   "heavily_played",
   "damaged",
+];
+
+const SORT_OPTIONS = [
+  { value: "recent", label: "Mas recientes" },
+  { value: "price_asc", label: "Menor precio" },
+  { value: "price_desc", label: "Mayor precio" },
 ];
 
 function isCondition(value: string): value is CardCondition {
@@ -148,177 +154,195 @@ export default async function MarketPage({
     tab: activeTab,
   };
 
+  // Active filters count
+  const activeFiltersCount = [
+    condition,
+    hasMin ? min : "",
+    hasMax ? max : "",
+    delivery,
+  ].filter(Boolean).length;
+
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-3 py-4 md:px-6 md:py-7">
-      {!isSupabaseConfigured() && (
-        <Card padding="md" className="border-[var(--color-warning)] bg-[var(--color-warning-soft)]">
-          <p className="text-body-sm text-[var(--color-warning)]">
-            Configura Supabase en produccion para abrir el marketplace.
+    <main className="min-h-screen bg-[var(--color-surface)]">
+      {/* Header */}
+      <div className="bg-white border-b border-[var(--color-border)]">
+        <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6 md:py-12">
+          <h1 className="text-3xl font-bold text-[var(--color-ink)] md:text-4xl [font-family:var(--font-display)]">
+            Mercado de cartas
+          </h1>
+          <p className="mt-2 text-body text-[var(--color-ink-muted)] max-w-xl">
+            Explora cartas publicadas por coleccionistas de todo el pais
           </p>
-        </Card>
-      )}
-
-      {loadError && (
-        <Card padding="md" className="border-[var(--color-danger)] bg-[var(--color-danger-soft)]">
-          <p className="text-body-sm text-[var(--color-danger)]">Error: {loadError}</p>
-        </Card>
-      )}
-
-      <header className="border-b border-[var(--color-border-strong)] pb-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-overline text-[var(--color-ink-subtle)]">Marketplace</p>
-            <h1 className="mt-1 text-display-md text-[var(--color-ink)] md:text-display-lg">
-              Mercado de cartas
-            </h1>
-            <p className="mt-2 max-w-2xl text-body-sm text-[var(--color-ink-muted)]">
-              Singles publicados por coleccionistas, con busqueda directa,
-              precio en pesos y filtros de compra.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 border border-[var(--color-border-strong)] bg-white text-center md:min-w-80">
-            <MarketMetric value={`${total}`} label="resultados" />
-            <MarketMetric value="ARS" label="moneda" />
-            <MarketMetric value="TCG" label="foco" />
-          </div>
-        </div>
-      </header>
-
-      <section className="sticky top-14 z-10 -mx-3 border-b border-[var(--color-border-strong)] bg-white/95 px-3 py-3 backdrop-blur md:top-16 md:mx-0 md:rounded-[var(--radius-card)] md:border md:p-4">
-        <form method="GET" className="space-y-3">
-          <input type="hidden" name="tab" value={activeTab} />
-          <div className="grid gap-2 md:grid-cols-[1fr,auto]">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-subtle)]" />
-              <Input
-                name="q"
-                defaultValue={q}
-                placeholder="Buscar Charizard, Mew, Paradox Rift..."
-                className="border-[var(--color-border-strong)] bg-white pl-9"
-              />
-            </div>
-            <Button type="submit" size="md">
-              <Filter className="h-4 w-4" />
-              Aplicar
-            </Button>
-          </div>
-
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr,1fr,1fr,1fr]">
-            <select
-              name="condition"
-              defaultValue={condition}
-              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-3 text-body-sm text-[var(--color-ink)]"
-            >
-              <option value="">Todas las condiciones</option>
-              {CONDITIONS.map((item) => (
-                <option key={item} value={item}>
-                  {formatConditionEs(item)}
-                </option>
-              ))}
-            </select>
-            <select
-              name="delivery"
-              defaultValue={delivery}
-              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-3 text-body-sm text-[var(--color-ink)]"
-            >
-              <option value="">Envio o retiro</option>
-              <option value="shipping">Con envio</option>
-              <option value="pickup">Con retiro</option>
-            </select>
-            <div className="grid grid-cols-2 gap-2">
-              <Input name="min" defaultValue={min} type="number" min={1} placeholder="Min $" />
-              <Input name="max" defaultValue={max} type="number" min={1} placeholder="Max $" />
-            </div>
-            <select
-              name="sort"
-              defaultValue={sort}
-              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-3 text-body-sm text-[var(--color-ink)]"
-            >
-              <option value="recent">Mas recientes</option>
-              <option value="price_asc">Menor precio</option>
-              <option value="price_desc">Mayor precio</option>
-            </select>
-          </div>
-        </form>
-
-        <div className="mt-3 flex gap-1 overflow-x-auto">
-          {TABS.map((t) => (
-            <Link
-              key={t.key}
-              href={getParamHref({ tab: t.key }, currentParams)}
-              className={cn(
-                "shrink-0 rounded-[var(--radius-input)] border px-4 py-1.5 text-[0.8125rem] font-bold transition-colors",
-                activeTab === t.key
-                  ? "border-black bg-black text-white"
-                  : "border-[var(--color-border-default)] bg-white text-[var(--color-ink-muted)] hover:border-black hover:text-black",
-              )}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <p className="text-caption font-semibold text-[var(--color-ink-muted)]">
-          {total} {total === 1 ? "publicacion" : "publicaciones"}
-          {query && ` para "${q}"`}
-          {condition && isCondition(condition) ? ` / ${formatConditionEs(condition)}` : ""}
-          {delivery === "shipping" ? " / con envio" : delivery === "pickup" ? " / con retiro" : ""}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {["Venta directa", "Trades", "Mercado Pago"].map((label) => (
-            <span
-              key={label}
-              className="rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-3 py-1 text-caption font-bold text-[var(--color-ink)]"
-            >
-              {label}
-            </span>
-          ))}
         </div>
       </div>
 
-      {total === 0 ? (
-        <EmptyState
-          icon={<ShoppingBag className="h-8 w-8" />}
-          title="Sin publicaciones"
-          description={
-            <>
-              <p>Todavia no hay publicaciones que coincidan.</p>
-              <p className="mt-1 text-caption">
-                Vendes cartas? Cargalas en{" "}
-                <Link href="/inventory" className="font-semibold underline">
-                  Inventario
-                </Link>{" "}
-                y publicalas en un toque.
-              </p>
-            </>
-          }
-        />
-      ) : (
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-          {enriched.map(({ listing, pokemonTypes }) => (
-            <MarketListingCard
-              key={listing.id}
-              listing={listing}
-              pokemonTypes={pokemonTypes}
-              isLoggedIn={Boolean(user)}
-            />
-          ))}
-        </section>
+      {!isSupabaseConfigured() && (
+        <div className="mx-auto w-full max-w-7xl px-4 pt-4 md:px-6">
+          <Card padding="md" className="border-[var(--color-warning)] bg-[var(--color-warning-soft)]">
+            <p className="text-body-sm text-[var(--color-warning)]">
+              Configura Supabase en produccion para abrir el marketplace.
+            </p>
+          </Card>
+        </div>
       )}
-    </main>
-  );
-}
 
-function MarketMetric({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="border-l border-[var(--color-border-strong)] px-3 py-3 first:border-l-0">
-      <p className="text-h3 font-extrabold">{value}</p>
-      <p className="text-caption font-semibold uppercase text-[var(--color-ink-subtle)]">
-        {label}
-      </p>
-    </div>
+      {loadError && (
+        <div className="mx-auto w-full max-w-7xl px-4 pt-4 md:px-6">
+          <Card padding="md" className="border-[var(--color-danger)] bg-[var(--color-danger-soft)]">
+            <p className="text-body-sm text-[var(--color-danger)]">Error: {loadError}</p>
+          </Card>
+        </div>
+      )}
+
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6">
+        {/* Search & Filters */}
+        <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 md:p-6">
+          <form method="GET" className="space-y-4">
+            <input type="hidden" name="tab" value={activeTab} />
+            
+            {/* Search Row */}
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-subtle)]" />
+                <Input
+                  name="q"
+                  defaultValue={q}
+                  placeholder="Buscar por nombre o set..."
+                  className="pl-10 h-12 text-base"
+                />
+              </div>
+              <Button type="submit" size="lg" className="px-6 shrink-0">
+                Buscar
+              </Button>
+            </div>
+
+            {/* Filters Row */}
+            <div className="flex flex-wrap gap-3">
+              <select
+                name="condition"
+                defaultValue={condition}
+                className="h-10 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] min-w-[140px]"
+              >
+                <option value="">Condicion</option>
+                {CONDITIONS.map((item) => (
+                  <option key={item} value={item}>
+                    {formatConditionEs(item)}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                name="delivery"
+                defaultValue={delivery}
+                className="h-10 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] min-w-[120px]"
+              >
+                <option value="">Entrega</option>
+                <option value="shipping">Con envio</option>
+                <option value="pickup">Retiro</option>
+              </select>
+
+              <div className="flex items-center gap-2">
+                <Input 
+                  name="min" 
+                  defaultValue={min} 
+                  type="number" 
+                  min={1} 
+                  placeholder="Min $" 
+                  className="w-24 h-10"
+                />
+                <span className="text-[var(--color-ink-subtle)]">-</span>
+                <Input 
+                  name="max" 
+                  defaultValue={max} 
+                  type="number" 
+                  min={1} 
+                  placeholder="Max $" 
+                  className="w-24 h-10"
+                />
+              </div>
+
+              <select
+                name="sort"
+                defaultValue={sort}
+                className="h-10 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] min-w-[140px]"
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 pt-2 border-t border-[var(--color-border)]">
+              {TABS.map((t) => (
+                <Link
+                  key={t.key}
+                  href={getParamHref({ tab: t.key }, currentParams)}
+                  className={cn(
+                    "px-4 py-2 text-sm font-medium rounded-lg transition-colors",
+                    activeTab === t.key
+                      ? "bg-[var(--color-ink)] text-white"
+                      : "bg-[var(--color-surface-muted)] text-[var(--color-ink-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-ink)]"
+                  )}
+                >
+                  {t.label}
+                </Link>
+              ))}
+            </div>
+          </form>
+        </div>
+
+        {/* Results Header */}
+        <div className="flex items-center justify-between mt-6 mb-4">
+          <p className="text-sm text-[var(--color-ink-muted)]">
+            <span className="font-semibold text-[var(--color-ink)]">{total}</span>
+            {" "}
+            {total === 1 ? "resultado" : "resultados"}
+            {query && <span> para &quot;{q}&quot;</span>}
+          </p>
+          {activeFiltersCount > 0 && (
+            <Link
+              href="/market"
+              className="text-sm font-medium text-[var(--color-ink)] hover:underline"
+            >
+              Limpiar filtros ({activeFiltersCount})
+            </Link>
+          )}
+        </div>
+
+        {/* Results Grid */}
+        {total === 0 ? (
+          <div className="rounded-xl border-2 border-dashed border-[var(--color-border)] bg-white p-12 text-center">
+            <Sparkles className="mx-auto h-10 w-10 text-[var(--color-ink-subtle)]" />
+            <h3 className="mt-4 text-lg font-semibold text-[var(--color-ink)]">
+              Sin resultados
+            </h3>
+            <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
+              No encontramos cartas con esos filtros.
+            </p>
+            <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+              Queres{" "}
+              <Link href="/inventory" className="font-semibold underline">
+                publicar una carta
+              </Link>
+              ?
+            </p>
+          </div>
+        ) : (
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+            {enriched.map(({ listing, pokemonTypes }) => (
+              <MarketListingCard
+                key={listing.id}
+                listing={listing}
+                pokemonTypes={pokemonTypes}
+                isLoggedIn={Boolean(user)}
+              />
+            ))}
+          </section>
+        )}
+      </div>
+    </main>
   );
 }

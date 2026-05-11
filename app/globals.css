@@ -1,68 +1,74 @@
 @import "tailwindcss";
 
 @theme {
-  /* Surfaces */
-  --color-surface: #f5f5f2;
-  --color-surface-muted: #ededeb;
+  /* Surfaces - Clean, minimal palette */
+  --color-surface: #fafafa;
+  --color-surface-muted: #f5f5f5;
   --color-surface-elevated: #ffffff;
   --color-surface-overlay: rgba(255, 255, 255, 0.98);
 
-  /* Ink (text) */
-  --color-ink: #080808;
-  --color-ink-muted: #4f4f4b;
-  --color-ink-subtle: #85857f;
+  /* Primary brand - Bold yellow for Pokemon energy */
+  --color-primary: #fcd34d;
+  --color-primary-strong: #fbbf24;
+  --color-primary-soft: #fef3c7;
+
+  /* Ink (text) - High contrast */
+  --color-ink: #0a0a0a;
+  --color-ink-muted: #525252;
+  --color-ink-subtle: #a3a3a3;
   --color-ink-inverse: #ffffff;
 
-  /* Borders */
-  --color-border: #d8d8d2;
-  --color-border-default: #d8d8d2;
-  --color-border-strong: #111111;
-  --color-border-subtle: #e7e7e1;
+  /* Borders - Clean and minimal */
+  --color-border: #e5e5e5;
+  --color-border-default: #e5e5e5;
+  --color-border-strong: #0a0a0a;
+  --color-border-subtle: #f5f5f5;
 
-  /* Accent */
-  --color-accent: #111111;
+  /* Accent - Bold black for CTAs */
+  --color-accent: #0a0a0a;
   --color-accent-strong: #000000;
-  --color-accent-soft: #ededeb;
+  --color-accent-soft: #f5f5f5;
 
   /* Status */
-  --color-success: #157a4d;
-  --color-success-soft: #d3eddf;
-  --color-warning: #b06d10;
-  --color-warning-soft: #fbe6c4;
-  --color-danger: #b3261e;
-  --color-danger-soft: #f4d8d6;
-  --color-info: #1d5e9c;
-  --color-info-soft: #d4e3f3;
+  --color-success: #16a34a;
+  --color-success-soft: #dcfce7;
+  --color-warning: #ca8a04;
+  --color-warning-soft: #fef9c3;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+  --color-info: #2563eb;
+  --color-info-soft: #dbeafe;
 
   /* Typography */
   --font-display: var(--font-display);
   --font-sans: var(--font-body);
 
-  /* Radius */
+  /* Radius - Slightly rounded for modern feel */
   --radius-input: 0.5rem;
-  --radius-card: 0.5rem;
-  --radius-modal: 0.75rem;
+  --radius-card: 0.75rem;
+  --radius-modal: 1rem;
   --radius-pill: 9999px;
 
-  /* Shadows */
-  --shadow-card-sm: 0 1px 2px rgba(8, 8, 8, 0.04);
-  --shadow-card: 0 1px 2px rgba(8, 8, 8, 0.06), 0 8px 24px rgba(8, 8, 8, 0.04);
-  --shadow-card-lg: 0 18px 42px rgba(8, 8, 8, 0.14);
-  --shadow-overlay: 0 24px 60px rgba(8, 8, 8, 0.24);
+  /* Shadows - Subtle and refined */
+  --shadow-card-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-card-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-overlay: 0 20px 40px rgba(0, 0, 0, 0.12);
 }
 
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
   }
+  
   body {
     margin: 0;
-    background:
-      linear-gradient(180deg, #ffffff 0%, var(--color-surface) 34rem),
-      var(--color-surface);
+    background: var(--color-surface);
     color: var(--color-ink);
-    font-family: var(--font-body), "Segoe UI", sans-serif;
+    font-family: var(--font-body), "Segoe UI", system-ui, sans-serif;
   }
+  
   a { color: inherit; }
   .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
 
@@ -75,11 +81,12 @@
 
   .muted { color: var(--color-ink-muted); }
   .subtle { color: var(--color-ink-subtle); }
+  
   .eyebrow {
     color: var(--color-ink-subtle);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    letter-spacing: 0;
+    letter-spacing: 0.05em;
     line-height: 1.2;
     text-transform: uppercase;
   }
@@ -126,7 +133,7 @@
     gap: 0.5rem;
     border-radius: var(--radius-input);
     font-weight: 600;
-    transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+    transition: all 150ms ease;
   }
   .btn-sm {
     min-height: 2.25rem;
@@ -146,15 +153,14 @@
   .btn-ghost:hover { background: color-mix(in srgb, var(--color-ink) 5%, transparent); }
 }
 
-@utility text-display-lg { font-family: var(--font-display); font-size: 3rem; line-height: 1.05; letter-spacing: 0; }
-@utility text-display-md { font-family: var(--font-display); font-size: 2.25rem; line-height: 1.1; }
-@utility text-h1 { font-size: 1.875rem; line-height: 1.2; font-weight: 700; }
-@utility text-h2 { font-size: 1.5rem; line-height: 1.25; font-weight: 700; }
+@utility text-display-lg { font-family: var(--font-display); font-size: 3.5rem; line-height: 1; letter-spacing: -0.02em; }
+@utility text-display-md { font-family: var(--font-display); font-size: 2.5rem; line-height: 1.05; letter-spacing: -0.01em; }
+@utility text-h1 { font-size: 2rem; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; }
+@utility text-h2 { font-size: 1.5rem; line-height: 1.2; font-weight: 700; }
 @utility text-h3 { font-size: 1.25rem; line-height: 1.3; font-weight: 600; }
 @utility text-h4 { font-size: 1.125rem; line-height: 1.35; font-weight: 600; }
-@utility text-body-lg { font-size: 1.0625rem; line-height: 1.55; }
-@utility text-body { font-size: 0.9375rem; line-height: 1.5; }
-@utility text-body-sm { font-size: 0.8125rem; line-height: 1.45; }
+@utility text-body-lg { font-size: 1.125rem; line-height: 1.6; }
+@utility text-body { font-size: 1rem; line-height: 1.5; }
+@utility text-body-sm { font-size: 0.875rem; line-height: 1.5; }
 @utility text-caption { font-size: 0.75rem; line-height: 1.4; }
-@utility text-overline { font-size: 0.6875rem; line-height: 1.2; letter-spacing: 0; text-transform: uppercase; font-weight: 700; }
-
+@utility text-overline { font-size: 0.75rem; line-height: 1.2; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600; }

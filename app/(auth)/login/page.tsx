@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { LoginForm } from "@/components/login-form";
 import { getAuthenticatedUser } from "@/lib/server/auth";
-import { Card } from "@/components/ui/card";
 
 export default async function LoginPage() {
   const user = await getAuthenticatedUser();
@@ -10,20 +10,31 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      <Card as="section" className="w-full max-w-md">
-        <p className="text-overline text-[var(--color-ink-subtle)]">
-          Acceso vendedor/comprador
+    <div className="w-full max-w-md">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-[var(--color-ink)] [font-family:var(--font-display)]">
+          Bienvenido de vuelta
+        </h1>
+        <p className="mt-2 text-body text-[var(--color-ink-muted)]">
+          Ingresa a tu cuenta para continuar
         </p>
-        <h1 className="mt-2 text-h1 [font-family:var(--font-display)]">Iniciar sesión</h1>
-        <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
-          Gestioná tu inventario, publicaciones y transacciones.
-        </p>
+      </div>
 
-        <div className="mt-6">
-          <LoginForm />
+      <div className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-sm md:p-8">
+        <LoginForm />
+        
+        <div className="mt-6 text-center">
+          <p className="text-sm text-[var(--color-ink-muted)]">
+            No tenes cuenta?{" "}
+            <Link 
+              href="/register" 
+              className="font-semibold text-[var(--color-ink)] hover:underline"
+            >
+              Registrate gratis
+            </Link>
+          </p>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

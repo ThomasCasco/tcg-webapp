@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { RegisterForm } from "@/components/register-form";
 import { getAuthenticatedUser } from "@/lib/server/auth";
-import { Card } from "@/components/ui/card";
 
 export default async function RegisterPage() {
   const user = await getAuthenticatedUser();
@@ -10,22 +10,31 @@ export default async function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      <Card as="section" className="w-full max-w-md">
-        <p className="text-overline text-[var(--color-ink-subtle)]">
-          Onboarding vendedor
-        </p>
-        <h1 className="mt-2 text-h1 [font-family:var(--font-display)]">
+    <div className="w-full max-w-md">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-[var(--color-ink)] [font-family:var(--font-display)]">
           Crear cuenta
         </h1>
-        <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
-          Registrate para cargar tu inventario y publicar cartas.
+        <p className="mt-2 text-body text-[var(--color-ink-muted)]">
+          Unite a la comunidad de coleccionistas
         </p>
+      </div>
 
-        <div className="mt-6">
-          <RegisterForm />
+      <div className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-sm md:p-8">
+        <RegisterForm />
+        
+        <div className="mt-6 text-center">
+          <p className="text-sm text-[var(--color-ink-muted)]">
+            Ya tenes cuenta?{" "}
+            <Link 
+              href="/login" 
+              className="font-semibold text-[var(--color-ink)] hover:underline"
+            >
+              Inicia sesion
+            </Link>
+          </p>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

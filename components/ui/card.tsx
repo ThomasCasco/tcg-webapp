@@ -3,19 +3,19 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/ui/cn";
 
 const cardVariants = cva(
-  "rounded-[var(--radius-card)] border bg-[var(--color-surface-elevated)]",
+  "rounded-xl border bg-white",
   {
     variants: {
       variant: {
-        default: "border-[var(--color-border-default)] shadow-[var(--shadow-card)]",
+        default: "border-[var(--color-border)] shadow-sm",
         interactive:
-          "border-[var(--color-border-default)] shadow-[var(--shadow-card)] transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-card-lg)]",
-        muted: "border-[var(--color-border-subtle)] bg-[var(--color-surface)] shadow-none",
+          "border-[var(--color-border)] shadow-sm transition-all hover:border-[var(--color-ink)] hover:shadow-md",
+        muted: "border-[var(--color-border)] bg-[var(--color-surface-muted)] shadow-none",
         outlined: "border-[var(--color-border-strong)] bg-transparent shadow-none",
       },
       padding: {
         none: "",
-        sm: "p-3",
+        sm: "p-4",
         md: "p-5",
         lg: "p-6",
       },
@@ -37,13 +37,13 @@ export function Card({ as: Tag = "div", className, variant, padding, ...props }:
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("mb-3 flex items-start justify-between gap-3", className)} {...props} />;
+  return <div className={cn("mb-4 flex items-start justify-between gap-4", className)} {...props} />;
 }
 
 export function CardBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("space-y-2", className)} {...props} />;
+  return <div className={cn("space-y-3", className)} {...props} />;
 }
 
 export function CardFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("mt-4 flex flex-wrap items-center gap-2", className)} {...props} />;
+  return <div className={cn("mt-5 flex flex-wrap items-center gap-2", className)} {...props} />;
 }

@@ -16,17 +16,19 @@ const bodyFont = Manrope({
 
 export const metadata: Metadata = {
   title: {
-    default: "TCG Marketplace AR",
-    template: "%s | TCG Marketplace AR",
+    default: "TCG.ar - Marketplace de Pokemon TCG en Argentina",
+    template: "%s | TCG.ar",
   },
   description:
-    "Pokemon-first marketplace para semi-vendedores de TCG en Argentina.",
-  applicationName: "TCG Marketplace AR",
+    "Compra, vende y tradea cartas Pokemon TCG en Argentina. Precios en pesos, pagos con Mercado Pago, envio o retiro.",
+  applicationName: "TCG.ar",
+  keywords: ["pokemon", "tcg", "cartas", "marketplace", "argentina", "mercado pago", "trading cards"],
   openGraph: {
-    title: "TCG Marketplace AR",
+    title: "TCG.ar - Marketplace de Pokemon TCG en Argentina",
     description:
-      "Inventario, listings y pagos verificados para vender cartas con confianza.",
+      "El marketplace de cartas Pokemon para coleccionistas en Argentina. Compra, vende y tradea con confianza.",
     type: "website",
+    locale: "es_AR",
   },
 };
 
@@ -38,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${displayFont.variable} ${bodyFont.variable} h-full antialiased`}
+      className={`${displayFont.variable} ${bodyFont.variable} h-full antialiased bg-[var(--color-surface)]`}
     >
       <body className="min-h-full flex flex-col">
         {children}

@@ -1,21 +1,17 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Chip } from "@/components/ui/chip";
 import { MarketListingCard } from "@/components/market-listing-card";
 import { listListings } from "@/lib/server/repository";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import {
-  ArrowLeftRight,
   ArrowRight,
   Gavel,
-  Info,
-  Package,
-  Scale,
-  ShoppingBag,
-  Star,
+  ArrowLeftRight,
+  ShieldCheck,
   Wallet,
+  Package,
+  Sparkles,
 } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
@@ -35,236 +31,232 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col">
-      <section className="relative overflow-hidden bg-[#070707] text-white">
-        <div className="mx-auto grid min-h-[calc(100svh-3.5rem)] w-full max-w-7xl gap-10 px-6 pb-10 pt-12 md:min-h-[calc(100svh-4rem)] md:grid-cols-[0.95fr,1.05fr] md:items-center md:gap-12 md:pb-14 md:pt-16">
-          <div className="max-w-2xl">
-            <Chip variant="default" size="sm" className="border-white/25 bg-white/10 text-white">
-              Pokemon TCG Argentina
-            </Chip>
-            <h1 className="mt-5 text-display-md leading-[1.02] text-white md:text-[4.75rem] md:leading-[0.94]">
-              Cartas reales. Mercado local. Liquidez simple.
+      {/* Hero Section - Bold Yellow Background */}
+      <section className="relative bg-[var(--color-primary)] overflow-hidden">
+        <div className="mx-auto w-full max-w-7xl px-4 py-16 md:px-6 md:py-24 lg:py-32">
+          <div className="max-w-3xl">
+            <h1 className="text-[2.75rem] font-bold leading-[1.05] tracking-tight text-[var(--color-ink)] md:text-[4rem] lg:text-[5rem] [font-family:var(--font-display)]">
+              El marketplace de cartas Pokemon en Argentina
             </h1>
-            <p className="mt-5 max-w-xl text-body-lg text-white/72">
-              Compra cartas publicadas por coleccionistas, vende tu stock en pesos y
-              coordina trades desde una experiencia enfocada en TCG.
+            <p className="mt-6 max-w-xl text-lg text-[var(--color-ink)]/80 md:text-xl">
+              Compra, vende y tradea cartas con coleccionistas de todo el pais. 
+              Precios en pesos, pagos con Mercado Pago.
             </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="bg-white text-black hover:bg-white/90">
+            
+            <div className="mt-10">
+              <Button asChild size="lg" className="bg-[var(--color-ink)] text-white hover:bg-black px-8">
                 <Link href="/market">
-                  <ShoppingBag className="h-5 w-5" />
-                  Abrir mercado
+                  Explorar mercado
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button
-                asChild
-                variant="secondary"
-                size="lg"
-                className="border-white bg-transparent text-white hover:bg-white hover:text-black"
-              >
-                <Link href="/auctions">
-                  <Gavel className="h-4 w-4" />
-                  Subastas
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="secondary"
-                size="lg"
-                className="border-white bg-transparent text-white hover:bg-white hover:text-black"
-              >
-                <Link href="/trades">
-                  <ArrowLeftRight className="h-4 w-4" />
-                  Ver trades
-                </Link>
-              </Button>
-              <Button asChild variant="ghost" size="lg" className="text-white hover:bg-white/10">
-                <Link href="/how-it-works">
-                  <Info className="h-4 w-4" />
-                  Cómo funciona
-                </Link>
-              </Button>
-            </div>
-
-            <div className="mt-10 grid grid-cols-3 border-y border-white/15 py-4 text-white">
-              <MarketStat value={featured.length ? `${featured.length}` : "24/7"} label="listings" />
-              <MarketStat value="ARS" label="precios locales" />
-              <MarketStat value="MP" label="pagos integrados" />
             </div>
           </div>
-
-          <div>
-            <div className="mb-3 flex items-center justify-between border-b border-white/15 pb-3 text-caption text-white/64">
-              <span className="font-semibold uppercase">Live market</span>
-              <Link href="/market" className="inline-flex items-center gap-1 font-semibold text-white">
-                View all <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-            {featured.length === 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {["Charizard ex", "Pikachu promo", "Mew alt art", "Trainer gallery"].map((name, index) => (
-                  <div key={name} className="min-h-72 border border-white/15 bg-white/[0.06] p-3">
-                    <div className="grid aspect-[3/4] place-items-center bg-white/10 text-caption text-white/48">
-                      Preview
-                    </div>
-                    <p className="mt-3 text-body-sm font-bold text-white">{name}</p>
-                    <p className="text-caption text-white/56">Slot #{index + 1}</p>
+        </div>
+        
+        {/* Product Preview Cards - Desktop only */}
+        <div className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 w-[45%] pr-8">
+          <div className="grid grid-cols-2 gap-4 rotate-[-4deg]">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="aspect-[3/4] rounded-xl bg-white/90 shadow-lg border border-black/5 overflow-hidden"
+              >
+                {featured[i - 1]?.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={featured[i - 1].imageUrl ?? ""}
+                    alt={featured[i - 1]?.cardName ?? ""}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                    <Sparkles className="h-8 w-8 text-gray-300" />
                   </div>
-                ))}
+                )}
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {featured.slice(0, 4).map((listing) => (
-                  <Link
-                    key={listing.id}
-                    href={`/market/${listing.id}`}
-                    className="group block overflow-hidden border border-white/15 bg-white/[0.06]"
-                  >
-                    <div className="aspect-[3/4] overflow-hidden bg-white/10">
-                      {listing.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={listing.imageUrl}
-                          alt={listing.cardName}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                        />
-                      ) : (
-                        <div className="grid h-full place-items-center text-caption text-white/48">
-                          Sin foto
-                        </div>
-                      )}
-                    </div>
-                    <div className="border-t border-white/15 p-3">
-                      <p className="text-body-sm font-extrabold text-white">
-                        ARS {listing.priceArs.toLocaleString("es-AR")}
-                      </p>
-                      <p className="mt-1 line-clamp-1 text-caption text-white/68">
-                        {listing.cardName}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-[var(--color-border-strong)] bg-white">
-        <div className="mx-auto flex w-full max-w-7xl gap-2 overflow-x-auto px-6 py-4">
-          {["Pokemon", "Singles", "Trades", "Mercado Pago", "Retiro", "Envio"].map((label) => (
-            <Link
-              key={label}
-              href={label === "Trades" ? "/trades" : "/market"}
-              className="shrink-0 rounded-[var(--radius-input)] border border-[var(--color-border-strong)] px-4 py-2 text-body-sm font-bold hover:bg-black hover:text-white"
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-7xl px-6 py-12">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-overline text-[var(--color-ink-subtle)]">Recien publicadas</p>
-            <h2 className="mt-1 text-h1 [font-family:var(--font-display)]">
-              Ultimas cartas en el mercado
-            </h2>
-          </div>
-          <Link
-            href="/market"
-            className="inline-flex items-center gap-1 text-body-sm font-bold text-[var(--color-ink)] hover:underline"
-          >
-            Ver todo <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-
-        {featured.length === 0 ? (
-          <Card padding="lg" className="mt-6 text-center">
-            <p className="text-body-sm text-[var(--color-ink-muted)]">
-              Todavia no hay cartas publicadas. Podes{" "}
-              <Link href="/inventory" className="font-semibold underline">
-                cargar una carta
-              </Link>{" "}
-              o explorar trades.
-            </p>
-          </Card>
-        ) : (
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">
-            {featured.map((listing) => (
-              <MarketListingCard
-                key={listing.id}
-                listing={listing}
-                pokemonTypes={null}
-                isLoggedIn={Boolean(user)}
-              />
             ))}
           </div>
-        )}
-      </section>
-
-      <section className="border-y border-[var(--color-border-strong)] bg-white">
-        <div className="mx-auto grid w-full max-w-7xl gap-0 px-6 py-12 md:grid-cols-3">
-          <MarketSignal
-            icon={<Package className="h-5 w-5" />}
-            title="Publica stock"
-            body="Carga fotos, condicion, precio y entrega para poner cartas en venta directa."
-          />
-          <MarketSignal
-            icon={<Wallet className="h-5 w-5" />}
-            title="Cobra local"
-            body="Vende en pesos y usa Mercado Pago cuando el vendedor lo tenga conectado."
-          />
-          <MarketSignal
-            icon={<Scale className="h-5 w-5" />}
-            title="Mueve coleccion"
-            body="Arma trades y encuentra coleccionistas con cartas compatibles."
-          />
         </div>
       </section>
 
-      <section className="bg-[var(--color-surface)]">
-        <div className="mx-auto w-full max-w-7xl px-6 py-16">
-          <div className="max-w-2xl">
-            <p className="text-overline text-[var(--color-ink-subtle)]">Como funciona</p>
-            <h2 className="mt-1 text-h1 [font-family:var(--font-display)]">
-              Del listing a la entrega, sin ruido.
-            </h2>
-          </div>
+      {/* Quick Stats Bar */}
+      <section className="border-b border-[var(--color-border-strong)] bg-white">
+        <div className="mx-auto flex w-full max-w-7xl">
+          <QuickStat value="24/7" label="Mercado activo" />
+          <QuickStat value="ARS" label="Precios locales" />
+          <QuickStat value="MP" label="Pagos integrados" />
+          <QuickStat value="P2P" label="Envio o retiro" className="hidden sm:flex" />
+        </div>
+      </section>
 
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
-            <FeatureStep
-              step="1"
-              icon={<ShoppingBag className="h-6 w-6" />}
-              title="Explora cartas"
-              body="Filtra por carta, precio, condicion y forma de entrega."
+      {/* Main Actions - Clear CTAs */}
+      <section className="bg-white py-16 md:py-20">
+        <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            <ActionCard
+              href="/market"
+              icon={<Package className="h-6 w-6" />}
+              title="Mercado"
+              description="Explora cartas publicadas por coleccionistas con precios en pesos"
+              primary
             />
-            <FeatureStep
-              step="2"
-              icon={<Star className="h-6 w-6" />}
-              title="Reserva o negocia"
-              body="Abre la publicacion, revisa vendedor y coordina la operacion."
+            <ActionCard
+              href="/auctions"
+              icon={<Gavel className="h-6 w-6" />}
+              title="Subastas"
+              description="Participa en subastas en vivo y consegui cartas a buen precio"
             />
-            <FeatureStep
-              step="3"
+            <ActionCard
+              href="/trades"
               icon={<ArrowLeftRight className="h-6 w-6" />}
-              title="Compra, tradea o vende"
-              body="Usa el marketplace para dar rotacion real a tu coleccion."
+              title="Trades"
+              description="Intercambia cartas directamente con otros coleccionistas"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Listings */}
+      <section className="py-16 md:py-20">
+        <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
+          <div className="flex items-end justify-between gap-4 mb-8">
+            <div>
+              <p className="text-overline text-[var(--color-ink-subtle)]">
+                Recien publicadas
+              </p>
+              <h2 className="mt-1 text-h1 [font-family:var(--font-display)]">
+                Cartas destacadas
+              </h2>
+            </div>
+            <Link
+              href="/market"
+              className="hidden sm:inline-flex items-center gap-1 text-body-sm font-semibold text-[var(--color-ink)] hover:underline"
+            >
+              Ver todo <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {featured.length === 0 ? (
+            <div className="rounded-xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)] p-12 text-center">
+              <Sparkles className="mx-auto h-10 w-10 text-[var(--color-ink-subtle)]" />
+              <p className="mt-4 text-body text-[var(--color-ink-muted)]">
+                Todavia no hay cartas publicadas
+              </p>
+              <p className="mt-1 text-body-sm text-[var(--color-ink-subtle)]">
+                Se el primero en{" "}
+                <Link href="/inventory" className="font-semibold underline">
+                  publicar una carta
+                </Link>
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">
+                {featured.map((listing) => (
+                  <MarketListingCard
+                    key={listing.id}
+                    listing={listing}
+                    pokemonTypes={null}
+                    isLoggedIn={Boolean(user)}
+                  />
+                ))}
+              </div>
+              <div className="mt-8 text-center sm:hidden">
+                <Button asChild variant="secondary">
+                  <Link href="/market">
+                    Ver todas las cartas
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="bg-[var(--color-ink)] text-white py-16 md:py-24">
+        <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-h1 [font-family:var(--font-display)]">
+              Como funciona
+            </h2>
+            <p className="mt-4 text-body-lg text-white/70">
+              Tres pasos simples para comprar o vender cartas
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            <StepCard
+              step="1"
+              title="Explora el mercado"
+              description="Busca cartas por nombre, set, condicion o precio. Filtra para encontrar exactamente lo que necesitas."
+            />
+            <StepCard
+              step="2"
+              title="Reserva o negocia"
+              description="Encontraste algo? Reserva la carta, coordina con el vendedor o propone un trade."
+            />
+            <StepCard
+              step="3"
+              title="Coordina la entrega"
+              description="Paga con Mercado Pago, coordina envio o retiro en persona. Listo!"
             />
           </div>
 
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Button asChild size="lg">
-              <Link href="/market">
-                Entrar al mercado
+          <div className="mt-12 text-center">
+            <Button asChild size="lg" className="bg-[var(--color-primary)] text-[var(--color-ink)] hover:bg-[var(--color-primary-strong)]">
+              <Link href="/how-it-works">
+                Leer la guia completa
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Signals */}
+      <section className="bg-white py-16 md:py-20">
+        <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
+          <div className="grid gap-8 md:grid-cols-3">
+            <TrustSignal
+              icon={<Wallet className="h-6 w-6" />}
+              title="Pagos seguros"
+              description="Paga con Mercado Pago cuando el vendedor lo tenga conectado, o coordina P2P."
+            />
+            <TrustSignal
+              icon={<ShieldCheck className="h-6 w-6" />}
+              title="Vendedores verificados"
+              description="Perfil publico, historial de ventas y sistema de reputacion para cada usuario."
+            />
+            <TrustSignal
+              icon={<Package className="h-6 w-6" />}
+              title="Envio o retiro"
+              description="Cada publicacion indica opciones de entrega. Elegis lo que te convenga."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="border-t border-[var(--color-border)] py-16 md:py-20">
+        <div className="mx-auto w-full max-w-7xl px-4 md:px-6 text-center">
+          <h2 className="text-h1 [font-family:var(--font-display)]">
+            Listo para empezar?
+          </h2>
+          <p className="mt-4 text-body-lg text-[var(--color-ink-muted)] max-w-xl mx-auto">
+            Unite a la comunidad de coleccionistas de Pokemon TCG en Argentina
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+            <Button asChild size="lg">
+              <Link href="/register">
+                Crear cuenta gratis
+              </Link>
+            </Button>
             <Button asChild size="lg" variant="secondary">
-              <Link href="/how-it-works">
-                <Info className="h-4 w-4" />
-                Leer la guía completa
+              <Link href="/market">
+                Explorar sin cuenta
               </Link>
             </Button>
           </div>
@@ -274,56 +266,98 @@ export default async function HomePage() {
   );
 }
 
-function MarketStat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="pr-4">
-      <p className="text-h2 font-extrabold text-white">{value}</p>
-      <p className="mt-1 text-caption font-semibold uppercase text-white/52">{label}</p>
-    </div>
-  );
-}
-
-function MarketSignal({
-  icon,
-  title,
-  body,
+function QuickStat({
+  value,
+  label,
+  className = "",
 }: {
-  icon: React.ReactNode;
-  title: string;
-  body: string;
+  value: string;
+  label: string;
+  className?: string;
 }) {
   return (
-    <div className="border-[var(--color-border-strong)] py-6 md:border-l md:px-6 md:first:border-l-0">
-      <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-input)] bg-black text-white">
-        {icon}
-      </div>
-      <h3 className="mt-5 text-h3">{title}</h3>
-      <p className="mt-2 max-w-sm text-body-sm text-[var(--color-ink-muted)]">{body}</p>
+    <div className={`flex-1 flex flex-col items-center justify-center border-l border-[var(--color-border-strong)] py-4 first:border-l-0 ${className}`}>
+      <p className="text-xl font-bold text-[var(--color-ink)] md:text-2xl">{value}</p>
+      <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-[var(--color-ink-subtle)]">
+        {label}
+      </p>
     </div>
   );
 }
 
-function FeatureStep({
-  step,
+function ActionCard({
+  href,
   icon,
   title,
-  body,
+  description,
+  primary = false,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  primary?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`group relative flex flex-col p-6 rounded-xl border-2 transition-all ${
+        primary
+          ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] hover:bg-[var(--color-primary)]/30"
+          : "border-[var(--color-border)] bg-white hover:border-[var(--color-ink)] hover:shadow-md"
+      }`}
+    >
+      <div className={`inline-flex h-12 w-12 items-center justify-center rounded-lg ${
+        primary ? "bg-[var(--color-primary)]" : "bg-[var(--color-surface-muted)]"
+      }`}>
+        {icon}
+      </div>
+      <h3 className="mt-4 text-h3 text-[var(--color-ink)]">{title}</h3>
+      <p className="mt-2 text-body-sm text-[var(--color-ink-muted)] flex-1">{description}</p>
+      <div className="mt-4 inline-flex items-center gap-1 text-body-sm font-semibold text-[var(--color-ink)] group-hover:underline">
+        Ir a {title.toLowerCase()}
+        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+      </div>
+    </Link>
+  );
+}
+
+function StepCard({
+  step,
+  title,
+  description,
 }: {
   step: string;
-  icon: React.ReactNode;
   title: string;
-  body: string;
+  description: string;
 }) {
   return (
-    <Card padding="lg" className="relative">
-      <span className="absolute -top-3 left-5 grid h-7 w-7 place-items-center rounded-full bg-[var(--color-accent)] text-[0.75rem] font-bold text-white">
+    <div className="text-center">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)] text-2xl font-bold text-[var(--color-ink)]">
         {step}
-      </span>
-      <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-input)] bg-black text-white">
+      </div>
+      <h3 className="mt-5 text-h3">{title}</h3>
+      <p className="mt-3 text-body-sm text-white/70">{description}</p>
+    </div>
+  );
+}
+
+function TrustSignal({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="text-center p-6">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-surface-muted)]">
         {icon}
       </div>
-      <h3 className="mt-4 text-h3">{title}</h3>
-      <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">{body}</p>
-    </Card>
+      <h3 className="mt-5 text-h3 text-[var(--color-ink)]">{title}</h3>
+      <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">{description}</p>
+    </div>
   );
 }
