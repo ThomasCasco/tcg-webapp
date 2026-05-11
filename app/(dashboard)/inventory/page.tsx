@@ -4,9 +4,11 @@ import { listInventoryEntries, listListings } from "@/lib/server/repository";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Package } from "@/components/ui/icon";
+import { Info, Package } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +91,29 @@ export default async function InventoryPage() {
         <EmptyState
           icon={<Package className="h-8 w-8" />}
           title="Inventario vacío"
-          description="Usá el buscador de arriba para agregar tu primera carta."
+          description={
+            <>
+              <p>
+                Usá el formulario de arriba para agregar tu primera carta. Sin
+                inventario no podés publicar, subastar ni tradear.
+              </p>
+              <p className="mt-2 text-caption">
+                ¿Primera vez por acá?{" "}
+                <Link href="/how-it-works" className="font-semibold underline">
+                  Mirá la guía
+                </Link>{" "}
+                de cómo funciona.
+              </p>
+            </>
+          }
+          action={
+            <Button asChild variant="ghost">
+              <Link href="/how-it-works">
+                <Info className="h-4 w-4" />
+                Cómo funciona
+              </Link>
+            </Button>
+          }
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">

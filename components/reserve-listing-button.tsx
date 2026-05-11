@@ -13,6 +13,11 @@ import { ShoppingBag } from "@/components/ui/icon";
 
 type Props = {
   listingId: string;
+  /**
+   * Cuando true, muestra label especifica de MP automatico.
+   * Cuando false/undefined, label generico para coordinacion P2P.
+   */
+  sellerMpConnected?: boolean;
 };
 
 type CheckoutResponse = {
@@ -27,7 +32,7 @@ type ReserveResponse = {
   message?: string;
 };
 
-export function ReserveListingButton({ listingId }: Props) {
+export function ReserveListingButton({ listingId, sellerMpConnected }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,12 +87,19 @@ export function ReserveListingButton({ listingId }: Props) {
     }
   }
 
+  const label = sellerMpConnected ? "Comprar con MP" : "Reservar y coordinar";
+
   return (
     <div>
       <Button onClick={buy} disabled={busy} loading={busy} size="sm" fullWidth>
         <ShoppingBag className="h-4 w-4" />
-        Comprar
+        {label}
       </Button>
+      {!sellerMpConnected && (
+        <p className="mt-1 text-[0.6875rem] text-[var(--color-ink-subtle)]">
+          Pago P2P: coordinás con el vendedor.
+        </p>
+      )}
       {error && (
         <p role="alert" className="mt-2 text-caption text-[var(--color-danger)]">
           {error}

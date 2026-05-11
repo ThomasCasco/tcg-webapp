@@ -11,6 +11,9 @@ import {
   Scale,
   Users,
   Wallet,
+  Gavel,
+  Home,
+  Info,
 } from "@/components/ui/icon";
 import { cn } from "@/lib/ui/cn";
 
@@ -25,9 +28,17 @@ type NavSection = {
 
 const sections: NavSection[] = [
   {
+    label: "Inicio",
+    items: [
+      { href: "/dashboard", label: "Resumen", icon: Home },
+      { href: "/how-it-works", label: "Cómo funciona", icon: Info },
+    ],
+  },
+  {
     label: "Comprar",
     items: [
       { href: "/market", label: "Mercado", icon: ShoppingBag },
+      { href: "/auctions", label: "Subastas", icon: Gavel },
       { href: "/trades", label: "Trades", icon: ArrowLeftRight },
       { href: "/profiles", label: "Perfiles", icon: Users },
       { href: "/trade-proposals", label: "Propuestas", icon: ArrowLeftRight },
@@ -39,6 +50,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/inventory", label: "Inventario", icon: Layers },
       { href: "/listings", label: "Mis ventas", icon: Tag },
+      { href: "/my-auctions", label: "Mis subastas", icon: Gavel },
     ],
   },
   {

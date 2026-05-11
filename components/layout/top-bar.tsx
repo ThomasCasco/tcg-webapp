@@ -103,6 +103,17 @@ export function TopBar({ user }: Props) {
               Mercado
             </Link>
             <Link
+              href="/auctions"
+              className={cn(
+                "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
+                pathname === "/auctions"
+                  ? "bg-[var(--color-ink)] text-[var(--color-ink-inverse)]"
+                  : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
+              )}
+            >
+              Subastas
+            </Link>
+            <Link
               href="/trades"
               className={cn(
                 "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
@@ -114,15 +125,15 @@ export function TopBar({ user }: Props) {
               Trades
             </Link>
             <Link
-              href="/profiles"
+              href="/how-it-works"
               className={cn(
                 "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
-                pathname === "/profiles"
+                pathname === "/how-it-works"
                   ? "bg-[var(--color-ink)] text-[var(--color-ink-inverse)]"
                   : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
               )}
             >
-              Perfiles
+              Cómo funciona
             </Link>
           </nav>
         )}

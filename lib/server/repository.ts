@@ -356,10 +356,14 @@ type CreateAuctionInput = {
   bidIncrementArs: number;
   buyoutPriceArs?: number;
   durationHours: number;
+  /** Si se manda, la subasta queda "scheduled" hasta esa fecha. */
+  scheduledStartAt?: string;
   offersShipping: boolean;
   offersPickup: boolean;
   deliveryAreaNotes: string;
 };
+
+const AUCTION_SUBSCRIPTIONS_TABLE = "auction_subscriptions";
 
 function mapInventoryRow(row: InventoryRow): InventoryEntry {
   return {
@@ -1483,12 +1487,13 @@ export async function listAuctions(options?: {
   bidderId?: string;
   onlyPublic?: boolean;
   statuses?: AuctionStatus[];
+  viewerUserId?: string;
 }): Promise<AuctionListing[]> {
   assertSupabaseReady();
   const client = getSupabaseAdminClient();
 
-  let query = client.from(AUCTIONS_TABLE).select("*").order("created_at", {
-    ascending: false,
+  let query = client.from(AUCTIONS_TABLE).select("*").order("starts_at", {
+    ascending: true,
   });
 
   if (options?.sellerId) {
@@ -1498,7 +1503,7 @@ export async function listAuctions(options?: {
   if (options?.statuses && options.statuses.length > 0) {
     query = query.in("status", options.statuses);
   } else if (options?.onlyPublic) {
-    query = query.in("status", ["active", "ended", "settled"]);
+    query = query.in("status", ["scheduled", "active", "ended", "settled"]);
   }
 
   if (options?.bidderId) {
@@ -1514,7 +1519,21 @@ export async function listAuctions(options?: {
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  return ((data ?? []) as AuctionRow[]).map(mapAuctionRow);
+  const auctions = ((data ?? []) as AuctionRow[]).map(mapAuctionRow);
+
+  if (auctions.length === 0) return auctions;
+  const ids = auctions.map((auction) => auction.id);
+  const [counts, viewerSet] = await Promise.all([
+    getAuctionSubscriptionCounts(ids),
+    options?.viewerUserId
+      ? getUserAuctionSubscriptionSet(options.viewerUserId, ids)
+      : Promise.resolve(new Set<string>()),
+  ]);
+  return auctions.map((auction) => ({
+    ...auction,
+    subscriberCount: counts[auction.id] ?? 0,
+    viewerSubscribed: viewerSet.has(auction.id),
+  }));
 }
 
 export async function listAuctionBids(auctionId: string): Promise<AuctionBid[]> {
@@ -1563,7 +1582,20 @@ export async function createAuction(input: CreateAuctionInput): Promise<AuctionL
   }
 
   const now = new Date();
-  const endsAt = new Date(now.getTime() + durationHours * 3_600_000);
+  let startsAt = now;
+  let status: AuctionStatus = "active";
+  if (input.scheduledStartAt) {
+    const scheduled = new Date(input.scheduledStartAt);
+    if (Number.isNaN(scheduled.getTime())) {
+      throw new Error("Fecha de inicio invalida.");
+    }
+    if (scheduled.getTime() <= now.getTime() + 5 * 60_000) {
+      throw new Error("La subasta debe arrancar al menos 5 minutos en el futuro.");
+    }
+    startsAt = scheduled;
+    status = "scheduled";
+  }
+  const endsAt = new Date(startsAt.getTime() + durationHours * 3_600_000);
   const { data, error } = await client
     .from(AUCTIONS_TABLE)
     .insert({
@@ -1576,13 +1608,13 @@ export async function createAuction(input: CreateAuctionInput): Promise<AuctionL
       image_url: input.imageUrl ?? null,
       condition: input.condition,
       quantity: input.quantity,
-      status: "active",
+      status,
       start_price_ars: startPrice,
       bid_increment_ars: increment,
       current_price_ars: startPrice,
       buyout_price_ars: input.buyoutPriceArs ? Math.round(input.buyoutPriceArs) : null,
       bid_count: 0,
-      starts_at: now.toISOString(),
+      starts_at: startsAt.toISOString(),
       ends_at: endsAt.toISOString(),
       offers_shipping: input.offersShipping,
       offers_pickup: input.offersPickup,
@@ -1594,6 +1626,143 @@ export async function createAuction(input: CreateAuctionInput): Promise<AuctionL
 
   if (error || !data) throw new Error(error?.message ?? "Failed to create auction.");
   return mapAuctionRow(data as AuctionRow);
+}
+
+export async function subscribeToAuction(input: {
+  auctionId: string;
+  userId: string;
+}): Promise<void> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { error } = await client
+    .from(AUCTION_SUBSCRIPTIONS_TABLE)
+    .upsert(
+      { auction_id: input.auctionId, user_id: input.userId },
+      { onConflict: "auction_id,user_id", ignoreDuplicates: true },
+    );
+  if (error) throw new Error(error.message);
+}
+
+export async function unsubscribeFromAuction(input: {
+  auctionId: string;
+  userId: string;
+}): Promise<void> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { error } = await client
+    .from(AUCTION_SUBSCRIPTIONS_TABLE)
+    .delete()
+    .eq("auction_id", input.auctionId)
+    .eq("user_id", input.userId);
+  if (error) throw new Error(error.message);
+}
+
+export async function getAuctionSubscriptionCounts(
+  auctionIds: string[],
+): Promise<Record<string, number>> {
+  if (auctionIds.length === 0) return {};
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(AUCTION_SUBSCRIPTIONS_TABLE)
+    .select("auction_id")
+    .in("auction_id", auctionIds);
+  if (error) throw new Error(error.message);
+  const counts: Record<string, number> = {};
+  for (const row of (data ?? []) as Array<{ auction_id: string }>) {
+    counts[row.auction_id] = (counts[row.auction_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
+export async function getUserAuctionSubscriptionSet(
+  userId: string,
+  auctionIds: string[],
+): Promise<Set<string>> {
+  if (auctionIds.length === 0) return new Set();
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(AUCTION_SUBSCRIPTIONS_TABLE)
+    .select("auction_id")
+    .eq("user_id", userId)
+    .in("auction_id", auctionIds);
+  if (error) throw new Error(error.message);
+  return new Set(((data ?? []) as Array<{ auction_id: string }>).map((row) => row.auction_id));
+}
+
+export async function getAuctionById(auctionId: string): Promise<AuctionListing | null> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(AUCTIONS_TABLE)
+    .select("*")
+    .eq("id", auctionId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return mapAuctionRow(data as AuctionRow);
+}
+
+/**
+ * Pasa subastas programadas a "active" si ya llegó su starts_at.
+ * Crea notificaciones in-app para los suscriptos.
+ * Retorna la cantidad activada.
+ */
+export async function activateScheduledAuctions(now: Date = new Date()): Promise<number> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  const { data: due, error: dueError } = await client
+    .from(AUCTIONS_TABLE)
+    .select("id,card_name,seller_handle")
+    .eq("status", "scheduled")
+    .lte("starts_at", now.toISOString())
+    .limit(50);
+
+  if (dueError) throw new Error(dueError.message);
+  const rows = (due ?? []) as Array<{ id: string; card_name: string; seller_handle: string }>;
+  if (rows.length === 0) return 0;
+
+  const ids = rows.map((row) => row.id);
+  const { error: updateError } = await client
+    .from(AUCTIONS_TABLE)
+    .update({ status: "active" })
+    .in("id", ids);
+  if (updateError) throw new Error(updateError.message);
+
+  const { data: subs, error: subsError } = await client
+    .from(AUCTION_SUBSCRIPTIONS_TABLE)
+    .select("id,auction_id,user_id")
+    .in("auction_id", ids);
+  if (subsError) throw new Error(subsError.message);
+
+  const subRows = (subs ?? []) as Array<{ id: string; auction_id: string; user_id: string }>;
+  if (subRows.length > 0) {
+    const auctionsById = new Map(rows.map((row) => [row.id, row]));
+    const notifications = subRows.map((sub) => {
+      const auction = auctionsById.get(sub.auction_id);
+      return {
+        user_id: sub.user_id,
+        type: "system" as const,
+        title: "Empezó una subasta que seguías",
+        body: auction
+          ? `La subasta de ${auction.card_name} (@${auction.seller_handle}) acaba de arrancar.`
+          : "Una subasta que seguías acaba de arrancar.",
+        link_path: `/auctions/${sub.auction_id}`,
+      };
+    });
+    await client.from(NOTIFICATIONS_TABLE).insert(notifications);
+    await client
+      .from(AUCTION_SUBSCRIPTIONS_TABLE)
+      .update({ notified_at: now.toISOString() })
+      .in(
+        "id",
+        subRows.map((row) => row.id),
+      );
+  }
+
+  return rows.length;
 }
 
 export async function placeAuctionBid(input: {
@@ -1615,8 +1784,14 @@ export async function placeAuctionBid(input: {
   }
 
   const auction = existing as AuctionRow;
+  if (auction.status === "scheduled") {
+    throw new Error("La subasta todavia no empezo.");
+  }
   if (auction.status !== "active") throw new Error("La subasta no esta activa.");
   if (auction.seller_id === input.bidderId) throw new Error("No podes ofertar en tu propia subasta.");
+  if (new Date(auction.starts_at).getTime() > Date.now()) {
+    throw new Error("La subasta todavia no empezo.");
+  }
   if (new Date(auction.ends_at).getTime() <= Date.now()) {
     await closeAuction({ auctionId: auction.id, actorUserId: auction.seller_id ?? input.bidderId });
     throw new Error("La subasta ya termino.");
@@ -1726,7 +1901,35 @@ export async function listListings(options?: {
     throw new Error(error.message);
   }
 
-  return ((data ?? []) as ListingRow[]).map(mapListingRow);
+  const listings = ((data ?? []) as ListingRow[]).map(mapListingRow);
+  return enrichListingsWithMpStatus(listings);
+}
+
+async function enrichListingsWithMpStatus(listings: Listing[]): Promise<Listing[]> {
+  if (listings.length === 0) return listings;
+  const sellerIds = Array.from(
+    new Set(listings.map((listing) => listing.sellerId).filter((id): id is string => Boolean(id))),
+  );
+  if (sellerIds.length === 0) return listings;
+
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(PROFILES_TABLE)
+    .select("id,mp_connected")
+    .in("id", sellerIds);
+  if (error) return listings;
+
+  const map = new Map(
+    ((data ?? []) as Array<{ id: string; mp_connected: boolean | null }>).map((row) => [
+      row.id,
+      Boolean(row.mp_connected),
+    ]),
+  );
+  return listings.map((listing) =>
+    listing.sellerId
+      ? { ...listing, sellerMpConnected: map.get(listing.sellerId) ?? false }
+      : listing,
+  );
 }
 
 export async function createListing(input: CreateListingInput): Promise<Listing> {
@@ -2896,7 +3099,9 @@ export async function getListingById(listingId: string): Promise<Listing | null>
 
   if (error) throw new Error(error.message);
   if (!data) return null;
-  return mapListingRow(data as ListingRow);
+  const listing = mapListingRow(data as ListingRow);
+  const [enriched] = await enrichListingsWithMpStatus([listing]);
+  return enriched;
 }
 
 /**

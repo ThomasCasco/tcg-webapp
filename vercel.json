@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/refresh-mp-tokens",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/activate-scheduled-auctions",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

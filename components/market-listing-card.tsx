@@ -51,9 +51,21 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
           </div>
         )}
 
-        <div className="absolute left-2 top-2">
+        <div className="absolute left-2 top-2 flex flex-col gap-1">
           <Chip size="sm" variant="default" className="border-black bg-white/95 text-black backdrop-blur">
             {formatConditionEs(listing.condition)}
+          </Chip>
+          <Chip
+            size="sm"
+            variant={listing.sellerMpConnected ? "success" : "warning"}
+            className="bg-white/95 backdrop-blur"
+            title={
+              listing.sellerMpConnected
+                ? "El vendedor tiene Mercado Pago conectado: verificacion automatica."
+                : "El vendedor no tiene MP conectado: pago coordinado P2P."
+            }
+          >
+            {listing.sellerMpConnected ? "MP automatico" : "Pago P2P"}
           </Chip>
         </div>
 
@@ -97,7 +109,10 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
         {listing.status === "active" && (
           <div className="mt-3">
             {isLoggedIn ? (
-              <ReserveListingButton listingId={listing.id} />
+              <ReserveListingButton
+                listingId={listing.id}
+                sellerMpConnected={listing.sellerMpConnected}
+              />
             ) : (
               <Link
                 href="/login"
