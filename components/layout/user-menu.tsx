@@ -11,15 +11,9 @@ import { Avatar } from "@/components/ui/avatar";
 import {
   ChevronDown,
   User,
-  Users,
-  Layers,
-  Tag,
-  Package,
   Wallet,
-  Scale,
   LogOut,
   Home,
-  Gavel,
   Info,
 } from "@/components/ui/icon";
 import { cn } from "@/lib/ui/cn";
@@ -30,18 +24,10 @@ type Props = {
   onLogout?: () => void;
 };
 
+// Keep this short — sidebar covers the rest.
 const items = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/account", label: "Mi cuenta", icon: User },
-  { href: "/profiles", label: "Perfiles", icon: Users },
-  { href: "/trade-proposals", label: "Propuestas de trade", icon: Scale },
-  { href: "/inventory", label: "Inventario", icon: Layers },
-  { href: "/listings", label: "Mis ventas", icon: Tag },
-  { href: "/my-auctions", label: "Mis subastas", icon: Gavel },
-  { href: "/my-claims", label: "Mis claims", icon: Layers },
-  { href: "/transactions", label: "Operaciones", icon: Package },
-  { href: "/account", label: "Cobros (MP)", icon: Wallet },
-  { href: "/disputes", label: "Disputas", icon: Scale },
+  { href: "/account", label: "Mi cuenta y cobros", icon: Wallet },
   { href: "/how-it-works", label: "Cómo funciona", icon: Info },
 ];
 
