@@ -1,20 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/reconcile-mp-payments",
-      "schedule": "*/10 * * * *"
-    },
-    {
-      "path": "/api/cron/release-stale-reservations",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/cron/refresh-mp-tokens",
-      "schedule": "0 */6 * * *"
-    },
-    {
-      "path": "/api/cron/activate-scheduled-auctions",
-      "schedule": "*/5 * * * *"
+      "path": "/api/cron/daily",
+      "schedule": "0 6 * * *"
     }
   ]
 }
