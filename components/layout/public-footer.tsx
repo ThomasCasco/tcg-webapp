@@ -1,19 +1,18 @@
 import Link from "next/link";
-import { ShoppingBag } from "@/components/ui/icon";
 
 export function PublicFooter() {
   return (
-    <footer className="mt-16 border-t border-[var(--hairline)] [background:linear-gradient(180deg,transparent,rgba(8,12,28,0.6))]">
+    <footer className="mt-16 border-t border-[var(--hairline)]">
       <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 py-10 md:grid-cols-4">
         <div>
           <Link
             href="/"
-            className="flex items-center gap-2 text-[1.25rem] font-bold text-[var(--ink)]"
+            className="flex items-center gap-2 text-[var(--ink)]"
+            aria-label="TCG.ar - Inicio"
           >
-            <span className="grid h-8 w-8 place-items-center rounded-[var(--r-xs)] [background:linear-gradient(135deg,var(--accent-hi),#C77DFF)] text-white [box-shadow:0_0_24px_rgba(var(--accent-glow),0.5)]">
-              <ShoppingBag className="h-4 w-4" />
-            </span>
-            <span className="[font-family:var(--f-display)]">TCG.ar</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/img/logo.png" alt="" className="h-8 w-auto" />
+            <span className="text-[1.1rem] font-bold [font-family:var(--f-display)]">.ar</span>
           </Link>
           <p className="mt-3 t-sm t-mute">
             Mercado argentino de cartas Pokemon. Compras, ventas y trades con pagos

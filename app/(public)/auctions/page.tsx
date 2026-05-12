@@ -99,7 +99,8 @@ export default async function PublicAuctionsPage() {
         </header>
         {upcoming.length === 0 ? (
           <EmptyState
-            icon={<CalendarClock className="h-8 w-8" />}
+            image="/img/empty-states/auctions-empty.png"
+            imageAlt="Martillo de subasta"
             title="Sin subastas programadas"
             description="Cuando un vendedor programe una subasta, vas a poder anotarte para que te avisemos cuando arranque."
           />
@@ -124,7 +125,8 @@ export default async function PublicAuctionsPage() {
         </header>
         {active.length === 0 ? (
           <EmptyState
-            icon={<Gavel className="h-8 w-8" />}
+            image="/img/empty-states/auctions-empty.png"
+            imageAlt="Martillo de subasta"
             title="Sin subastas activas"
             description="No hay subastas en vivo en este momento. Revisá las próximas o volvé más tarde."
           />

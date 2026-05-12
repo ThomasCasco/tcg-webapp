@@ -39,7 +39,8 @@ export default async function ClaimsPage() {
 
         {active.length === 0 ? (
           <EmptyState
-            icon={<Layers className="h-8 w-8" />}
+            image="/img/empty-states/claims-empty.png"
+            imageAlt="Sobre con carta"
             title="No hay sesiones activas"
             description="Cuando un vendedor inicie una sesión de claims aparecerá acá."
             className="mt-4"

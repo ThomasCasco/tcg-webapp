@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export function PublicHeader() {
   return (
-    <header className="sticky top-0 z-20 border-b border-[var(--hairline)] backdrop-blur-2xl [background:linear-gradient(180deg,rgba(11,19,43,0.85),rgba(11,19,43,0.55))]">
+    <header className="sticky top-0 z-20 border-b border-[var(--hairline)] bg-[var(--bg-0)]/95 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3">
         <Link
           href="/"

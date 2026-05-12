@@ -69,7 +69,7 @@ export function UserMenu({ username, email, onLogout }: Props) {
       {open && (
         <div
           role="menu"
-          className="glass absolute right-0 top-[calc(100%+8px)] z-50 w-64 overflow-hidden [background:linear-gradient(180deg,rgba(20,28,52,0.95),rgba(8,12,28,0.98))]"
+          className="glass absolute right-0 top-[calc(100%+8px)] z-50 w-64 overflow-hidden"
         >
           <div className="flex items-center gap-3 border-b border-[var(--hairline)] p-3">
             <Avatar name={username} size="md" />

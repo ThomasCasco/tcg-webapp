@@ -89,7 +89,8 @@ export default async function InventoryPage() {
 
       {inventoryEntries.length === 0 ? (
         <EmptyState
-          icon={<Package className="h-8 w-8" />}
+          image="/img/empty-states/inventory-empty.png"
+          imageAlt="Binder de cartas vacío"
           title="Inventario vacío"
           description={
             <>

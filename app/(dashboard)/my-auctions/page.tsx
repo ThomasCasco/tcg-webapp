@@ -120,7 +120,8 @@ export default async function AuctionsPage() {
 
       {mineAuctions.length === 0 ? (
         <EmptyState
-          icon={<Gavel className="h-8 w-8" />}
+          image="/img/empty-states/auctions-empty.png"
+          imageAlt="Martillo de subasta"
           title="Todavía no subastaste nada"
           description="Creá tu primera subasta. Si la programás, los coleccionistas se pueden anotar para recibir aviso cuando arranque."
         />

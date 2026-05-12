@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { Search, ShoppingBag } from "@/components/ui/icon";
+import { Search } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -46,7 +46,7 @@ export function TopBar({ user }: Props) {
       className={cn(
         "rounded-full px-3 py-1.5 t-sm font-semibold transition-colors",
         pathname === href
-          ? "[background:linear-gradient(180deg,var(--accent-hi),var(--accent))] text-white [box-shadow:0_6px_18px_rgba(var(--accent-glow),0.45)]"
+          ? "bg-[var(--accent)] text-white"
           : "text-[var(--ink-mute)] hover:bg-white/5 hover:text-[var(--ink)]"
       )}
     >
@@ -55,17 +55,21 @@ export function TopBar({ user }: Props) {
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--hairline)] backdrop-blur-2xl [background:linear-gradient(180deg,rgba(11,19,43,0.85),rgba(11,19,43,0.55))]">
+    <header className="sticky top-0 z-40 border-b border-[var(--hairline)] bg-[var(--bg-0)]/95 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-3 md:h-16 md:gap-5 md:px-6">
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2 text-[1.25rem] font-bold leading-none text-[var(--ink)] md:text-[1.5rem]"
+          className="flex shrink-0 items-center gap-2 leading-none text-[var(--ink)]"
+          aria-label="TCG.ar - Inicio"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-[var(--r-xs)] [background:linear-gradient(135deg,var(--accent-hi),#C77DFF)] text-white [box-shadow:0_0_24px_rgba(var(--accent-glow),0.55)]">
-            <ShoppingBag className="h-4 w-4" />
-          </span>
-          <span className="hidden sm:inline [font-family:var(--f-display)]">
-            TCG.ar
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/img/logo.png"
+            alt=""
+            className="h-8 w-auto md:h-9"
+          />
+          <span className="hidden text-[1.1rem] font-bold sm:inline [font-family:var(--f-display)] md:text-[1.25rem]">
+            .ar
           </span>
         </Link>
 

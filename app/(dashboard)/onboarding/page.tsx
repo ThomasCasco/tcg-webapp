@@ -105,7 +105,7 @@ export default function OnboardingPage() {
         </div>
         <div className="h-1.5 rounded-full bg-[var(--color-border-default)]">
           <div
-            className="h-1.5 rounded-full [background:linear-gradient(90deg,var(--accent-hi),var(--accent))] transition-all duration-300"
+            className="h-1.5 rounded-full bg-[var(--accent)] transition-all duration-300"
             style={{ width: `${progressPct}%` }}
           />
         </div>

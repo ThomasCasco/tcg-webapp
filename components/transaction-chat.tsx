@@ -104,8 +104,8 @@ export function TransactionChat({ transactionId, viewerUserId }: Props) {
                 <span
                   className={`mt-0.5 max-w-[95%] rounded-2xl px-3 py-1.5 ${
                     mine
-                      ? "[background:linear-gradient(180deg,var(--accent-hi),var(--accent))] text-white"
-                      : "bg-[var(--glass-fill-hi)] text-[var(--ink)] ring-1 ring-[var(--glass-border)]"
+                      ? "bg-[var(--accent)] text-white"
+                      : "bg-[var(--bg-2)] text-[var(--ink)] ring-1 ring-[var(--glass-border)]"
                   }`}
                 >
                   {m.body}

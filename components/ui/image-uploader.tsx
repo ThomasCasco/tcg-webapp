@@ -169,7 +169,7 @@ export function ImageUploader({
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="absolute inset-x-1.5 bottom-1.5 inline-flex h-8 items-center justify-center gap-1.5 rounded-full [background:linear-gradient(180deg,var(--accent-hi),var(--accent))] text-[0.75rem] font-semibold text-white [box-shadow:0_6px_18px_rgba(var(--accent-glow),0.5)] disabled:opacity-60"
+            className="absolute inset-x-1.5 bottom-1.5 inline-flex h-8 items-center justify-center gap-1.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hi)] text-[0.75rem] font-semibold text-white disabled:opacity-60"
           >
             <ImagePlus className="h-3.5 w-3.5" />
             Cambiar
