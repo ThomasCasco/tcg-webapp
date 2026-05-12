@@ -8,16 +8,6 @@ import { getAuthenticatedUser } from "@/lib/server/auth";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { ArrowRight, Gavel, Info, Package, ShoppingBag } from "@/components/ui/icon";
 
-// Hero sample cards. Real Pokémon TCG official artwork served from the
-// pokemontcg.io CDN (CSP-whitelisted in next.config.ts). Swap out for your
-// own listing screenshots once you have featured inventory.
-const HERO_SAMPLE_CARDS: { name: string; set: string; src: string }[] = [
-  { name: "Charizard", set: "Base Set · 1999", src: "https://images.pokemontcg.io/base1/4_hires.png" },
-  { name: "Pikachu VMAX", set: "Vivid Voltage · Rainbow", src: "https://images.pokemontcg.io/swsh4/188_hires.png" },
-  { name: "Mewtwo", set: "Base Set · 1999", src: "https://images.pokemontcg.io/base1/10_hires.png" },
-  { name: "Venusaur", set: "Base Set · 1999", src: "https://images.pokemontcg.io/base1/15_hires.png" },
-];
-
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
@@ -76,39 +66,27 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div>
-            <div className="mb-3 flex items-center justify-between border-b border-[var(--hairline)] pb-3">
-              <span className="t-eyebrow">
-                {featured.length === 0 ? "Cartas destacadas" : "Últimas publicaciones"}
-              </span>
-              <Link
-                href="/market"
-                className="inline-flex items-center gap-1 t-sm font-semibold text-[var(--accent-hi)]"
-              >
-                Ver todo <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+          {featured.length === 0 ? (
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/img/hero/banner.png"
+                alt="TCG.ar - cartas Pokémon: Charizard 1ra edición, Mew ex, Mega Charizard X"
+                className="w-full h-auto rounded-[var(--r-md)]"
+                loading="eager"
+              />
             </div>
-            {featured.length === 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {HERO_SAMPLE_CARDS.map((card) => (
-                  <div key={card.name} className="overflow-hidden glass-soft">
-                    <div className="aspect-[3/4] overflow-hidden bg-[var(--bg-0)]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={card.src}
-                        alt={`${card.name} - ${card.set}`}
-                        className="h-full w-full object-cover"
-                        loading="eager"
-                      />
-                    </div>
-                    <div className="border-t border-[var(--hairline)] p-3">
-                      <p className="t-sm font-semibold text-[var(--ink)]">{card.name}</p>
-                      <p className="t-xs t-mute">{card.set}</p>
-                    </div>
-                  </div>
-                ))}
+          ) : (
+            <div>
+              <div className="mb-3 flex items-center justify-between border-b border-[var(--hairline)] pb-3">
+                <span className="t-eyebrow">Últimas publicaciones</span>
+                <Link
+                  href="/market"
+                  className="inline-flex items-center gap-1 t-sm font-semibold text-[var(--accent-hi)]"
+                >
+                  Ver todo <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
               </div>
-            ) : (
               <div className="grid grid-cols-2 gap-3">
                 {featured.slice(0, 4).map((listing) => (
                   <Link
@@ -137,8 +115,8 @@ export default async function HomePage() {
                   </Link>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
