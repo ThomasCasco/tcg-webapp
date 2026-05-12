@@ -26,7 +26,26 @@
       "Bash(cmd //c \"where gh\")",
       "Bash(git fetch *)",
       "Bash(echo \"EXIT=$?\")",
-      "Bash(npm search *)"
+      "Bash(npm search *)",
+      "Bash(ls -la \"/c/Users/thoma/Downloads/\" 2>&1 | grep -i \"chatgpt\\\\|tcg\\\\|pokemon\" | head -30)",
+      "Bash(ls -lat \"/c/Users/thoma/Downloads/\" 2>&1 | grep -iE \"\\\\.png|\\\\.jpg|\\\\.webp\" | head -25)",
+      "Bash(cp \"/c/Users/thoma/Downloads/Diseño sin título.png\" \"app/opengraph-image.png\")",
+      "Bash(cp \"/c/Users/thoma/Downloads/ChatGPT Image 11 may 2026, 22_42_33 \\(2\\).png\" \"app/apple-icon.png\")",
+      "Bash(cp \"/c/Users/thoma/Downloads/ChatGPT Image 11 may 2026, 22_42_33 \\(1\\).png\" \"public/img/logo.png\")",
+      "Bash(cp \"/c/Users/thoma/Downloads/ChatGPT Image 11 may 2026, 23_13_41 \\(1\\).png\" \"public/img/empty-states/market-empty.png\")",
+      "Bash(cp \"/c/Users/thoma/Downloads/ChatGPT Image 11 may 2026, 23_13_42 \\(2\\).png\" \"public/img/empty-states/inventory-empty.png\")",
+      "Bash(magick --version)",
+      "Bash(convert --version)",
+      "Bash(python -c \"from PIL import Image; im = Image.open\\('public/img/empty-states/auctions-empty.png'\\); print\\('mode:', im.mode\\); print\\('size:', im.size\\); print\\('has_alpha:', im.mode in \\('RGBA','LA'\\) or 'transparency' in im.info\\); px = im.convert\\('RGBA'\\).load\\(\\); print\\('corner_px:', px[10,10]\\); print\\('center_px:', px[im.size[0]//2, im.size[1]//2]\\); print\\('sample_bg:', [px[i*50, 100] for i in range\\(5\\)]\\)\")",
+      "Bash(python -c \"import numpy\")",
+      "Bash(python -c \"from PIL import Image\")",
+      "Bash(cp \"/c/Users/thoma/Downloads/ChatGPT Image 11 may 2026, 23_13_42 \\(3\\).png\" \"public/img/empty-states/auctions-empty.png\")",
+      "Bash(cp \"/c/Users/thoma/Downloads/ChatGPT Image 11 may 2026, 23_13_43 \\(4\\).png\" \"public/img/empty-states/trades-empty.png\")",
+      "Bash(cp \"/c/Users/thoma/Downloads/ChatGPT Image 11 may 2026, 23_13_43 \\(5\\).png\" \"public/img/empty-states/claims-empty.png\")",
+      "Bash(cp \"/c/Users/thoma/Downloads/ChatGPT Image 11 may 2026, 23_13_44 \\(6\\).png\" \"public/img/empty-states/alerts-empty.png\")",
+      "Bash(python scripts/remove-checker-bg.py public/img/logo.png public/img/empty-states/*.png)",
+      "Bash(python scripts/remove-checker-bg.py public/img/logo.png)",
+      "Bash(python -c ' *)"
     ]
   }
 }
