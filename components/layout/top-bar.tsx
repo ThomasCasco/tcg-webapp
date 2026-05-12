@@ -1,14 +1,4 @@
 "use client";
-/**
- * TopBar — sticky navigation bar shown across the entire site.
- *
- * Layout:
- *   [Logo] [Search bar (flex)] [Actions: bell, user menu | login/register]
- *
- * Responsive:
- *   - Mobile: logo + search icon button + bell + avatar
- *   - Tablet+: logo + full search bar + bell + user menu
- */
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -49,23 +39,36 @@ export function TopBar({ user }: Props) {
   const showNav =
     !pathname?.startsWith("/login") && !pathname?.startsWith("/register");
 
+  const navLink = (href: string, label: string) => (
+    <Link
+      href={href}
+      key={href}
+      className={cn(
+        "rounded-full px-3 py-1.5 t-sm font-semibold transition-colors",
+        pathname === href
+          ? "[background:linear-gradient(180deg,var(--accent-hi),var(--accent))] text-white [box-shadow:0_6px_18px_rgba(var(--accent-glow),0.45)]"
+          : "text-[var(--ink-mute)] hover:bg-white/5 hover:text-[var(--ink)]"
+      )}
+    >
+      {label}
+    </Link>
+  );
+
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)]/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-[var(--hairline)] backdrop-blur-2xl [background:linear-gradient(180deg,rgba(11,19,43,0.85),rgba(11,19,43,0.55))]">
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-3 md:h-16 md:gap-5 md:px-6">
-        {/* ── Logo ── */}
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2 text-[1.25rem] font-bold leading-none text-[var(--color-ink)] md:text-[1.5rem]"
+          className="flex shrink-0 items-center gap-2 text-[1.25rem] font-bold leading-none text-[var(--ink)] md:text-[1.5rem]"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-[var(--radius-input)] border border-[var(--color-ink)] bg-[var(--color-ink)] text-white">
+          <span className="grid h-8 w-8 place-items-center rounded-[var(--r-xs)] [background:linear-gradient(135deg,var(--accent-hi),#C77DFF)] text-white [box-shadow:0_0_24px_rgba(var(--accent-glow),0.55)]">
             <ShoppingBag className="h-4 w-4" />
           </span>
-          <span className="hidden sm:inline [font-family:var(--font-display)]">
+          <span className="hidden sm:inline [font-family:var(--f-display)]">
             TCG.ar
           </span>
         </Link>
 
-        {/* ── Search ── */}
         {!hideSearch && (
           <form
             onSubmit={onSearch}
@@ -73,7 +76,7 @@ export function TopBar({ user }: Props) {
             role="search"
           >
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-subtle)]" />
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink-soft)]" />
               <input
                 type="search"
                 inputMode="search"
@@ -81,9 +84,9 @@ export function TopBar({ user }: Props) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar Charizard, Mew, Paradox Rift..."
                 className={cn(
-                  "h-10 w-full rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-[var(--color-surface)] pl-9 pr-3 text-body-sm",
-                  "outline-none placeholder:text-[var(--color-ink-subtle)]",
-                  "focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/20",
+                  "h-10 w-full rounded-full border border-[var(--glass-border)] bg-[var(--glass-fill)] backdrop-blur-md pl-10 pr-4 t-sm text-[var(--ink)]",
+                  "outline-none placeholder:text-[var(--ink-soft)]",
+                  "focus:border-[var(--accent-hi)] focus:bg-[var(--glass-fill-hi)] focus:ring-2 focus:ring-[rgba(var(--accent-glow),0.3)]"
                 )}
                 aria-label="Buscar publicaciones"
               />
@@ -91,67 +94,15 @@ export function TopBar({ user }: Props) {
           </form>
         )}
 
-        {/* When search is hidden, push nav + actions to the right */}
         {hideSearch && <div className="hidden flex-1 md:block" />}
 
-        {/* ── Actions ── */}
         {showNav && (
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegacion publica">
-            <Link
-              href="/market"
-              className={cn(
-                "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
-                pathname === "/market"
-                  ? "bg-[var(--color-ink)] text-[var(--color-ink-inverse)]"
-                  : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
-              )}
-            >
-              Mercado
-            </Link>
-            <Link
-              href="/auctions"
-              className={cn(
-                "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
-                pathname === "/auctions"
-                  ? "bg-[var(--color-ink)] text-[var(--color-ink-inverse)]"
-                  : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
-              )}
-            >
-              Subastas
-            </Link>
-            <Link
-              href="/claims"
-              className={cn(
-                "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
-                pathname === "/claims"
-                  ? "bg-[var(--color-ink)] text-[var(--color-ink-inverse)]"
-                  : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
-              )}
-            >
-              Claims
-            </Link>
-            <Link
-              href="/trades"
-              className={cn(
-                "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
-                pathname === "/trades"
-                  ? "bg-[var(--color-ink)] text-[var(--color-ink-inverse)]"
-                  : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
-              )}
-            >
-              Trades
-            </Link>
-            <Link
-              href="/how-it-works"
-              className={cn(
-                "rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium",
-                pathname === "/how-it-works"
-                  ? "bg-[var(--color-ink)] text-[var(--color-ink-inverse)]"
-                  : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]",
-              )}
-            >
-              Cómo funciona
-            </Link>
+            {navLink("/market", "Mercado")}
+            {navLink("/auctions", "Subastas")}
+            {navLink("/claims", "Claims")}
+            {navLink("/trades", "Trades")}
+            {navLink("/how-it-works", "Cómo funciona")}
           </nav>
         )}
 
@@ -165,7 +116,7 @@ export function TopBar({ user }: Props) {
             <>
               <Link
                 href="/login"
-                className="hidden rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)] sm:inline-block"
+                className="hidden rounded-full px-3 py-2 t-sm font-semibold text-[var(--ink-mute)] hover:bg-white/5 hover:text-[var(--ink)] sm:inline-block"
               >
                 Ingresar
               </Link>

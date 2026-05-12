@@ -52,6 +52,8 @@ export {
   Zap,
   PlayCircle,
   ListChecks,
+  Sparkles,
+  Flame,
 } from "lucide-react";
 
 export type { LucideIcon } from "lucide-react";

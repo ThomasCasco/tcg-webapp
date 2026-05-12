@@ -6,20 +6,22 @@ import { cn } from "@/lib/ui/cn";
 import { Loader2 } from "@/components/ui/icon";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-input)] border border-transparent font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60",
+  "btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-0)] disabled:pointer-events-none disabled:opacity-60",
   {
     variants: {
       variant: {
-        primary: "bg-[var(--color-accent)] text-[var(--color-ink-inverse)] hover:bg-[var(--color-accent-strong)]",
-        secondary: "border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)] text-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-[var(--color-ink-inverse)]",
-        ghost: "text-[var(--color-ink)] hover:bg-[var(--color-ink)]/5",
-        danger: "bg-[var(--color-danger)] text-[var(--color-ink-inverse)] hover:bg-[var(--color-danger)]/90",
-        link: "text-[var(--color-accent-strong)] underline-offset-4 hover:underline",
+        primary: "btn-primary",
+        secondary: "btn-ghost",
+        ghost: "btn-ghost border-transparent bg-transparent hover:bg-[var(--glass-fill)]",
+        danger:
+          "text-white border-0 [background:linear-gradient(180deg,#FF8090,#FF5566)] [box-shadow:0_0_0_1px_rgba(255,255,255,0.18)_inset,0_10px_28px_rgba(255,85,102,0.45)]",
+        link: "text-[var(--accent-hi)] underline-offset-4 hover:underline px-1 py-0 [box-shadow:none]",
+        icon: "btn-icon",
       },
       size: {
-        sm: "h-9 px-3 text-[0.8125rem]",
-        md: "h-11 px-4 text-[0.9375rem]",
-        lg: "h-12 px-6 text-[1.0625rem]",
+        sm: "min-h-9 px-3 py-1.5 text-[0.8125rem]",
+        md: "min-h-11 px-4 py-2.5 text-[0.9375rem]",
+        lg: "min-h-12 px-6 py-3 text-[1.0625rem]",
       },
       fullWidth: { true: "w-full" },
     },
@@ -42,8 +44,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
-    // Slot (asChild) requires exactly one React element child — pass children through directly.
-    // Icons/loading are only injected when rendering a real <button>.
     const inner = asChild ? (
       children
     ) : (

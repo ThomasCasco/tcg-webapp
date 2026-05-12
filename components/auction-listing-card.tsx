@@ -101,7 +101,7 @@ export function AuctionListingCard({ auction, isLoggedIn }: Props) {
 
   return (
     <Card as="article" variant="interactive" padding="none" className="group flex flex-col overflow-hidden">
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[var(--color-surface-elevated)]">
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[rgba(8,12,28,0.6)]">
         {auction.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -116,7 +116,7 @@ export function AuctionListingCard({ auction, isLoggedIn }: Props) {
           </div>
         )}
         <div className="absolute left-2 top-2 flex gap-1.5">
-          <Chip size="sm" variant="warning" className="bg-white/95 backdrop-blur">
+          <Chip size="sm" variant="warning" className="backdrop-blur">
             {scheduled ? (
               <>
                 <CalendarClock className="h-3 w-3" />
@@ -163,10 +163,10 @@ export function AuctionListingCard({ auction, isLoggedIn }: Props) {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2 text-caption text-[var(--color-ink-muted)]">
-            <span className="rounded bg-[var(--color-surface)] px-2 py-1">
+            <span className="chip">
               {auction.bidCount} ofertas
             </span>
-            <span className="rounded bg-[var(--color-surface)] px-2 py-1">
+            <span className="chip">
               {new Date(auction.endsAt).toLocaleDateString("es-AR")}
             </span>
           </div>
@@ -222,7 +222,7 @@ export function AuctionListingCard({ auction, isLoggedIn }: Props) {
                   min={minBid}
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
-                  className="h-9 w-full rounded-[var(--radius-input)] border border-[var(--color-border)] bg-white px-2 text-body-sm outline-none focus:border-[var(--color-accent)]"
+                  className="h-9 w-full rounded-[var(--r-sm)] border border-[var(--glass-border)] bg-[var(--glass-fill)] backdrop-blur-md px-3 text-body-sm text-[var(--ink)] outline-none focus:border-[var(--accent-hi)] focus:bg-[var(--glass-fill-hi)]"
                 />
                 <Button size="sm" fullWidth onClick={bid} loading={busy}>
                   Ofertar

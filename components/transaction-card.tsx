@@ -307,7 +307,7 @@ export function TransactionCard({ transaction, viewerUserId }: Props) {
       )}
 
       {panel === "verify" && (
-        <div className="mt-4 space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4">
+        <div className="glass-soft mt-4 space-y-3 rounded-[var(--r-md)] p-4">
           <FormField
             label="ID de pago / comprobante"
             htmlFor={`payment-id-${transaction.transactionId}`}
@@ -334,7 +334,7 @@ export function TransactionCard({ transaction, viewerUserId }: Props) {
 
       {/* ── Ship panel ── */}
       {panel === "ship" && (
-        <div className="mt-4 space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4">
+        <div className="glass-soft mt-4 space-y-3 rounded-[var(--r-md)] p-4">
           <FormField
             label="Número de tracking (opcional)"
             htmlFor={`tracking-${transaction.transactionId}`}

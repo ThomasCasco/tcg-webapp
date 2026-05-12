@@ -1,10 +1,10 @@
 import { cn } from "@/lib/ui/cn";
 
 const variantClasses = {
-  text: "h-4 w-full rounded-md",
-  card: "h-32 w-full rounded-[var(--radius-card)]",
+  text: "h-4 w-full",
+  card: "h-32 w-full rounded-[var(--r-md)]",
   avatar: "h-10 w-10 rounded-full",
-  image: "aspect-[3/4] w-full rounded-lg",
+  image: "aspect-[3/4] w-full rounded-[var(--r-md)]",
 } as const;
 
 export function Skeleton({
@@ -18,11 +18,7 @@ export function Skeleton({
     <div
       role="status"
       aria-label="Cargando"
-      className={cn(
-        "animate-pulse bg-[var(--color-border-subtle)]",
-        variantClasses[variant],
-        className
-      )}
+      className={cn("skeleton", variantClasses[variant], className)}
     />
   );
 }

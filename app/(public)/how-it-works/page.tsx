@@ -174,7 +174,7 @@ export default function HowItWorksPage() {
           </Card>
         </div>
 
-        <Card padding="md" className="border-[var(--color-accent)] bg-[var(--color-accent-soft)]">
+        <Card padding="md" className="!border-[rgba(var(--accent-glow),0.4)] [background:rgba(var(--accent-glow),0.12)]">
           <p className="text-body-sm text-[var(--color-accent-strong)]">
             <ShieldCheck className="mr-1 inline h-4 w-4" />
             En cada listing vas a ver un sello que dice si el vendedor tiene MP
@@ -348,7 +348,7 @@ function ModeCard({
 }) {
   return (
     <Card padding="lg" className="flex flex-col gap-3">
-      <div className="grid h-10 w-10 place-items-center rounded-[var(--radius-card)] bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]">
+      <div className="grid h-10 w-10 place-items-center rounded-[var(--r-xs)] [background:rgba(var(--accent-glow),0.18)] text-[var(--accent-hi)]">
         {icon}
       </div>
       <div>
@@ -380,7 +380,7 @@ function SectionHeading({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="grid h-10 w-10 place-items-center rounded-[var(--radius-card)] bg-[var(--color-ink)] text-white">
+      <div className="grid h-10 w-10 place-items-center rounded-[var(--r-xs)] [background:linear-gradient(135deg,var(--accent-hi),#C77DFF)] text-white [box-shadow:0_0_24px_rgba(var(--accent-glow),0.35)]">
         {icon}
       </div>
       <div>
@@ -401,7 +401,7 @@ function Step({
   children: React.ReactNode;
 }) {
   return (
-    <li className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-3">
+    <li className="glass-soft rounded-[var(--r-md)] p-3">
       <div className="flex items-center gap-2">
         <span className="grid h-6 w-6 place-items-center rounded-full bg-[var(--color-accent)] text-[0.75rem] font-bold text-white">
           {n}
@@ -423,7 +423,7 @@ function MiniInfo({
   body: string;
 }) {
   return (
-    <div className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-3">
+    <div className="glass-soft rounded-[var(--r-md)] p-3">
       <div className="flex items-center gap-2 text-body-sm font-semibold">
         {icon}
         {title}

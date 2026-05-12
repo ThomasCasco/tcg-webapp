@@ -16,10 +16,10 @@ export function SidebarNav({ links }: { links: LinkItem[] }) {
           <Link
             key={link.href}
             href={link.href}
-            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2.5 rounded-[var(--r-sm)] px-3 py-2 text-sm font-medium transition-colors ${
               active
-                ? "bg-[var(--color-accent-soft)] text-[var(--color-accent-ink)]"
-                : "text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-ink)]"
+                ? "[background:rgba(var(--accent-glow),0.15)] border border-[rgba(var(--accent-glow),0.3)] text-[var(--accent-hi)]"
+                : "text-[var(--ink-mute)] hover:bg-white/5 hover:text-[var(--ink)]"
             }`}
           >
             <span aria-hidden className="text-base leading-none">

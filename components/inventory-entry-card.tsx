@@ -157,7 +157,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
     <Card as="article" padding="md">
       {/* ── Header (always visible) ── */}
       <div className="flex gap-3">
-        <div className="h-24 w-[68px] shrink-0 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
+        <div className="glass-soft h-24 w-[68px] shrink-0 overflow-hidden rounded-lg">
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={preview} alt={entry.cardName} className="h-full w-full object-cover" />
@@ -240,7 +240,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
 
       {/* ── Edit panel ── */}
       {panel === "edit" && (
-        <div className="mt-4 space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4">
+        <div className="glass-soft mt-4 space-y-4 rounded-[var(--r-md)] p-4">
           <div className="grid gap-4 md:grid-cols-[auto,1fr]">
             <div>
               <p className="mb-2 text-caption font-medium">Foto</p>
@@ -270,7 +270,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+          <div className="glass-soft rounded-[var(--r-sm)] p-3">
             <label className="flex cursor-pointer items-center gap-2 text-body-sm font-medium">
               <input
                 type="checkbox"
@@ -307,7 +307,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
 
       {/* ── Publish panel ── */}
       {panel === "publish" && (
-        <div className="mt-4 space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4">
+        <div className="glass-soft mt-4 space-y-4 rounded-[var(--r-md)] p-4">
           {!entry.askingPriceArs && (
             <FormField label="Precio ARS" htmlFor={`pub-price-${entry.id}`} required>
               <Input

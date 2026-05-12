@@ -175,7 +175,7 @@ export function ListingRow({ listing }: { listing: Listing }) {
                 min={1}
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                className="mt-0.5 w-full rounded-[var(--radius-input)] border border-[var(--color-border)] bg-white/75 px-2 py-1 text-body-sm outline-none focus:border-[var(--color-accent)]"
+                className="mt-0.5 w-full rounded-[var(--r-sm)] border border-[var(--glass-border)] bg-[var(--glass-fill)] backdrop-blur-md px-3 py-1.5 text-body-sm text-[var(--ink)] outline-none focus:border-[var(--accent-hi)] focus:bg-[var(--glass-fill-hi)]"
               />
             </label>
             <label className="text-caption text-[var(--color-ink-muted)]">
@@ -186,7 +186,7 @@ export function ListingRow({ listing }: { listing: Listing }) {
                 max={100}
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-                className="mt-0.5 w-full rounded-[var(--radius-input)] border border-[var(--color-border)] bg-white/75 px-2 py-1 text-body-sm outline-none focus:border-[var(--color-accent)]"
+                className="mt-0.5 w-full rounded-[var(--r-sm)] border border-[var(--glass-border)] bg-[var(--glass-fill)] backdrop-blur-md px-3 py-1.5 text-body-sm text-[var(--ink)] outline-none focus:border-[var(--accent-hi)] focus:bg-[var(--glass-fill-hi)]"
               />
             </label>
             {!isPack ? (
@@ -196,7 +196,7 @@ export function ListingRow({ listing }: { listing: Listing }) {
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="https://..."
-                  className="mt-0.5 w-full rounded-[var(--radius-input)] border border-[var(--color-border)] bg-white/75 px-2 py-1 text-body-sm outline-none focus:border-[var(--color-accent)]"
+                  className="mt-0.5 w-full rounded-[var(--r-sm)] border border-[var(--glass-border)] bg-[var(--glass-fill)] backdrop-blur-md px-3 py-1.5 text-body-sm text-[var(--ink)] outline-none focus:border-[var(--accent-hi)] focus:bg-[var(--glass-fill-hi)]"
                 />
                 <input
                   type="file"
@@ -207,7 +207,7 @@ export function ListingRow({ listing }: { listing: Listing }) {
                 />
               </label>
             ) : null}
-            <div className="sm:col-span-2 rounded-lg border border-[var(--color-border)] bg-white/50 p-2 text-caption text-[var(--color-ink-muted)]">
+            <div className="sm:col-span-2 rounded-[var(--r-sm)] border border-[var(--glass-border)] bg-[var(--glass-fill)] p-2 text-caption text-[var(--ink-mute)]">
               <p className="font-semibold text-[var(--color-ink)]">Entrega</p>
               <label className="mt-1 flex cursor-pointer items-center gap-2">
                 <input
@@ -231,18 +231,18 @@ export function ListingRow({ listing }: { listing: Listing }) {
                   value={deliveryNotes}
                   onChange={(e) => setDeliveryNotes(e.target.value)}
                   rows={2}
-                  className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-white/80 px-2 py-1 text-body-sm outline-none focus:border-[var(--color-accent)]"
+                  className="mt-0.5 w-full rounded-[var(--r-sm)] border border-[var(--glass-border)] bg-[var(--glass-fill)] backdrop-blur-md px-3 py-1.5 text-body-sm text-[var(--ink)] outline-none focus:border-[var(--accent-hi)] focus:bg-[var(--glass-fill-hi)]"
                 />
               </label>
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2 text-body-sm">
-            <div className="rounded-lg border border-[var(--color-border)] bg-white/70 p-2">
+            <div className="glass-soft rounded-[var(--r-sm)] p-2">
               <p className="text-overline text-[var(--color-ink-subtle)]">Precio</p>
               <p className="font-semibold">ARS {listing.priceArs.toLocaleString("es-AR")}</p>
             </div>
-            <div className="rounded-lg border border-[var(--color-border)] bg-white/70 p-2">
+            <div className="glass-soft rounded-[var(--r-sm)] p-2">
               <p className="text-overline text-[var(--color-ink-subtle)]">Stock</p>
               <p className="font-semibold">{listing.quantity}</p>
             </div>

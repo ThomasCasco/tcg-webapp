@@ -16,9 +16,9 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navegación principal"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-border-default)] bg-[var(--color-surface-elevated)]/95 backdrop-blur safe-pb md:hidden"
+      className="fixed inset-x-3 bottom-3 z-30 safe-pb md:hidden"
     >
-      <ul className="mx-auto flex max-w-md">
+      <ul className="glass mx-auto flex max-w-md [background:linear-gradient(180deg,rgba(20,28,52,0.78),rgba(8,12,28,0.92))]">
         {items.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname?.startsWith(href + "/");
           return (
@@ -26,21 +26,23 @@ export function BottomNav() {
               <Link
                 href={href}
                 className={cn(
-                  "relative flex h-16 flex-col items-center justify-center gap-1 text-[0.6875rem] font-medium transition-colors",
+                  "relative flex h-16 flex-col items-center justify-center gap-1 text-[10px] font-semibold transition-colors",
                   active
-                    ? "text-[var(--color-accent-strong)]"
-                    : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]",
+                    ? "text-[var(--accent-hi)]"
+                    : "text-[var(--ink-soft)] hover:text-[var(--ink)]"
                 )}
                 aria-current={active ? "page" : undefined}
               >
-                {/* Active indicator pill */}
                 {active && (
                   <span
                     aria-hidden
-                    className="absolute top-1.5 h-1 w-8 rounded-full bg-[var(--color-accent)]"
+                    className="absolute top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--accent-hi)] [box-shadow:0_0_10px_var(--accent-hi)]"
                   />
                 )}
-                <Icon className={cn("h-5 w-5 transition-transform", active && "scale-110")} aria-hidden />
+                <Icon
+                  className={cn("h-5 w-5 transition-transform", active && "scale-110")}
+                  aria-hidden
+                />
                 <span>{label}</span>
               </Link>
             </li>

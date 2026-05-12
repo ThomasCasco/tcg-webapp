@@ -131,7 +131,7 @@ export default async function PublicUserPage({
         </Card>
       ) : null}
 
-      <nav className="flex gap-1 overflow-x-auto rounded-[var(--radius-card)] bg-[var(--color-surface-elevated)] p-1">
+      <nav className="glass-soft flex gap-1 overflow-x-auto rounded-[var(--r-md)] p-1">
         {[
           { key: "trade", label: "Tiene para trade" },
           { key: "wants", label: "Busca" },
@@ -143,7 +143,7 @@ export default async function PublicUserPage({
             className={`shrink-0 rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-medium ${
               visibleTab === item.key
                 ? "bg-[var(--color-accent)] text-white"
-                : "text-[var(--color-ink-muted)] hover:bg-black/5 hover:text-[var(--color-ink)]"
+                : "text-[var(--ink-mute)] hover:bg-white/5 hover:text-[var(--ink)]"
             }`}
           >
             {item.label}
@@ -169,9 +169,9 @@ export default async function PublicUserPage({
               {tradeCards.map((card) => (
                 <div
                   key={card.id}
-                  className="flex gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-2"
+                  className="glass-soft flex gap-3 rounded-lg p-2"
                 >
-                  <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-[var(--color-surface-elevated)]">
+                  <div className="glass-soft h-20 w-14 shrink-0 overflow-hidden rounded-md">
                     {card.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={card.imageUrl} alt={card.cardName} className="h-full w-full object-cover" />
@@ -215,7 +215,7 @@ export default async function PublicUserPage({
               {wantedCards.map((watch) => (
                 <span
                   key={watch.id}
-                  className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 text-caption"
+                  className="chip"
                   title={watch.notes}
                 >
                   {watch.query}
@@ -246,7 +246,7 @@ export default async function PublicUserPage({
               <Link
                 key={listing.id}
                 href={`/market/${listing.id}`}
-                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-colors hover:bg-[var(--color-accent-soft)]/40"
+                className="glass-soft rounded-[var(--r-sm)] p-3 transition-colors hover:bg-[rgba(var(--accent-glow),0.15)]"
               >
                 <p className="font-semibold">{listing.cardName}</p>
                 <p className="text-caption text-[var(--color-ink-muted)]">{listing.setName}</p>

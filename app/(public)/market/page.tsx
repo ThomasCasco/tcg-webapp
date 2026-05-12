@@ -148,54 +148,55 @@ export default async function MarketPage({
     tab: activeTab,
   };
 
+  const selectClass =
+    "h-11 rounded-[var(--r-sm)] border border-[var(--glass-border)] bg-[var(--glass-fill)] backdrop-blur-md px-3.5 text-[var(--ink)] t-sm focus:border-[var(--accent-hi)] focus:bg-[var(--glass-fill-hi)] focus:outline-none focus:ring-2 focus:ring-[rgba(var(--accent-glow),0.3)]";
+
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-3 py-4 md:px-6 md:py-7">
       {!isSupabaseConfigured() && (
-        <Card padding="md" className="border-[var(--color-warning)] bg-[var(--color-warning-soft)]">
-          <p className="text-body-sm text-[var(--color-warning)]">
-            Configura Supabase en produccion para abrir el marketplace.
-          </p>
+        <Card padding="md" className="chip-warning">
+          <p className="t-sm">Configurá Supabase en producción para abrir el marketplace.</p>
         </Card>
       )}
 
       {loadError && (
-        <Card padding="md" className="border-[var(--color-danger)] bg-[var(--color-danger-soft)]">
-          <p className="text-body-sm text-[var(--color-danger)]">Error: {loadError}</p>
+        <Card padding="md" className="chip-danger">
+          <p className="t-sm">Error: {loadError}</p>
         </Card>
       )}
 
-      <header className="border-b border-[var(--color-border-strong)] pb-5">
+      <header className="border-b border-[var(--hairline)] pb-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-overline text-[var(--color-ink-subtle)]">Marketplace</p>
-            <h1 className="mt-1 text-display-md text-[var(--color-ink)] md:text-display-lg">
+            <p className="t-eyebrow">Marketplace</p>
+            <h1 className="mt-1 t-display text-[2.25rem] text-[var(--ink)] md:text-[3rem]">
               Mercado de cartas
             </h1>
-            <p className="mt-2 max-w-2xl text-body-sm text-[var(--color-ink-muted)]">
-              Singles publicados por coleccionistas, con busqueda directa,
-              precio en pesos y filtros de compra.
+            <p className="mt-2 max-w-2xl t-sm t-mute">
+              Singles publicados por coleccionistas, con búsqueda directa, precio en pesos
+              y filtros de compra.
             </p>
           </div>
 
-          <div className="grid grid-cols-3 border border-[var(--color-border-strong)] bg-white text-center md:min-w-80">
+          <Card variant="muted" padding="none" className="grid grid-cols-3 text-center md:min-w-80">
             <MarketMetric value={`${total}`} label="resultados" />
-            <MarketMetric value="ARS" label="moneda" />
-            <MarketMetric value="TCG" label="foco" />
-          </div>
+            <MarketMetric value="ARS" label="moneda" divider />
+            <MarketMetric value="TCG" label="foco" divider />
+          </Card>
         </div>
       </header>
 
-      <section className="sticky top-14 z-10 -mx-3 border-b border-[var(--color-border-strong)] bg-white/95 px-3 py-3 backdrop-blur md:top-16 md:mx-0 md:rounded-[var(--radius-card)] md:border md:p-4">
+      <section className="sticky top-14 z-10 -mx-3 border-b border-[var(--hairline)] px-3 py-3 backdrop-blur-2xl [background:linear-gradient(180deg,rgba(11,19,43,0.88),rgba(11,19,43,0.55))] md:top-16 md:mx-0 md:rounded-[var(--r-md)] md:border md:p-4">
         <form method="GET" className="space-y-3">
           <input type="hidden" name="tab" value={activeTab} />
           <div className="grid gap-2 md:grid-cols-[1fr,auto]">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-subtle)]" />
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink-soft)]" />
               <Input
                 name="q"
                 defaultValue={q}
                 placeholder="Buscar Charizard, Mew, Paradox Rift..."
-                className="border-[var(--color-border-strong)] bg-white pl-9"
+                className="pl-10"
               />
             </div>
             <Button type="submit" size="md">
@@ -205,11 +206,7 @@ export default async function MarketPage({
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr,1fr,1fr,1fr]">
-            <select
-              name="condition"
-              defaultValue={condition}
-              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-3 text-body-sm text-[var(--color-ink)]"
-            >
+            <select name="condition" defaultValue={condition} className={selectClass}>
               <option value="">Todas las condiciones</option>
               {CONDITIONS.map((item) => (
                 <option key={item} value={item}>
@@ -217,42 +214,29 @@ export default async function MarketPage({
                 </option>
               ))}
             </select>
-            <select
-              name="delivery"
-              defaultValue={delivery}
-              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-3 text-body-sm text-[var(--color-ink)]"
-            >
-              <option value="">Envio o retiro</option>
-              <option value="shipping">Con envio</option>
+            <select name="delivery" defaultValue={delivery} className={selectClass}>
+              <option value="">Envío o retiro</option>
+              <option value="shipping">Con envío</option>
               <option value="pickup">Con retiro</option>
             </select>
             <div className="grid grid-cols-2 gap-2">
-              <Input name="min" defaultValue={min} type="number" min={1} placeholder="Min $" />
-              <Input name="max" defaultValue={max} type="number" min={1} placeholder="Max $" />
+              <Input name="min" defaultValue={min} type="number" min={1} placeholder="Mín $" />
+              <Input name="max" defaultValue={max} type="number" min={1} placeholder="Máx $" />
             </div>
-            <select
-              name="sort"
-              defaultValue={sort}
-              className="h-11 rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-3 text-body-sm text-[var(--color-ink)]"
-            >
-              <option value="recent">Mas recientes</option>
+            <select name="sort" defaultValue={sort} className={selectClass}>
+              <option value="recent">Más recientes</option>
               <option value="price_asc">Menor precio</option>
               <option value="price_desc">Mayor precio</option>
             </select>
           </div>
         </form>
 
-        <div className="mt-3 flex gap-1 overflow-x-auto">
+        <div className="mt-3 flex gap-1.5 overflow-x-auto scroll-x">
           {TABS.map((t) => (
             <Link
               key={t.key}
               href={getParamHref({ tab: t.key }, currentParams)}
-              className={cn(
-                "shrink-0 rounded-[var(--radius-input)] border px-4 py-1.5 text-[0.8125rem] font-bold transition-colors",
-                activeTab === t.key
-                  ? "border-black bg-black text-white"
-                  : "border-[var(--color-border-default)] bg-white text-[var(--color-ink-muted)] hover:border-black hover:text-black",
-              )}
+              className={cn("chip shrink-0", activeTab === t.key && "chip-active")}
             >
               {t.label}
             </Link>
@@ -261,18 +245,15 @@ export default async function MarketPage({
       </section>
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <p className="text-caption font-semibold text-[var(--color-ink-muted)]">
-          {total} {total === 1 ? "publicacion" : "publicaciones"}
+        <p className="t-xs font-semibold t-mute">
+          {total} {total === 1 ? "publicación" : "publicaciones"}
           {query && ` para "${q}"`}
-          {condition && isCondition(condition) ? ` / ${formatConditionEs(condition)}` : ""}
-          {delivery === "shipping" ? " / con envio" : delivery === "pickup" ? " / con retiro" : ""}
+          {condition && isCondition(condition) ? ` · ${formatConditionEs(condition)}` : ""}
+          {delivery === "shipping" ? " · con envío" : delivery === "pickup" ? " · con retiro" : ""}
         </p>
         <div className="flex flex-wrap gap-2">
           {["Venta directa", "Trades", "Mercado Pago"].map((label) => (
-            <span
-              key={label}
-              className="rounded-[var(--radius-input)] border border-[var(--color-border-default)] bg-white px-3 py-1 text-caption font-bold text-[var(--color-ink)]"
-            >
+            <span key={label} className="chip">
               {label}
             </span>
           ))}
@@ -285,10 +266,10 @@ export default async function MarketPage({
           title="Sin publicaciones"
           description={
             <>
-              <p>Todavia no hay publicaciones que coincidan.</p>
-              <p className="mt-1 text-caption">
-                Vendes cartas? Cargalas en{" "}
-                <Link href="/inventory" className="font-semibold underline">
+              <p>Todavía no hay publicaciones que coincidan.</p>
+              <p className="mt-1 t-xs">
+                ¿Vendés cartas? Cargalas en{" "}
+                <Link href="/inventory" className="font-semibold text-[var(--accent-hi)] underline">
                   Inventario
                 </Link>{" "}
                 y publicalas en un toque.
@@ -312,13 +293,11 @@ export default async function MarketPage({
   );
 }
 
-function MarketMetric({ value, label }: { value: string; label: string }) {
+function MarketMetric({ value, label, divider }: { value: string; label: string; divider?: boolean }) {
   return (
-    <div className="border-l border-[var(--color-border-strong)] px-3 py-3 first:border-l-0">
-      <p className="text-h3 font-extrabold">{value}</p>
-      <p className="text-caption font-semibold uppercase text-[var(--color-ink-subtle)]">
-        {label}
-      </p>
+    <div className={cn("px-3 py-3", divider && "border-l border-[var(--hairline)]")}>
+      <p className="t-h3 t-mono font-extrabold">{value}</p>
+      <p className="t-eyebrow">{label}</p>
     </div>
   );
 }

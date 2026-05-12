@@ -325,7 +325,7 @@ function ContextCard({
 }) {
   return (
     <Card padding="lg" className="flex h-full flex-col gap-3">
-      <div className="grid h-10 w-10 place-items-center rounded-[var(--radius-card)] bg-[var(--color-ink)] text-white">
+      <div className="grid h-10 w-10 place-items-center rounded-[var(--r-xs)] [background:linear-gradient(135deg,var(--accent-hi),#C77DFF)] text-white [box-shadow:0_0_24px_rgba(var(--accent-glow),0.35)]">
         {icon}
       </div>
       <div>
@@ -338,7 +338,7 @@ function ContextCard({
           <li key={link.href}>
             <Link
               href={link.href}
-              className="flex items-center justify-between rounded-[var(--radius-input)] border border-[var(--color-border-default)] px-3 py-2 text-body-sm font-semibold transition-colors hover:border-black hover:bg-black hover:text-white"
+              className="flex items-center justify-between rounded-[var(--r-sm)] border border-[var(--glass-border)] bg-[var(--glass-fill)] px-3 py-2 text-body-sm font-semibold transition-colors hover:border-[var(--accent-hi)] hover:bg-[rgba(var(--accent-glow),0.15)] hover:text-[var(--accent-hi)]"
             >
               <span>{link.label}</span>
               <ArrowRight className="h-3.5 w-3.5" />
