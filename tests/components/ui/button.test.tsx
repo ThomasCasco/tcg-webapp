@@ -13,6 +13,6 @@ describe("Button", () => {
   });
   it("applies primary variant by default", () => {
     render(<Button>Primary btn</Button>);
-    expect(screen.getByRole("button", { name: "Primary btn" }).className).toContain("bg-[var(--color-accent)]");
+    expect(screen.getByRole("button", { name: "Primary btn" }).className).toContain("btn-primary");
   });
 });

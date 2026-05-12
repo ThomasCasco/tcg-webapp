@@ -74,20 +74,18 @@ export function TransactionChat({ transactionId, viewerUserId }: Props) {
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-white/70 p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-black/55">
-        Chat de la operación
-      </p>
-      <p className="mt-1 text-[11px] text-black/55">
+    <div className="mt-4 glass-soft p-3">
+      <p className="t-eyebrow">Chat de la operación</p>
+      <p className="mt-1 t-xs t-soft">
         Solo vos y la otra parte. Coordiná envío, retiro o comprobantes. Se actualiza solo cada
         ~12 s o al enviar.
       </p>
 
-      <div className="mt-2 max-h-52 space-y-2 overflow-y-auto rounded-lg bg-black/[0.03] p-2 text-xs">
+      <div className="mt-2 max-h-52 space-y-2 overflow-y-auto rounded-[var(--r-sm)] bg-black/30 p-2 text-xs">
         {loading ? (
-          <p className="text-black/50">Cargando mensajes…</p>
+          <p className="t-soft">Cargando mensajes…</p>
         ) : items.length === 0 ? (
-          <p className="text-black/50">Todavía no hay mensajes. Escribí el primero.</p>
+          <p className="t-soft">Todavía no hay mensajes. Escribí el primero.</p>
         ) : (
           items.map((m) => {
             const mine = m.senderId === viewerUserId;
@@ -96,7 +94,7 @@ export function TransactionChat({ transactionId, viewerUserId }: Props) {
                 key={m.id}
                 className={`flex flex-col ${mine ? "items-end" : "items-start"}`}
               >
-                <span className="text-[10px] text-black/45">
+                <span className="text-[10px] t-soft">
                   {mine ? "Vos" : m.senderHandle} ·{" "}
                   {new Date(m.createdAt).toLocaleString("es-AR", {
                     dateStyle: "short",
@@ -104,10 +102,10 @@ export function TransactionChat({ transactionId, viewerUserId }: Props) {
                   })}
                 </span>
                 <span
-                  className={`mt-0.5 max-w-[95%] rounded-lg px-2 py-1.5 ${
+                  className={`mt-0.5 max-w-[95%] rounded-2xl px-3 py-1.5 ${
                     mine
-                      ? "bg-[var(--color-accent)] text-white"
-                      : "bg-white text-black/85 ring-1 ring-[var(--color-border)]"
+                      ? "[background:linear-gradient(180deg,var(--accent-hi),var(--accent))] text-white"
+                      : "bg-[var(--glass-fill-hi)] text-[var(--ink)] ring-1 ring-[var(--glass-border)]"
                   }`}
                 >
                   {m.body}
@@ -124,7 +122,7 @@ export function TransactionChat({ transactionId, viewerUserId }: Props) {
           onChange={(e) => setText(e.target.value)}
           maxLength={2000}
           placeholder="Escribí un mensaje…"
-          className="min-w-0 flex-1 rounded-lg border border-[var(--color-border)] bg-white px-2 py-1.5 text-sm outline-none focus:border-[var(--color-accent)]"
+          className="min-w-0 flex-1 rounded-full border border-[var(--glass-border)] bg-[var(--glass-fill)] px-3 py-1.5 t-sm text-[var(--ink)] placeholder:text-[var(--ink-soft)] outline-none focus:border-[var(--accent-hi)] focus:bg-[var(--glass-fill-hi)]"
         />
         <button
           type="submit"

@@ -27,7 +27,7 @@ export default async function ProfilesPage({
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
-      <header className="rounded-[var(--radius-card)] bg-[var(--color-surface-elevated)] p-5 shadow-sm">
+      <header className="glass rounded-[var(--r-md)] p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-overline text-[var(--color-ink-subtle)]">Comunidad</p>
@@ -95,9 +95,9 @@ export default async function ProfilesPage({
                   <span className="text-[var(--color-ink-muted)]">Perfil completo</span>
                   <strong>{profile.completionScore}%</strong>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-[var(--color-surface-muted)]">
+                <div className="h-2 overflow-hidden rounded-full bg-[var(--glass-fill)]">
                   <div
-                    className="h-full rounded-full bg-[var(--color-accent)]"
+                    className="h-full rounded-full [background:linear-gradient(90deg,var(--accent-hi),var(--accent))]"
                     style={{ width: `${profile.completionScore}%` }}
                   />
                 </div>
@@ -118,15 +118,15 @@ export default async function ProfilesPage({
               </div>
 
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-[var(--color-surface)] p-2">
+                <div className="rounded-[var(--r-sm)] bg-[var(--glass-fill)] border border-[var(--glass-border)] p-2">
                   <p className="text-lg font-semibold">{profile.tradeCount}</p>
                   <p className="text-caption text-[var(--color-ink-muted)]">Trade</p>
                 </div>
-                <div className="rounded-lg bg-[var(--color-surface)] p-2">
+                <div className="rounded-[var(--r-sm)] bg-[var(--glass-fill)] border border-[var(--glass-border)] p-2">
                   <p className="text-lg font-semibold">{profile.wantedCount}</p>
                   <p className="text-caption text-[var(--color-ink-muted)]">Busca</p>
                 </div>
-                <div className="rounded-lg bg-[var(--color-surface)] p-2">
+                <div className="rounded-[var(--r-sm)] bg-[var(--glass-fill)] border border-[var(--glass-border)] p-2">
                   <p className="text-lg font-semibold">{profile.listingCount}</p>
                   <p className="text-caption text-[var(--color-ink-muted)]">Ventas</p>
                 </div>

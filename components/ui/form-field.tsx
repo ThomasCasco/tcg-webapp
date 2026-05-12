@@ -21,18 +21,18 @@ export function FormField({
   children,
 }: FormFieldProps) {
   return (
-    <label htmlFor={htmlFor} className={cn("flex flex-col gap-1.5", className)}>
-      <span className="text-[0.8125rem] font-medium text-[var(--color-ink)]">
+    <label htmlFor={htmlFor} className={cn("flex flex-col gap-2", className)}>
+      <span className="t-eyebrow">
         {label}
-        {required && <span className="ml-0.5 text-[var(--color-danger)]">*</span>}
+        {required && <span className="ml-1 text-[#FF8090]">*</span>}
       </span>
       {children}
       {error ? (
-        <span role="alert" className="text-[0.75rem] text-[var(--color-danger)]">
+        <span role="alert" className="text-[0.75rem] text-[#FF8090]">
           {error}
         </span>
       ) : hint ? (
-        <span className="text-[0.75rem] text-[var(--color-ink-subtle)]">{hint}</span>
+        <span className="text-[0.75rem] text-[var(--ink-soft)]">{hint}</span>
       ) : null}
     </label>
   );

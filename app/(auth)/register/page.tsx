@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { RegisterForm } from "@/components/register-form";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { Card } from "@/components/ui/card";
+import { Sparkles } from "@/components/ui/icon";
 
 export default async function RegisterPage() {
   const user = await getAuthenticatedUser();
@@ -10,16 +11,15 @@ export default async function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      <Card as="section" className="w-full max-w-md">
-        <p className="text-overline text-[var(--color-ink-subtle)]">
-          Onboarding vendedor
-        </p>
-        <h1 className="mt-2 text-h1 [font-family:var(--font-display)]">
-          Crear cuenta
-        </h1>
-        <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
-          Registrate para cargar tu inventario y publicar cartas.
+    <div className="flex min-h-svh items-center justify-center p-4 screen-in">
+      <Card as="section" padding="lg" className="w-full max-w-md">
+        <div className="grid h-12 w-12 place-items-center rounded-[var(--r-sm)] [background:linear-gradient(135deg,var(--accent-hi),#C77DFF)] text-white [box-shadow:0_14px_36px_rgba(var(--accent-glow),0.45)]">
+          <Sparkles className="h-5 w-5" />
+        </div>
+        <p className="mt-4 t-eyebrow">Onboarding vendedor</p>
+        <h1 className="mt-1 t-h1 text-[2rem]">Creá tu cuenta</h1>
+        <p className="mt-2 t-sm t-mute">
+          Empezá a vender, comprar y tradear cartas reales.
         </p>
 
         <div className="mt-6">

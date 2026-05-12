@@ -171,7 +171,7 @@ export function CardPicker({
             <button
               type="button"
               onClick={() => pickSet(null)}
-              className="rounded-full px-2 py-0.5 text-xs subtle hover:bg-[var(--color-surface-muted)]"
+              className="rounded-full px-2 py-0.5 text-xs subtle hover:bg-white/5"
               aria-label="Limpiar set"
             >
               ×
@@ -180,11 +180,11 @@ export function CardPicker({
         </div>
 
         {setsOpen ? (
-          <div className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg">
+          <div className="glass absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-[var(--r-md)]">
             <button
               type="button"
               onClick={() => pickSet(null)}
-              className="flex w-full items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 text-left text-sm hover:bg-[var(--color-surface-muted)]"
+              className="flex w-full items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 text-left text-sm hover:bg-white/5"
             >
               <span className="muted">Todos los sets</span>
             </button>
@@ -196,7 +196,7 @@ export function CardPicker({
                   key={option.id}
                   type="button"
                   onClick={() => pickSet(option)}
-                  className="flex w-full items-center gap-3 border-b border-[var(--color-border)] px-3 py-2 text-left text-sm last:border-b-0 hover:bg-[var(--color-surface-muted)]"
+                  className="flex w-full items-center gap-3 border-b border-[var(--color-border)] px-3 py-2 text-left text-sm last:border-b-0 hover:bg-white/5"
                 >
                   {option.logo ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
@@ -206,7 +206,7 @@ export function CardPicker({
                       className="h-6 w-auto max-w-[72px] object-contain"
                     />
                   ) : (
-                    <div className="h-6 w-6 rounded bg-[var(--color-surface-muted)]" />
+                    <div className="h-6 w-6 rounded bg-[var(--glass-fill)]" />
                   )}
                   <div className="flex-1">
                     <p className="font-medium">{option.name}</p>
@@ -242,7 +242,7 @@ export function CardPicker({
         />
 
         {picked ? (
-          <div className="mt-2 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-2 text-sm">
+          <div className="glass-soft mt-2 flex items-center gap-3 rounded-[var(--r-md)] p-2 text-sm">
             {picked.imageSmall ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
@@ -251,7 +251,7 @@ export function CardPicker({
                 className="h-16 w-12 rounded object-cover"
               />
             ) : (
-              <div className="h-16 w-12 rounded bg-[var(--color-surface)]" />
+              <div className="h-16 w-12 rounded bg-[var(--glass-fill)]" />
             )}
             <div className="flex-1">
               <p className="font-semibold">{picked.name}</p>
@@ -272,7 +272,7 @@ export function CardPicker({
         ) : null}
 
         {open && !picked ? (
-          <div className="absolute z-20 mt-1 max-h-96 w-full overflow-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg">
+          <div className="glass absolute z-20 mt-1 max-h-96 w-full overflow-auto rounded-[var(--r-md)]">
             {loading ? (
               <div className="px-3 py-2 text-sm muted">Buscando...</div>
             ) : results.length === 0 ? (
@@ -286,7 +286,7 @@ export function CardPicker({
                   key={card.id}
                   type="button"
                   onClick={() => choose(card)}
-                  className="flex w-full items-center gap-3 border-b border-[var(--color-border)] px-3 py-2 text-left text-sm last:border-b-0 hover:bg-[var(--color-surface-muted)]"
+                  className="flex w-full items-center gap-3 border-b border-[var(--color-border)] px-3 py-2 text-left text-sm last:border-b-0 hover:bg-white/5"
                 >
                   {card.imageSmall ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
@@ -296,7 +296,7 @@ export function CardPicker({
                       className="h-16 w-12 rounded object-cover"
                     />
                   ) : (
-                    <div className="h-16 w-12 rounded bg-[var(--color-surface-muted)]" />
+                    <div className="h-16 w-12 rounded bg-[var(--glass-fill)]" />
                   )}
                   <div className="flex-1">
                     <p className="font-semibold">{card.name}</p>

@@ -88,7 +88,7 @@ export function ImageUploader({
   if (variant === "compact") {
     return (
       <div className={cn("flex items-center gap-3", className)}>
-        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
+        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-[var(--glass-border)] bg-[var(--glass-fill)]">
           {url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={url} alt="Vista previa" className="h-full w-full object-cover" />
@@ -148,7 +148,7 @@ export function ImageUploader({
   return (
     <div className={cn("space-y-2", className)}>
       {url ? (
-        <div className="relative aspect-[3/4] w-full max-w-[180px] overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
+        <div className="relative aspect-[3/4] w-full max-w-[180px] overflow-hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass-fill)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={url} alt="Vista previa" className="h-full w-full object-cover" />
           {uploading && (
@@ -169,7 +169,7 @@ export function ImageUploader({
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="absolute inset-x-1.5 bottom-1.5 inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-white/90 text-[0.75rem] font-semibold text-[var(--color-ink)] backdrop-blur hover:bg-white disabled:opacity-60"
+            className="absolute inset-x-1.5 bottom-1.5 inline-flex h-8 items-center justify-center gap-1.5 rounded-full [background:linear-gradient(180deg,var(--accent-hi),var(--accent))] text-[0.75rem] font-semibold text-white [box-shadow:0_6px_18px_rgba(var(--accent-glow),0.5)] disabled:opacity-60"
           >
             <ImagePlus className="h-3.5 w-3.5" />
             Cambiar
@@ -180,7 +180,7 @@ export function ImageUploader({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="flex aspect-[3/4] w-full max-w-[180px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4 text-center transition-colors hover:border-[var(--color-accent)] hover:bg-[var(--color-accent-soft)]/40 disabled:opacity-60"
+          className="flex aspect-[3/4] w-full max-w-[180px] flex-col items-center justify-center gap-2 rounded-[var(--r-md)] border-2 border-dashed border-[var(--glass-border)] bg-[var(--glass-fill)] p-4 text-center transition-colors hover:border-[var(--accent-hi)] hover:bg-[rgba(var(--accent-glow),0.15)] disabled:opacity-60"
         >
           {uploading ? (
             <Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" />

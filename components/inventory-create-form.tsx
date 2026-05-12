@@ -119,7 +119,7 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
           </FormField>
 
           {!picked && (
-            <details className="group rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-3 py-2">
+            <details className="glass-soft group rounded-[var(--r-sm)] px-3 py-2">
               <summary className="cursor-pointer text-caption text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]">
                 ¿No la encontrás? Cargala manualmente
               </summary>
@@ -184,7 +184,7 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
           </div>
         </div>
 
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-3">
+        <div className="glass-soft rounded-[var(--r-sm)] p-3">
           <label className="flex cursor-pointer items-center gap-2 text-body-sm font-medium">
             <input
               type="checkbox"

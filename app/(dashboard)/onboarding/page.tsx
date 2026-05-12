@@ -105,7 +105,7 @@ export default function OnboardingPage() {
         </div>
         <div className="h-1.5 rounded-full bg-[var(--color-border-default)]">
           <div
-            className="h-1.5 rounded-full bg-[var(--color-ink)] transition-all duration-300"
+            className="h-1.5 rounded-full [background:linear-gradient(90deg,var(--accent-hi),var(--accent))] transition-all duration-300"
             style={{ width: `${progressPct}%` }}
           />
         </div>
@@ -206,7 +206,7 @@ export default function OnboardingPage() {
             <button
               onClick={() => handleFinish("/market")}
               disabled={loading}
-              className="flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[var(--color-border-default)] p-4 text-center transition-colors hover:border-black hover:bg-black hover:text-white"
+              className="flex flex-col items-center gap-2 rounded-[var(--r-md)] border border-[var(--glass-border)] bg-[var(--glass-fill)] p-4 text-center transition-colors hover:border-[var(--accent-hi)] hover:bg-[rgba(var(--accent-glow),0.15)] hover:text-[var(--accent-hi)]"
             >
               <ShoppingBag className="h-6 w-6" />
               <span className="text-body-sm font-semibold">Explorar mercado</span>
@@ -214,7 +214,7 @@ export default function OnboardingPage() {
             <button
               onClick={() => handleFinish("/inventory")}
               disabled={loading}
-              className="flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[var(--color-border-default)] p-4 text-center transition-colors hover:border-black hover:bg-black hover:text-white"
+              className="flex flex-col items-center gap-2 rounded-[var(--r-md)] border border-[var(--glass-border)] bg-[var(--glass-fill)] p-4 text-center transition-colors hover:border-[var(--accent-hi)] hover:bg-[rgba(var(--accent-glow),0.15)] hover:text-[var(--accent-hi)]"
             >
               <Tag className="h-6 w-6" />
               <span className="text-body-sm font-semibold">Cargar cartas</span>
@@ -222,7 +222,7 @@ export default function OnboardingPage() {
             <button
               onClick={() => handleFinish("/dashboard")}
               disabled={loading}
-              className="flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[var(--color-border-default)] p-4 text-center transition-colors hover:border-black hover:bg-black hover:text-white"
+              className="flex flex-col items-center gap-2 rounded-[var(--r-md)] border border-[var(--glass-border)] bg-[var(--glass-fill)] p-4 text-center transition-colors hover:border-[var(--accent-hi)] hover:bg-[rgba(var(--accent-glow),0.15)] hover:text-[var(--accent-hi)]"
             >
               <Layers className="h-6 w-6" />
               <span className="text-body-sm font-semibold">Ver dashboard</span>

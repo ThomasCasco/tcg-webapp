@@ -77,7 +77,7 @@ export default async function ListingDetailPage({
 
       <Card as="section" padding="none" className="overflow-hidden">
         <div className="grid gap-0 md:grid-cols-[minmax(280px,380px)_1fr]">
-          <div className="relative aspect-[3/4] w-full overflow-hidden bg-[var(--color-surface-muted)] md:aspect-auto md:min-h-[520px]">
+          <div className="relative aspect-[3/4] w-full overflow-hidden bg-[rgba(8,12,28,0.6)] md:aspect-auto md:min-h-[520px]">
             {image ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
@@ -134,7 +134,7 @@ export default async function ListingDetailPage({
               </div>
             ) : null}
 
-            <div className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-4">
+            <div className="glass-soft rounded-[var(--r-md)] p-4">
               <p className="text-overline text-[var(--color-ink-subtle)]">Precio</p>
               <p className="mt-1 text-3xl font-bold tracking-tight">
                 ARS {listing.priceArs.toLocaleString("es-AR")}
@@ -242,14 +242,14 @@ export default async function ListingDetailPage({
           </p>
         </div>
         <ol className="mt-3 grid gap-3 md:grid-cols-3">
-          <li className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-4">
+          <li className="glass-soft rounded-[var(--r-md)] p-4">
             <CheckCircle className="h-5 w-5 text-[var(--color-accent)]" />
             <p className="mt-2 text-body-sm font-semibold">1. Reservás</p>
             <p className="mt-0.5 text-caption text-[var(--color-ink-muted)]">
               La publicación queda en pago pendiente a tu nombre por 24 h.
             </p>
           </li>
-          <li className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-4">
+          <li className="glass-soft rounded-[var(--r-md)] p-4">
             <CreditCard className="h-5 w-5 text-[var(--color-accent)]" />
             <p className="mt-2 text-body-sm font-semibold">
               2. {listing.sellerMpConnected ? "Pagás por Mercado Pago" : "Coordinás el pago"}
@@ -260,7 +260,7 @@ export default async function ListingDetailPage({
                 : "El vendedor te pasa alias o CBU. Transferís y avisás por el chat."}
             </p>
           </li>
-          <li className="rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] p-4">
+          <li className="glass-soft rounded-[var(--r-md)] p-4">
             <Truck className="h-5 w-5 text-[var(--color-accent)]" />
             <p className="mt-2 text-body-sm font-semibold">3. Seguís la entrega</p>
             <p className="mt-0.5 text-caption text-[var(--color-ink-muted)]">

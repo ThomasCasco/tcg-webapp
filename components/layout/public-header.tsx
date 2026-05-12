@@ -3,21 +3,24 @@ import { Button } from "@/components/ui/button";
 
 export function PublicHeader() {
   return (
-    <header className="sticky top-0 z-20 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)]/95 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-[var(--hairline)] backdrop-blur-2xl [background:linear-gradient(180deg,rgba(11,19,43,0.85),rgba(11,19,43,0.55))]">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3">
-        <Link href="/" className="text-h3 font-bold text-[var(--color-accent-strong)]">
+        <Link
+          href="/"
+          className="t-h2 text-[var(--accent-hi)] [font-family:var(--f-display)]"
+        >
           TCG.ar
         </Link>
         <nav className="flex items-center gap-2">
           <Link
             href="/market"
-            className="hidden text-[0.9375rem] font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] sm:inline"
+            className="hidden text-[0.9375rem] font-medium text-[var(--ink-mute)] hover:text-[var(--ink)] sm:inline"
           >
             Mercado
           </Link>
           <Link
             href="/trades"
-            className="hidden text-[0.9375rem] font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] sm:inline"
+            className="hidden text-[0.9375rem] font-medium text-[var(--ink-mute)] hover:text-[var(--ink)] sm:inline"
           >
             Trades
           </Link>

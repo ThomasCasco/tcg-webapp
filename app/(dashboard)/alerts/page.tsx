@@ -64,8 +64,10 @@ export default async function AlertsPage() {
             {notifications.map((notification) => (
               <li
                 key={notification.id}
-                className={`rounded-xl border border-[var(--color-border)] p-3 ${
-                  notification.readAt ? "bg-white/60" : "bg-[var(--color-warning-soft)]"
+                className={`rounded-[var(--r-md)] border p-3 ${
+                  notification.readAt
+                    ? "border-[var(--glass-border)] bg-[var(--glass-fill)]"
+                    : "border-[rgba(var(--accent-glow),0.3)] bg-[rgba(var(--accent-glow),0.12)]"
                 }`}
               >
                 <p className="text-body-sm font-semibold">{notification.title}</p>

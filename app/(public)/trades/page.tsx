@@ -48,7 +48,7 @@ export default async function TradesPage({
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
-      <header className="rounded-[var(--radius-card)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] p-5 shadow-sm">
+      <header className="glass rounded-[var(--r-md)] p-5">
         <div className="grid gap-4 lg:grid-cols-[1fr,auto] lg:items-end">
           <div>
             <Chip variant="accent" size="sm">Trades Pokemon</Chip>
@@ -142,9 +142,9 @@ export default async function TradesPage({
                     {profile.tradeCards.slice(0, 6).map((card) => (
                       <div
                         key={card.id}
-                        className="flex gap-3 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2"
+                        className="glass-soft flex gap-3 rounded-[var(--r-sm)] p-2"
                       >
-                        <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-[var(--color-surface-elevated)]">
+                        <div className="glass-soft h-20 w-14 shrink-0 overflow-hidden rounded-md">
                           {card.imageUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={card.imageUrl} alt={card.cardName} className="h-full w-full object-cover" />
@@ -179,7 +179,7 @@ export default async function TradesPage({
                     {profile.wantedCards.slice(0, 10).map((watch) => (
                       <span
                         key={watch.id}
-                        className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 text-caption"
+                        className="chip"
                         title={watch.notes}
                       >
                         {watch.query}

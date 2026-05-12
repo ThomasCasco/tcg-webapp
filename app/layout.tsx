@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, Manrope } from "next/font/google";
+import { Sora, Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/toast";
 import "./globals.css";
 
-const displayFont = Bebas_Neue({
+const displayFont = Sora({
   variable: "--font-display",
-  weight: "400",
+  weight: ["500", "600", "700", "800"],
   subsets: ["latin"],
 });
 
-const bodyFont = Manrope({
+const bodyFont = Inter({
   variable: "--font-body",
+  subsets: ["latin"],
+});
+
+const monoFont = JetBrains_Mono({
+  variable: "--font-mono",
+  weight: ["500", "700"],
   subsets: ["latin"],
 });
 
@@ -38,7 +44,8 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${displayFont.variable} ${bodyFont.variable} h-full antialiased`}
+      data-theme="dark"
+      className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

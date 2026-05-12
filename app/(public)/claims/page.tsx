@@ -78,7 +78,7 @@ function SessionCard({
     <li>
       <Link
         href={`/claims/${session.id}`}
-        className="flex items-center justify-between rounded-[var(--radius-input)] border border-[var(--color-border-default)] px-4 py-3 transition-colors hover:border-black hover:bg-black hover:text-white"
+        className="flex items-center justify-between rounded-[var(--r-sm)] border border-[var(--glass-border)] bg-[var(--glass-fill)] px-4 py-3 transition-colors hover:border-[var(--accent-hi)] hover:bg-[rgba(var(--accent-glow),0.15)]"
       >
         <div className="min-w-0">
           <p className="truncate font-semibold">{session.title}</p>

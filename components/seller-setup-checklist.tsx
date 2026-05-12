@@ -73,7 +73,7 @@ export function SellerSetupChecklist({
         </div>
       </header>
 
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-surface-muted)]">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--glass-fill)]">
         <div
           className="h-full bg-[var(--color-accent)] transition-all duration-500"
           style={{ width: `${percent}%` }}
@@ -87,14 +87,14 @@ export function SellerSetupChecklist({
             className={`flex items-start gap-3 rounded-[var(--radius-card)] border p-3 transition-colors ${
               step.done
                 ? "border-[var(--color-success)] bg-[var(--color-success-soft)]/40"
-                : "border-[var(--color-border-default)] bg-white hover:border-[var(--color-accent)]"
+                : "border-[var(--glass-border)] bg-[var(--glass-fill)] hover:border-[var(--accent-hi)]"
             }`}
           >
             <div
               className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full ${
                 step.done
                   ? "bg-[var(--color-success)] text-white"
-                  : "bg-[var(--color-surface-muted)] text-[var(--color-ink-subtle)]"
+                  : "bg-[var(--glass-fill)] text-[var(--ink-soft)]"
               }`}
               aria-hidden
             >

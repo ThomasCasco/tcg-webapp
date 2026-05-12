@@ -71,13 +71,13 @@ export function TradeProposalsManager({ proposals, currentUserId }: Props) {
             </div>
 
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <div className="rounded-lg bg-[var(--color-surface)] p-3">
+              <div className="glass-soft rounded-[var(--r-sm)] p-3">
                 <p className="text-caption font-semibold">Ofrece</p>
                 <p className="text-body-sm text-[var(--color-ink-muted)]">
                   {proposal.offeredInventoryIds.length} carta(s)
                 </p>
               </div>
-              <div className="rounded-lg bg-[var(--color-surface)] p-3">
+              <div className="glass-soft rounded-[var(--r-sm)] p-3">
                 <p className="text-caption font-semibold">Pide</p>
                 <p className="text-body-sm text-[var(--color-ink-muted)]">
                   {proposal.requestedInventoryIds.length} carta(s)
@@ -86,7 +86,7 @@ export function TradeProposalsManager({ proposals, currentUserId }: Props) {
             </div>
 
             {proposal.message ? (
-              <p className="mt-3 rounded-lg bg-[var(--color-surface)] p-3 text-body-sm">
+              <p className="glass-soft mt-3 rounded-[var(--r-sm)] p-3 text-body-sm">
                 {proposal.message}
               </p>
             ) : null}
@@ -125,7 +125,7 @@ export function TradeProposalsManager({ proposals, currentUserId }: Props) {
             ) : null}
 
             {accepted ? (
-              <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+              <div className="glass-soft mt-3 rounded-[var(--r-sm)] p-3">
                 <p className="text-body-sm font-semibold text-[var(--color-ink)]">
                   Acuerdo aceptado, falta confirmar entrega fisica
                 </p>
