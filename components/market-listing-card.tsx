@@ -5,6 +5,7 @@ import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { ReserveListingButton } from "@/components/reserve-listing-button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { PokemonTypeIcon } from "@/components/ui/pokemon-type-icon";
 
 type Props = {
   listing: Listing;
@@ -64,7 +65,7 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
           </Chip>
         </div>
 
-        <div className="absolute bottom-2 right-2 rounded-full [background:linear-gradient(180deg,var(--accent-hi),var(--accent))] px-2.5 py-1 text-[0.6875rem] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100 [box-shadow:0_6px_18px_rgba(var(--accent-glow),0.5)]">
+        <div className="absolute bottom-2 right-2 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[0.6875rem] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
           Ver carta
         </div>
       </Link>
@@ -85,9 +86,10 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
             {pokemonTypes.slice(0, 3).map((t) => (
               <span
                 key={t.name}
-                className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white"
+                className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white"
                 style={{ backgroundColor: t.color }}
               >
+                <PokemonTypeIcon type={t.name} size={11} />
                 {t.labelEs}
               </span>
             ))}

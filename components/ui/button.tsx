@@ -13,8 +13,7 @@ const buttonVariants = cva(
         primary: "btn-primary",
         secondary: "btn-ghost",
         ghost: "btn-ghost border-transparent bg-transparent hover:bg-[var(--glass-fill)]",
-        danger:
-          "text-white border-0 [background:linear-gradient(180deg,#FF8090,#FF5566)] [box-shadow:0_0_0_1px_rgba(255,255,255,0.18)_inset,0_10px_28px_rgba(255,85,102,0.45)]",
+        danger: "text-white border-0 bg-[#FF5566] hover:bg-[#FF6F7E]",
         link: "text-[var(--accent-hi)] underline-offset-4 hover:underline px-1 py-0 [box-shadow:none]",
         icon: "btn-icon",
       },

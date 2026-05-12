@@ -97,7 +97,7 @@ export default async function ProfilesPage({
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[var(--glass-fill)]">
                   <div
-                    className="h-full rounded-full [background:linear-gradient(90deg,var(--accent-hi),var(--accent))]"
+                    className="h-full rounded-full bg-[var(--accent)]"
                     style={{ width: `${profile.completionScore}%` }}
                   />
                 </div>

@@ -14,15 +14,8 @@ export function Stepper({ total, current, className }: StepperProps) {
           key={i}
           className={cn(
             "h-1 flex-1 rounded-full transition-all duration-300",
-            i <= current
-              ? "[background:linear-gradient(90deg,var(--accent-hi),var(--accent))]"
-              : "bg-[var(--glass-fill)]"
+            i <= current ? "bg-[var(--accent)]" : "bg-[var(--glass-fill)]"
           )}
-          style={
-            i === current
-              ? { boxShadow: "0 0 16px rgba(var(--accent-glow), 0.6)" }
-              : undefined
-          }
         />
       ))}
     </div>

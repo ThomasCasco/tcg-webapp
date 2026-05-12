@@ -9,7 +9,7 @@ export function Toaster() {
       toastOptions={{
         classNames: {
           toast:
-            "glass !bg-[linear-gradient(180deg,rgba(20,28,52,0.92),rgba(8,12,28,0.96))] !text-[var(--ink)] !border-[var(--glass-border)]",
+            "glass !bg-[var(--bg-2)] !text-[var(--ink)] !border-[var(--glass-border)]",
           title: "!font-semibold !text-[var(--ink)]",
           description: "!text-[var(--ink-mute)]",
           actionButton: "!bg-[var(--accent)] !text-white",

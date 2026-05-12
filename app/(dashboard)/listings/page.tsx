@@ -72,7 +72,8 @@ export default async function ListingsPage() {
         </div>
         {active.length === 0 ? (
           <EmptyState
-            icon={<Tag className="h-8 w-8" />}
+            image="/img/empty-states/market-empty.png"
+            imageAlt="Caja vacía"
             title="Sin publicaciones activas"
             description={
               <>

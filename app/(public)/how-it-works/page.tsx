@@ -380,7 +380,7 @@ function SectionHeading({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="grid h-10 w-10 place-items-center rounded-[var(--r-xs)] [background:linear-gradient(135deg,var(--accent-hi),#C77DFF)] text-white [box-shadow:0_0_24px_rgba(var(--accent-glow),0.35)]">
+      <div className="grid h-10 w-10 place-items-center rounded-[var(--r-xs)] border border-[var(--glass-border)] bg-[var(--bg-2)] text-[var(--accent-hi)]">
         {icon}
       </div>
       <div>

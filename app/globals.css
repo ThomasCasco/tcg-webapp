@@ -62,13 +62,10 @@
 
   --hairline: rgba(255, 255, 255, 0.07);
 
-  --shadow-card: 0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 60px rgba(0,0,0,0.55);
-  --shadow-fab:  0 14px 40px rgba(var(--accent-glow), 0.55), 0 0 0 1px rgba(255,255,255,0.10) inset;
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.03) inset, 0 1px 2px rgba(0,0,0,0.35);
+  --shadow-fab:  0 8px 24px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08) inset;
 
-  --page-bg:
-    radial-gradient(1200px 600px at 80% -10%, rgba(var(--accent-glow), 0.18), transparent 60%),
-    radial-gradient(900px 500px at -10% 30%, rgba(199, 125, 255, 0.10), transparent 60%),
-    linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 50%, var(--bg-0) 100%);
+  --page-bg: var(--bg-0);
 }
 
 /* ---------- LIGHT (opt-in) ---------- */
@@ -88,13 +85,10 @@
 
   --hairline: rgba(10, 14, 26, 0.07);
 
-  --shadow-card: 0 1px 0 rgba(255,255,255,0.6) inset, 0 18px 40px rgba(10, 14, 26, 0.10);
-  --shadow-fab:  0 14px 40px rgba(var(--accent-glow), 0.45), 0 0 0 1px rgba(255,255,255,0.6) inset;
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.5) inset, 0 1px 2px rgba(10, 14, 26, 0.06);
+  --shadow-fab:  0 8px 20px rgba(10, 14, 26, 0.10), 0 0 0 1px rgba(10, 14, 26, 0.08) inset;
 
-  --page-bg:
-    radial-gradient(1200px 600px at 80% -10%, rgba(var(--accent-glow), 0.12), transparent 60%),
-    radial-gradient(900px 500px at -10% 30%, rgba(199, 125, 255, 0.08), transparent 60%),
-    linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%);
+  --page-bg: var(--bg-0);
 }
 
 /* ============================================================
@@ -217,18 +211,13 @@ input, textarea, select { font: inherit; color: inherit; }
    Glass primitives
    ============================================================ */
 .glass {
-  background: linear-gradient(180deg, var(--glass-fill-hi), var(--glass-fill));
-  backdrop-filter: blur(28px) saturate(140%);
-  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  background: var(--bg-1);
   border: 1px solid var(--glass-border);
-  border-top-color: var(--glass-border-hi);
   border-radius: var(--r-md);
   box-shadow: var(--shadow-card);
 }
 .glass-soft {
-  background: var(--glass-fill);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: var(--bg-2);
   border: 1px solid var(--glass-border);
   border-radius: var(--r-md);
 }
@@ -274,20 +263,13 @@ input, textarea, select { font: inherit; color: inherit; }
 }
 .btn:active { transform: scale(0.96); }
 .btn-primary {
-  background: linear-gradient(180deg, var(--accent-hi), var(--accent));
+  background: var(--accent);
   color: white;
   padding: 12px 18px;
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.18) inset,
-    0 10px 28px rgba(var(--accent-glow), 0.45);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.10) inset;
   border: 0;
 }
-.btn-primary:hover {
-  background: linear-gradient(180deg, var(--accent-hi), var(--accent));
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.22) inset,
-    0 14px 36px rgba(var(--accent-glow), 0.6);
-}
+.btn-primary:hover { background: var(--accent-hi); }
 .btn-ghost {
   background: var(--glass-fill);
   border: 1px solid var(--glass-border);
@@ -321,10 +303,9 @@ input, textarea, select { font: inherit; color: inherit; }
   transition: all 180ms var(--ease);
 }
 .chip-active {
-  background: linear-gradient(180deg, var(--accent-hi), var(--accent));
+  background: var(--accent);
   border-color: transparent;
   color: white;
-  box-shadow: 0 6px 18px rgba(var(--accent-glow), 0.5);
 }
 .chip-soft   { background: rgba(var(--accent-glow), 0.12); border-color: rgba(var(--accent-glow), 0.3); color: var(--accent-hi); }
 .chip-accent { background: rgba(var(--accent-glow), 0.12); border-color: rgba(var(--accent-glow), 0.3); color: var(--accent-hi); }
@@ -340,11 +321,8 @@ input, textarea, select { font: inherit; color: inherit; }
    Card (back-compat with old `.card`)
    ============================================================ */
 .card {
-  background: linear-gradient(180deg, var(--glass-fill-hi), var(--glass-fill));
-  backdrop-filter: blur(28px) saturate(140%);
-  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  background: var(--bg-1);
   border: 1px solid var(--glass-border);
-  border-top-color: var(--glass-border-hi);
   border-radius: var(--r-md);
   box-shadow: var(--shadow-card);
 }
@@ -378,33 +356,10 @@ input, textarea, select { font: inherit; color: inherit; }
   transition: transform 280ms var(--ease), box-shadow 280ms var(--ease);
   cursor: pointer;
 }
-.tcg-tile::after {
-  content: "";
-  position: absolute; inset: 0;
-  background:
-    linear-gradient(115deg,
-      transparent 30%,
-      rgba(255,255,255,0.16) 50%,
-      transparent 70%);
-  transform: translateX(-100%);
-  transition: transform 700ms var(--ease);
-  pointer-events: none;
-  mix-blend-mode: overlay;
-  z-index: 2;
-}
-.tcg-tile:hover { transform: translateY(-4px); }
-.tcg-tile:hover::after { transform: translateX(100%); }
-.tcg-tile:active { transform: translateY(-2px) scale(0.98); }
+.tcg-tile:hover { transform: translateY(-2px); }
+.tcg-tile:active { transform: translateY(0) scale(0.99); }
 
-.tcg-halo {
-  position: absolute; inset: -1px;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 1;
-  background: var(--halo, radial-gradient(80% 60% at 50% 0%, rgba(var(--accent-glow),0.5), transparent 70%));
-  opacity: 0.55;
-  mix-blend-mode: screen;
-}
+.tcg-halo { display: none; }
 
 @keyframes nav-pop {
   0% { transform: scale(1); }
@@ -430,11 +385,7 @@ input, textarea, select { font: inherit; color: inherit; }
 }
 .fade-in { animation: fade-in 220ms var(--ease) both; }
 
-@keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(var(--accent-glow), 0.5); }
-  100% { box-shadow: 0 0 0 14px rgba(var(--accent-glow), 0); }
-}
-.pulse-ring { animation: pulse-ring 1.6s var(--ease) infinite; }
+.pulse-ring { /* removed: pulsating glow looked promo-ish */ }
 
 @keyframes marquee {
   0% { transform: translateX(0); }

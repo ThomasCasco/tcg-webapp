@@ -18,7 +18,7 @@ export function BottomNav() {
       aria-label="Navegación principal"
       className="fixed inset-x-3 bottom-3 z-30 safe-pb md:hidden"
     >
-      <ul className="glass mx-auto flex max-w-md [background:linear-gradient(180deg,rgba(20,28,52,0.78),rgba(8,12,28,0.92))]">
+      <ul className="glass mx-auto flex max-w-md">
         {items.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname?.startsWith(href + "/");
           return (
@@ -36,7 +36,7 @@ export function BottomNav() {
                 {active && (
                   <span
                     aria-hidden
-                    className="absolute top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--accent-hi)] [box-shadow:0_0_10px_var(--accent-hi)]"
+                    className="absolute top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--accent-hi)]"
                   />
                 )}
                 <Icon

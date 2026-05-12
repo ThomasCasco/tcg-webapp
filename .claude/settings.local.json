@@ -24,7 +24,9 @@
       "Bash(gh pr *)",
       "Bash(where gh *)",
       "Bash(cmd //c \"where gh\")",
-      "Bash(git fetch *)"
+      "Bash(git fetch *)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(npm search *)"
     ]
   }
 }

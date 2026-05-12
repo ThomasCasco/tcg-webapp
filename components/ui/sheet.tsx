@@ -39,7 +39,6 @@ export function Sheet({
         <Dialog.Content
           className={cn(
             "fixed z-50 flex flex-col glass",
-            "[background:linear-gradient(180deg,rgba(20,28,52,0.95),rgba(8,12,28,0.98))]",
             "data-[state=open]:animate-[slide-up_320ms_var(--ease)_both]",
             sideClass[side]
           )}

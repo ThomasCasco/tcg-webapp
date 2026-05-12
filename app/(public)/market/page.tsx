@@ -186,7 +186,7 @@ export default async function MarketPage({
         </div>
       </header>
 
-      <section className="sticky top-14 z-10 -mx-3 border-b border-[var(--hairline)] px-3 py-3 backdrop-blur-2xl [background:linear-gradient(180deg,rgba(11,19,43,0.88),rgba(11,19,43,0.55))] md:top-16 md:mx-0 md:rounded-[var(--r-md)] md:border md:p-4">
+      <section className="sticky top-14 z-10 -mx-3 border-b border-[var(--hairline)] bg-[var(--bg-0)]/95 px-3 py-3 backdrop-blur md:top-16 md:mx-0 md:rounded-[var(--r-md)] md:border md:bg-[var(--bg-1)] md:p-4">
         <form method="GET" className="space-y-3">
           <input type="hidden" name="tab" value={activeTab} />
           <div className="grid gap-2 md:grid-cols-[1fr,auto]">
@@ -262,7 +262,8 @@ export default async function MarketPage({
 
       {total === 0 ? (
         <EmptyState
-          icon={<ShoppingBag className="h-8 w-8" />}
+          image="/img/empty-states/market-empty.png"
+          imageAlt="Caja de cartas vacía"
           title="Sin publicaciones"
           description={
             <>

@@ -174,7 +174,7 @@ export function AuctionCreateForm({ inventory, defaultOpen = false }: Props) {
           onClick={() => setMode("scheduled")}
           className={`rounded-[var(--radius-input)] border px-3 py-2 text-body-sm font-semibold transition-colors ${
             mode === "scheduled"
-              ? "border-transparent [background:linear-gradient(180deg,var(--accent-hi),var(--accent))] text-white [box-shadow:0_6px_18px_rgba(var(--accent-glow),0.5)]"
+              ? "border-transparent bg-[var(--accent)] text-white"
               : "border-[var(--glass-border)] bg-[var(--glass-fill)] text-[var(--ink)] hover:bg-[var(--glass-fill-hi)]"
           }`}
         >
@@ -185,7 +185,7 @@ export function AuctionCreateForm({ inventory, defaultOpen = false }: Props) {
           onClick={() => setMode("now")}
           className={`rounded-[var(--radius-input)] border px-3 py-2 text-body-sm font-semibold transition-colors ${
             mode === "now"
-              ? "border-transparent [background:linear-gradient(180deg,var(--accent-hi),var(--accent))] text-white [box-shadow:0_6px_18px_rgba(var(--accent-glow),0.5)]"
+              ? "border-transparent bg-[var(--accent)] text-white"
               : "border-[var(--glass-border)] bg-[var(--glass-fill)] text-[var(--ink)] hover:bg-[var(--glass-fill-hi)]"
           }`}
         >

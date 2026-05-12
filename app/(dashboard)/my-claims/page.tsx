@@ -90,7 +90,8 @@ export default async function MyClaimsPage() {
       {active.length === 0 && drafts.length === 0 && (
         <Card padding="lg">
           <EmptyState
-            icon={<Layers className="h-8 w-8" />}
+            image="/img/empty-states/claims-empty.png"
+            imageAlt="Sobre con carta"
             title="Sin sesiones activas"
             description="Creá una sesión arriba y revelá cartas de a una para tus compradores."
           />

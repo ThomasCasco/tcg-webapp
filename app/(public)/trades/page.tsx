@@ -115,7 +115,8 @@ export default async function TradesPage({
 
       {profiles.length === 0 ? (
         <EmptyState
-          icon={<ArrowLeftRight className="h-8 w-8" />}
+          image="/img/empty-states/trades-empty.png"
+          imageAlt="Dos cartas cruzadas en intercambio"
           title="Sin perfiles de trade"
           description="Marca cartas de tu inventario como disponibles para trade o publica cartas buscadas desde Alertas."
         />

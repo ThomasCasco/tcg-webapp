@@ -35,7 +35,6 @@ export function Modal({
         <Dialog.Content
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 flex max-h-[92vh] flex-col glass rounded-t-[var(--r-lg)]",
-            "[background:linear-gradient(180deg,rgba(20,28,52,0.95),rgba(8,12,28,0.98))]",
             "md:bottom-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-[var(--r-lg)]",
             "data-[state=open]:animate-[slide-up_320ms_var(--ease)_both]",
             sizeClass[size],

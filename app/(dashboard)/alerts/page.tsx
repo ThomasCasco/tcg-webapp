@@ -54,7 +54,8 @@ export default async function AlertsPage() {
         </p>
         {notifications.length === 0 ? (
           <EmptyState
-            icon={<Bell className="h-8 w-8" />}
+            image="/img/empty-states/alerts-empty.png"
+            imageAlt="Campana sin notificaciones"
             title="Sin notificaciones"
             description="Configurá alertas para empezar a recibirlas."
             className="mt-4"

@@ -13,10 +13,9 @@ export const Fab = React.forwardRef<HTMLButtonElement, FabProps>(
       <Comp
         ref={ref}
         className={cn(
-          "grid h-14 w-14 place-items-center rounded-full text-white",
-          "[background:linear-gradient(180deg,var(--accent-hi),var(--accent))]",
+          "grid h-14 w-14 place-items-center rounded-full text-white bg-[var(--accent)]",
           "[box-shadow:var(--shadow-fab)]",
-          "transition-transform active:scale-95",
+          "transition-transform active:scale-95 hover:bg-[var(--accent-hi)]",
           className
         )}
         {...props}

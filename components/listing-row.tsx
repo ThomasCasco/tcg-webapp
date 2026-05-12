@@ -129,7 +129,7 @@ export function ListingRow({ listing }: { listing: Listing }) {
     <Card as="article" variant="default" padding="none" className="flex gap-4 p-4">
       <div className="flex-shrink-0">
         {isPack ? (
-          <div className="grid h-32 w-24 place-items-center rounded-lg bg-gradient-to-br from-[var(--color-accent)] to-rose-500 p-2 text-center text-[10px] font-bold uppercase tracking-widest text-white">
+          <div className="grid h-32 w-24 place-items-center rounded-lg bg-[var(--accent)] p-2 text-center text-[10px] font-bold uppercase tracking-widest text-white">
             Mystery Pack
           </div>
         ) : (imageUrl.trim() || listing.imageUrl) && !isPack ? (
