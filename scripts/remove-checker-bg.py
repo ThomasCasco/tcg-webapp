@@ -3,9 +3,17 @@ Remove the gray checker pattern that ChatGPT bakes into "transparent" PNG
 exports. Detects near-grayscale pixels and converts them to actual alpha,
 preserving colored or near-white content (line art and logo strokes).
 
+Flags:
+    --invert-dark   Flip dark grayscale pixels to white (use for dark-theme
+                    logos where the original black stroke would disappear).
+    --out <path>    Write to a different file (default: in-place).
+
 Usage:
-    python scripts/remove-checker-bg.py public/img/logo.png public/img/empty-states/*.png
+    python scripts/remove-checker-bg.py public/img/empty-states/*.png
+    python scripts/remove-checker-bg.py --invert-dark --out public/img/logo-dark.png src.png
+    python scripts/remove-checker-bg.py --out public/img/logo-light.png src.png
 """
+import argparse
 import sys
 from pathlib import Path
 
@@ -13,7 +21,7 @@ import numpy as np
 from PIL import Image
 
 
-def process(path: Path) -> None:
+def process(src: Path, dst: Path, invert_dark: bool) -> None:
     """Remove the ChatGPT-baked gray checker.
 
     Strategy: detect background = the most common luminance bucket among low-chroma
@@ -21,7 +29,7 @@ def process(path: Path) -> None:
     transparent. Anything significantly brighter or colored → keep, snap to pure
     white where appropriate to fight the dotted line-art artefact.
     """
-    im = Image.open(path).convert("RGBA")
+    im = Image.open(src).convert("RGBA")
     arr = np.array(im).astype(np.int16)
     r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
 
@@ -51,30 +59,34 @@ def process(path: Path) -> None:
     new = np.zeros_like(arr, dtype=np.uint8)
     new[:, :, 3] = 0  # default transparent
     new[is_white_line] = [255, 255, 255, 255]
-    # If the original bg was light, dark pixels were meant to contrast with white
-    # — flip them to white so they read on dark UI. If the original bg was dark
-    # (gray checker), keep dark line-art as-is (rare case).
-    dark_replacement = [255, 255, 255, 255] if bg_lum > 200 else [0, 0, 0, 255]
+    dark_replacement = [255, 255, 255, 255] if invert_dark else [0, 0, 0, 255]
     new[is_dark_line] = dark_replacement
     # Colored: keep original RGB, opaque
     colored_mask = has_color
     new[colored_mask, :3] = arr[colored_mask, :3].astype(np.uint8)
     new[colored_mask, 3] = 255
 
-    Image.fromarray(new, "RGBA").save(path, optimize=True)
-    print(f"  processed {path.name}: {im.size[0]}x{im.size[1]} (bg_lum={bg_lum})")
+    Image.fromarray(new, "RGBA").save(dst, optimize=True)
+    print(f"  {src.name} -> {dst.name}: {im.size[0]}x{im.size[1]} (bg_lum={bg_lum}, invert={invert_dark})")
 
 
 def main() -> None:
-    paths = [Path(p) for p in sys.argv[1:]]
-    if not paths:
-        print("usage: python remove-checker-bg.py <file.png> [...]", file=sys.stderr)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--invert-dark", action="store_true")
+    parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument("paths", nargs="+", type=Path)
+    args = parser.parse_args()
+
+    if args.out and len(args.paths) > 1:
+        print("--out requires exactly one source path", file=sys.stderr)
         sys.exit(1)
-    for p in paths:
-        if not p.exists():
-            print(f"  skip {p}: not found", file=sys.stderr)
+
+    for src in args.paths:
+        if not src.exists():
+            print(f"  skip {src}: not found", file=sys.stderr)
             continue
-        process(p)
+        dst = args.out if args.out else src
+        process(src, dst, args.invert_dark)
 
 
 if __name__ == "__main__":

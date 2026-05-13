@@ -208,6 +208,13 @@ input, textarea, select { font: inherit; color: inherit; }
 .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
 
 /* ============================================================
+   Logo theme switch — picks between logo-dark.png and logo-light.png
+   based on the data-theme attribute on <html>.
+   ============================================================ */
+[data-theme="light"] .logo-dark { display: none; }
+[data-theme="light"] .logo-light { display: block; }
+
+/* ============================================================
    Glass primitives
    ============================================================ */
 .glass {

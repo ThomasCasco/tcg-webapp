@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/ui/logo";
 
 export function PublicFooter() {
   return (
@@ -10,8 +11,7 @@ export function PublicFooter() {
             className="flex items-center gap-2 text-[var(--ink)]"
             aria-label="TCG.ar - Inicio"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/img/logo.png" alt="" className="h-8 w-auto" />
+            <Logo className="h-7" />
             <span className="text-[1.1rem] font-bold [font-family:var(--f-display)]">.ar</span>
           </Link>
           <p className="mt-3 t-sm t-mute">

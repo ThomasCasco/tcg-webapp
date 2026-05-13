@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/ui/logo";
 
 export default function AuthLayout({
   children,
@@ -12,8 +13,7 @@ export default function AuthLayout({
             className="flex items-center gap-2 tracking-tight text-[var(--ink)]"
             aria-label="TCG.ar - Inicio"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/img/logo.png" alt="" className="h-9 w-auto" />
+            <Logo className="h-8" />
             <span className="text-[1.25rem] font-bold [font-family:var(--f-display)]">.ar</span>
           </Link>
           <Link
