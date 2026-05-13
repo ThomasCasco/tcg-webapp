@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Search } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/logo";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { UserMenu } from "@/components/layout/user-menu";
 import { cn } from "@/lib/ui/cn";
@@ -62,12 +63,7 @@ export function TopBar({ user }: Props) {
           className="flex shrink-0 items-center gap-2 leading-none text-[var(--ink)]"
           aria-label="TCG.ar - Inicio"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/img/logo.png"
-            alt=""
-            className="h-8 w-auto md:h-9"
-          />
+          <Logo className="h-7 md:h-8" />
           <span className="hidden text-[1.1rem] font-bold sm:inline [font-family:var(--f-display)] md:text-[1.25rem]">
             .ar
           </span>
