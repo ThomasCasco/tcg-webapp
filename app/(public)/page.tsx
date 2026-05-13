@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { HeroCardStack } from "@/components/hero-card-stack";
 import { MarketListingCard } from "@/components/market-listing-card";
 import { listListings } from "@/lib/server/repository";
 import { getAuthenticatedUser } from "@/lib/server/auth";
@@ -22,6 +23,14 @@ export default async function HomePage() {
       // Landing still renders without listings.
     }
   }
+
+  // Only listings matched to the official catalog with a photo qualify for the
+  // hero stack. Anything free-form (handwritten names, off-catalog uploads) is
+  // excluded so user noise doesn't dominate the first impression.
+  const heroStack = featured
+    .filter((listing) => listing.catalogCardId && listing.imageUrl)
+    .slice(0, 3);
+  const showHeroStack = heroStack.length >= 3;
 
   return (
     <div className="flex flex-col">
@@ -66,7 +75,20 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {featured.length === 0 ? (
+          {showHeroStack ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <span className="t-eyebrow">En venta ahora · {heroStack.length} destacadas</span>
+                <Link
+                  href="/market"
+                  className="inline-flex items-center gap-1 t-sm font-semibold text-[var(--accent-hi)]"
+                >
+                  Ver todo <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+              <HeroCardStack listings={heroStack} />
+            </div>
+          ) : (
             <div className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -76,77 +98,43 @@ export default async function HomePage() {
                 loading="eager"
               />
             </div>
-          ) : (
-            <div>
-              <div className="mb-3 flex items-center justify-between border-b border-[var(--hairline)] pb-3">
-                <span className="t-eyebrow">Últimas publicaciones</span>
-                <Link
-                  href="/market"
-                  className="inline-flex items-center gap-1 t-sm font-semibold text-[var(--accent-hi)]"
-                >
-                  Ver todo <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {featured.slice(0, 4).map((listing) => (
-                  <Link
-                    key={listing.id}
-                    href={`/market/${listing.id}`}
-                    className="group block overflow-hidden glass-soft transition-transform hover:-translate-y-0.5"
-                  >
-                    <div className="aspect-[3/4] overflow-hidden bg-[var(--bg-0)]">
-                      {listing.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={listing.imageUrl}
-                          alt={listing.cardName}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                        />
-                      ) : (
-                        <div className="grid h-full place-items-center t-xs t-soft">Sin foto</div>
-                      )}
-                    </div>
-                    <div className="border-t border-[var(--hairline)] p-3">
-                      <p className="t-sm font-extrabold t-mono text-[var(--ink)]">
-                        ARS {listing.priceArs.toLocaleString("es-AR")}
-                      </p>
-                      <p className="mt-1 line-clamp-1 t-xs t-mute">{listing.cardName}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
           )}
         </div>
       </section>
 
-      {/* Latest listings — only renders when there are 4+ featured listings,
-          otherwise the hero already shows the same data and a second grid below
-          would be empty filler. */}
-      {featured.length > 4 && (
-        <section className="mx-auto w-full max-w-7xl px-6 py-12">
-          <div className="flex items-end justify-between gap-3">
-            <h2 className="t-h1 [font-family:var(--f-display)]">Recién publicadas</h2>
-            <Link
-              href="/market"
-              className="inline-flex items-center gap-1 t-sm font-bold text-[var(--accent-hi)] hover:underline"
-            >
-              Ver todo <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+      {/* Latest listings — excludes anything already shown in the hero stack so
+          we don't repeat the same 3 cards immediately below. */}
+      {(() => {
+        const heroIds = new Set(heroStack.map((l) => l.id));
+        const rest = showHeroStack
+          ? featured.filter((l) => !heroIds.has(l.id))
+          : featured;
+        if (rest.length === 0) return null;
+        return (
+          <section className="mx-auto w-full max-w-7xl px-6 py-12">
+            <div className="flex items-end justify-between gap-3">
+              <h2 className="t-h1 [font-family:var(--f-display)]">Recién publicadas</h2>
+              <Link
+                href="/market"
+                className="inline-flex items-center gap-1 t-sm font-bold text-[var(--accent-hi)] hover:underline"
+              >
+                Ver todo <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">
-            {featured.slice(4).map((listing) => (
-              <MarketListingCard
-                key={listing.id}
-                listing={listing}
-                pokemonTypes={null}
-                isLoggedIn={Boolean(user)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">
+              {rest.map((listing) => (
+                <MarketListingCard
+                  key={listing.id}
+                  listing={listing}
+                  pokemonTypes={null}
+                  isLoggedIn={Boolean(user)}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Empty-market CTA: only shown when there's literally nothing to browse. */}
       {featured.length === 0 && (
