@@ -2,7 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { TransactionCard } from "@/components/transaction-card";
 import { getAuthenticatedUser } from "@/lib/server/auth";
-import { listTransactionsForUser } from "@/lib/server/repository";
+import {
+  getPaymentEventByExternalRef,
+  listTransactionsForUser,
+  releasePendingCheckoutReservation,
+} from "@/lib/server/repository";
 import { reconcileMpTransaction } from "@/lib/server/mp-reconcile";
 import { log } from "@/lib/server/logger";
 import type {
@@ -101,6 +105,8 @@ export default async function TransactionsPage({
   // ?mp_status=success&tx=..., reconcile the transaction against MP directly
   // instead of waiting for the webhook. Closes the gap when the webhook never
   // reached us (unreachable APP_URL, signature misconfig, transient failure).
+  // For ?mp_status=failure we also release the reservation here, so the buyer
+  // does not leave the listing locked just by going back without paying.
   let postRedirectMessage: { kind: "ok" | "warn" | "err"; text: string } | null = null;
   if (mpStatus === "success" && mpTx && mpTx.length >= 6) {
     try {
@@ -126,6 +132,42 @@ export default async function TransactionsPage({
       postRedirectMessage = {
         kind: "err",
         text: "Hubo un problema al verificar el pago. Probá refrescar la página.",
+      };
+    }
+  } else if (mpStatus === "failure" && mpTx && mpTx.length >= 6) {
+    try {
+      const payment = await getPaymentEventByExternalRef(mpTx);
+      // Only the buyer can trigger the release, and only while the payment
+      // is still in the pre-payment window (no provider payment recorded
+      // and still pending review).
+      if (
+        payment &&
+        payment.buyerId === user.id &&
+        !payment.providerPaymentId &&
+        payment.verificationStatus === "pending_review"
+      ) {
+        await releasePendingCheckoutReservation({
+          listingId: payment.listingId,
+          transactionId: payment.transactionId,
+        });
+        postRedirectMessage = {
+          kind: "warn",
+          text: "Cancelaste el pago. La publicación queda disponible de nuevo.",
+        };
+      } else {
+        postRedirectMessage = {
+          kind: "warn",
+          text: "Cancelaste el pago en Mercado Pago.",
+        };
+      }
+    } catch (err) {
+      log.error("transactions page: failure release failed", {
+        tx: mpTx,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      postRedirectMessage = {
+        kind: "warn",
+        text: "Cancelaste el pago en Mercado Pago.",
       };
     }
   }

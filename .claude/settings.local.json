@@ -47,7 +47,9 @@
       "Bash(python scripts/remove-checker-bg.py public/img/logo.png)",
       "Bash(python -c ' *)",
       "Bash(python scripts/remove-checker-bg.py --invert-dark --out public/img/logo-dark.png \"C:\\\\Users\\\\thoma\\\\Downloads\\\\ChatGPT Image 11 may 2026, 22_42_33 \\(1\\).png\")",
-      "Bash(python scripts/remove-checker-bg.py --out public/img/logo-light.png \"C:\\\\Users\\\\thoma\\\\Downloads\\\\ChatGPT Image 11 may 2026, 22_42_33 \\(1\\).png\")"
+      "Bash(python scripts/remove-checker-bg.py --out public/img/logo-light.png \"C:\\\\Users\\\\thoma\\\\Downloads\\\\ChatGPT Image 11 may 2026, 22_42_33 \\(1\\).png\")",
+      "Skill(superpowers:brainstorming)",
+      "Skill(superpowers:systematic-debugging)"
     ]
   }
 }

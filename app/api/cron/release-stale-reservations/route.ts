@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const released = await releaseStalePendingListings(24);
+    const released = await releaseStalePendingListings(0.5);
     return Response.json({ ok: true, released });
   } catch (error) {
     return Response.json(
