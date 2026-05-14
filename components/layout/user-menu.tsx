@@ -126,7 +126,7 @@ export function UserMenu({ username, email, onLogout }: Props) {
           </ul>
 
           {onLogout && (
-            <div className="border-t border-[var(--color-border-subtle)]">
+            <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-1">
               <button
                 type="button"
                 onClick={() => {
@@ -134,10 +134,10 @@ export function UserMenu({ username, email, onLogout }: Props) {
                   onLogout();
                 }}
                 role="menuitem"
-                className="flex w-full items-center gap-3 px-3 py-2 text-body-sm text-[var(--color-danger)] hover:bg-[var(--color-danger-soft)]"
+                className="flex w-full items-center gap-3 rounded-[var(--radius-input)] px-3 py-2 text-body-sm font-semibold text-[var(--color-danger)] transition-colors hover:bg-[var(--color-danger-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]/40"
               >
-                <LogOut className="h-4 w-4" />
-                Cerrar sesión
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+                <span>Cerrar sesión</span>
               </button>
             </div>
           )}
