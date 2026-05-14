@@ -1,5 +1,9 @@
 import { requireAuthenticatedUser } from "@/lib/server/auth";
 import { createDispute, listDisputesForUser } from "@/lib/server/repository";
+import { getTransactionContext } from "@/lib/server/transaction-context";
+import { createNotification } from "@/lib/server/notifications";
+import { sendDisputeOpened } from "@/lib/server/email";
+import { log } from "@/lib/server/logger";
 
 type DisputePayload = {
   transactionId?: string;
@@ -56,13 +60,30 @@ export async function POST(request: Request) {
   }
 
   try {
+    const transactionId = payload.transactionId.trim();
+    const reason = payload.reason.trim();
+    const details = payload.details.trim();
+
     const dispute = await createDispute({
-      transactionId: payload.transactionId.trim(),
+      transactionId,
       openedById: user.id,
       openedByHandle: user.username,
-      reason: payload.reason.trim(),
-      details: payload.details.trim(),
+      reason,
+      details,
     });
+
+    void notifyDisputeOpened({
+      transactionId,
+      openedById: user.id,
+      openedByHandle: user.username,
+      reason,
+      details,
+    }).catch((err) =>
+      log.error("notifyDisputeOpened failed", {
+        transactionId,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
 
     return Response.json({ dispute }, { status: 201 });
   } catch (error) {
@@ -73,5 +94,45 @@ export async function POST(request: Request) {
       },
       { status: 500 },
     );
+  }
+}
+
+async function notifyDisputeOpened(opts: {
+  transactionId: string;
+  openedById: string;
+  openedByHandle: string;
+  reason: string;
+  details: string;
+}): Promise<void> {
+  const ctx = await getTransactionContext(opts.transactionId);
+  if (!ctx) return;
+
+  const linkPath = `/transactions/${ctx.transactionId}`;
+  const parties: Array<{
+    id: string | null;
+    email: string | null;
+    username: string;
+  }> = [ctx.buyer, ctx.seller];
+
+  for (const party of parties) {
+    if (!party.id || party.id === opts.openedById) continue;
+    if (party.email) {
+      await sendDisputeOpened({
+        to: party.email,
+        recipientName: party.username,
+        openedBy: opts.openedByHandle,
+        cardName: ctx.cardName,
+        reason: opts.reason,
+        details: opts.details,
+        transactionId: ctx.transactionId,
+      }).catch((err) => log.error("dispute email failed", { error: String(err) }));
+    }
+    await createNotification({
+      userId: party.id,
+      type: "dispute_opened",
+      title: "Se abrió una disputa",
+      body: `${opts.openedByHandle} abrió una disputa sobre ${ctx.cardName}: ${opts.reason}.`,
+      linkPath,
+    });
   }
 }

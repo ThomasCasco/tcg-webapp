@@ -16,11 +16,11 @@
 import { validateMpWebhookSignature, getMpPayment } from "@/lib/server/mp-client";
 import {
   getPaymentEventByExternalRef,
-  getUserProfile,
   recordMpWebhookEvent,
 } from "@/lib/server/repository";
 import { reconcileMpTransaction } from "@/lib/server/mp-reconcile";
 import { sendPaymentConfirmedBuyer, sendSaleConfirmedSeller } from "@/lib/server/email";
+import { createNotification } from "@/lib/server/notifications";
 import { log } from "@/lib/server/logger";
 
 const PLATFORM_FEE_PERCENT = Number(process.env.PLATFORM_FEE_PERCENT ?? "1") / 100;
@@ -233,61 +233,55 @@ async function sendEmailsAfterPayment(opts: {
   platformFeeArs: number;
 }): Promise<void> {
   const { paymentEvent, priceArs, platformFeeArs } = opts;
+  const { getTransactionContext } = await import("@/lib/server/transaction-context");
 
-  // We need buyer and seller profile data.
-  // The listing row holds seller_id; we'll need to fetch it.
-  // Use the repository getUserProfile helper for both parties.
-
-  const buyerId = paymentEvent.buyerId;
-  if (!buyerId) return;
-
-  const [buyerProfile, listingRow] = await Promise.all([
-    getUserProfile(buyerId),
-    // Fetch seller_id from payment_event → listing
-    (async () => {
-      const { getSupabaseAdminClient } = await import("@/lib/server/supabase");
-      const client = getSupabaseAdminClient();
-      const { data } = await client
-        .from("market_listings")
-        .select("seller_id, card_name")
-        .eq("id", paymentEvent.listingId)
-        .maybeSingle();
-      return data as { seller_id: string | null; card_name: string } | null;
-    })(),
-  ]);
-
-  const cardName = listingRow?.card_name ?? "Carta";
-  const sellerId = listingRow?.seller_id;
+  const ctx = await getTransactionContext(paymentEvent.transactionId);
+  if (!ctx) return;
 
   const netArs = Math.round(priceArs - platformFeeArs);
   const feeFallback = Math.round(priceArs * PLATFORM_FEE_PERCENT);
   const feeArs = platformFeeArs > 0 ? platformFeeArs : feeFallback;
 
-  // Buyer email
-  if (buyerProfile?.email) {
+  const linkPath = `/transactions/${ctx.transactionId}`;
+
+  if (ctx.buyer.email) {
     await sendPaymentConfirmedBuyer({
-      to: buyerProfile.email,
-      buyerName: buyerProfile.username,
-      cardName,
+      to: ctx.buyer.email,
+      buyerName: ctx.buyer.username,
+      cardName: ctx.cardName,
       priceArs,
-      transactionId: paymentEvent.transactionId,
+      transactionId: ctx.transactionId,
+    }).catch((err) => log.error("payment_verified buyer email failed", { error: String(err) }));
+  }
+  if (ctx.buyer.id) {
+    await createNotification({
+      userId: ctx.buyer.id,
+      type: "payment_verified_buyer",
+      title: "Pago confirmado",
+      body: `Tu pago por ${ctx.cardName} fue acreditado. El vendedor va a coordinar la entrega.`,
+      linkPath,
     });
   }
 
-  // Seller email
-  if (sellerId) {
-    const sellerProfile = await getUserProfile(sellerId);
-    if (sellerProfile?.email) {
-      await sendSaleConfirmedSeller({
-        to: sellerProfile.email,
-        sellerName: sellerProfile.username,
-        buyerName: buyerProfile?.username ?? paymentEvent.buyerHandle,
-        cardName,
-        grossArs: priceArs,
-        platformFeeArs: feeArs,
-        netArs,
-        transactionId: paymentEvent.transactionId,
-      });
-    }
+  if (ctx.seller.email) {
+    await sendSaleConfirmedSeller({
+      to: ctx.seller.email,
+      sellerName: ctx.seller.username,
+      buyerName: ctx.buyer.username,
+      cardName: ctx.cardName,
+      grossArs: priceArs,
+      platformFeeArs: feeArs,
+      netArs,
+      transactionId: ctx.transactionId,
+    }).catch((err) => log.error("payment_verified seller email failed", { error: String(err) }));
+  }
+  if (ctx.seller.id) {
+    await createNotification({
+      userId: ctx.seller.id,
+      type: "payment_verified_seller",
+      title: "Venta pagada",
+      body: `${ctx.buyer.username} pagó tu publicación de ${ctx.cardName}. Coordiná la entrega.`,
+      linkPath,
+    });
   }
 }

@@ -22,6 +22,7 @@ export {
   EyeOff,
   Filter,
   Gavel,
+  Handshake as HandshakeIcon,
   Heart,
   Home,
   ImagePlus,

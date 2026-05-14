@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FulfillmentStatus, PaymentEventWithListing } from "@/lib/domain/types";
 import { TransactionChat } from "@/components/transaction-chat";
@@ -162,6 +163,12 @@ export function TransactionCard({ transaction, viewerUserId }: Props) {
             <strong>{isBuyer ? transaction.listingSellerHandle : transaction.buyerHandle}</strong>
           </p>
         </div>
+        <Link
+          href={`/transactions/${transaction.transactionId}`}
+          className="shrink-0 rounded-full border border-[var(--glass-border)] px-3 py-1 t-xs font-semibold hover:bg-[var(--glass-fill-hi)]"
+        >
+          Ver operación →
+        </Link>
       </div>
 
       {/* ── Status chips ── */}
