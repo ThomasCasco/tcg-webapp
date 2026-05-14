@@ -49,7 +49,20 @@
       "Bash(python scripts/remove-checker-bg.py --invert-dark --out public/img/logo-dark.png \"C:\\\\Users\\\\thoma\\\\Downloads\\\\ChatGPT Image 11 may 2026, 22_42_33 \\(1\\).png\")",
       "Bash(python scripts/remove-checker-bg.py --out public/img/logo-light.png \"C:\\\\Users\\\\thoma\\\\Downloads\\\\ChatGPT Image 11 may 2026, 22_42_33 \\(1\\).png\")",
       "Skill(superpowers:brainstorming)",
-      "Skill(superpowers:systematic-debugging)"
+      "Skill(superpowers:systematic-debugging)",
+      "Bash(gh api *)",
+      "Bash(git worktree *)",
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "PowerShell(vercel *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://tcg-webapp-7lf7836xg-thomascascos-projects.vercel.app/api/cron/reconcile-mp-payments)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://tcg-arg.vercel.app/api/cron/reconcile-mp-payments)",
+      "mcp__claude_ai_Supabase__list_tables",
+      "Bash(curl -s -H \"Authorization: Bearer APP_USR-298986293727344-050716-801095bb8d0ebe14f74820ad687ac35a-245544597\" \"https://api.mercadopago.com/v1/payments/158503600759\")",
+      "Bash(python -m json.tool)",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d.get\\(k\\) for k in ['id','status','status_detail','transaction_amount','currency_id','external_reference','collector_id','marketplace_fee','preference_id']}, indent=2\\)\\)\")",
+      "Bash(curl -s -o /dev/null -w \"home=%{http_code}\\\\n\" --max-time 5 \"https://tcg-webapp-thomascascos-projects.vercel.app/\")",
+      "Bash(curl -s -L --max-time 5 \"https://tcg-webapp-thomascascos-projects.vercel.app/\")"
     ]
   }
 }

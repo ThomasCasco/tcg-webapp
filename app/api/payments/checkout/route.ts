@@ -93,7 +93,8 @@ export async function POST(request: Request): Promise<Response> {
     const platformFeeArs = Math.max(1, Math.round(priceArs * PLATFORM_FEE_PERCENT));
 
     // 5. Build back URLs and notification URL
-    const appUrl = (process.env.APP_URL ?? "").replace(/\/$/, "");
+    const { getAppUrl } = await import("@/lib/shared/app-url");
+    const appUrl = getAppUrl();
     const txBase = `${appUrl}/transactions`;
     const notificationUrl = `${appUrl}/api/webhooks/mercadopago`;
 
@@ -107,9 +108,9 @@ export async function POST(request: Request): Promise<Response> {
       unitPriceArs: priceArs,
       quantity: 1,
       platformFeeArs,
-      successUrl: `${txBase}?mp_status=success&tx=${reservation.transactionId}`,
+      successUrl: `${txBase}/${reservation.transactionId}?mp_status=success`,
       failureUrl: `${txBase}?mp_status=failure&tx=${reservation.transactionId}`,
-      pendingUrl: `${txBase}?mp_status=pending&tx=${reservation.transactionId}`,
+      pendingUrl: `${txBase}/${reservation.transactionId}?mp_status=pending`,
       notificationUrl,
       externalReference: reservation.transactionId,
       payerEmail: buyerProfile?.email ?? undefined,

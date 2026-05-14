@@ -2573,6 +2573,224 @@ export async function listTransactionsForUser(userId: string): Promise<PaymentEv
   });
 }
 
+// ─── REPUTATION ────────────────────────────────────────────────────────────
+
+export type RatingRecord = {
+  id: string;
+  sellerId: string;
+  raterId: string;
+  transactionId: string;
+  stars: number;
+  comment: string | null;
+  createdAt: string;
+};
+
+export async function createRating(input: {
+  transactionId: string;
+  sellerId: string;
+  raterId: string;
+  stars: number;
+  comment?: string;
+}): Promise<RatingRecord> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from("reputation_events")
+    .insert({
+      seller_id: input.sellerId,
+      event_type: "rating",
+      score_delta: input.stars,
+      metadata: {
+        rater_id: input.raterId,
+        transaction_id: input.transactionId,
+        stars: input.stars,
+        comment: input.comment ?? null,
+      },
+    })
+    .select("id, seller_id, score_delta, metadata, created_at")
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "Failed to create rating");
+  return mapRatingRow(data);
+}
+
+export async function getRatingByTransactionAndRater(
+  transactionId: string,
+  raterId: string,
+): Promise<RatingRecord | null> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from("reputation_events")
+    .select("id, seller_id, score_delta, metadata, created_at")
+    .eq("event_type", "rating")
+    .eq("metadata->>transaction_id", transactionId)
+    .eq("metadata->>rater_id", raterId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return mapRatingRow(data);
+}
+
+export async function getSellerReputationSummary(
+  sellerId: string,
+): Promise<{ average: number; count: number }> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from("reputation_events")
+    .select("score_delta")
+    .eq("seller_id", sellerId)
+    .eq("event_type", "rating");
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as Array<{ score_delta: number }>;
+  if (rows.length === 0) return { average: 0, count: 0 };
+  const sum = rows.reduce((acc, r) => acc + Number(r.score_delta), 0);
+  return { average: sum / rows.length, count: rows.length };
+}
+
+export async function getSellerReputationSummaries(
+  sellerIds: string[],
+): Promise<Record<string, { average: number; count: number }>> {
+  if (sellerIds.length === 0) return {};
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from("reputation_events")
+    .select("seller_id, score_delta")
+    .in("seller_id", sellerIds)
+    .eq("event_type", "rating");
+  if (error) throw new Error(error.message);
+  const acc: Record<string, { sum: number; count: number }> = {};
+  for (const raw of data ?? []) {
+    const row = raw as { seller_id: string; score_delta: number };
+    if (!acc[row.seller_id]) acc[row.seller_id] = { sum: 0, count: 0 };
+    acc[row.seller_id].sum += Number(row.score_delta);
+    acc[row.seller_id].count += 1;
+  }
+  const out: Record<string, { average: number; count: number }> = {};
+  for (const [k, v] of Object.entries(acc)) {
+    out[k] = { average: v.sum / v.count, count: v.count };
+  }
+  return out;
+}
+
+function mapRatingRow(raw: unknown): RatingRecord {
+  const row = raw as {
+    id: string;
+    seller_id: string;
+    score_delta: number;
+    metadata: { rater_id?: string; transaction_id?: string; stars?: number; comment?: string | null };
+    created_at: string;
+  };
+  return {
+    id: row.id,
+    sellerId: row.seller_id,
+    raterId: row.metadata.rater_id ?? "",
+    transactionId: row.metadata.transaction_id ?? "",
+    stars: Number(row.metadata.stars ?? row.score_delta),
+    comment: row.metadata.comment ?? null,
+    createdAt: row.created_at,
+  };
+}
+
+export async function getTransactionWithListingForUser(
+  transactionId: string,
+  userId: string,
+): Promise<PaymentEventWithListing | null> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  const { data: paymentRow, error: paymentError } = await client
+    .from(PAYMENTS_TABLE)
+    .select("*")
+    .eq("transaction_id", transactionId.trim())
+    .maybeSingle();
+
+  if (paymentError) throw new Error(paymentError.message);
+  if (!paymentRow) return null;
+  const payment = mapPaymentRow(paymentRow as PaymentRow);
+
+  let listingMeta:
+    | {
+        cardName: string;
+        setName: string;
+        sellerHandle: string;
+        sellerId: string | null;
+        offersShipping: boolean;
+        offersPickup: boolean;
+        deliveryAreaNotes?: string;
+      }
+    | null = null;
+
+  if (payment.auctionId) {
+    const { data: auctionRow } = await client
+      .from(AUCTIONS_TABLE)
+      .select("id, card_name, set_name, seller_handle, seller_id, offers_shipping, offers_pickup, delivery_area_notes")
+      .eq("id", payment.auctionId)
+      .maybeSingle();
+    if (auctionRow) {
+      const row = auctionRow as {
+        card_name: string;
+        set_name: string | null;
+        seller_handle: string;
+        seller_id: string | null;
+        offers_shipping?: boolean | null;
+        offers_pickup?: boolean | null;
+        delivery_area_notes?: string | null;
+      };
+      listingMeta = {
+        cardName: row.card_name,
+        setName: row.set_name ?? "",
+        sellerHandle: row.seller_handle,
+        sellerId: row.seller_id,
+        offersShipping: Boolean(row.offers_shipping),
+        offersPickup: Boolean(row.offers_pickup),
+        deliveryAreaNotes: row.delivery_area_notes?.trim() || undefined,
+      };
+    }
+  } else if (payment.listingId) {
+    const { data: listingRow } = await client
+      .from(LISTINGS_TABLE)
+      .select("id, card_name, set_name, seller_handle, seller_id, offers_shipping, offers_pickup, delivery_area_notes")
+      .eq("id", payment.listingId)
+      .maybeSingle();
+    if (listingRow) {
+      const row = listingRow as {
+        card_name: string;
+        set_name: string;
+        seller_handle: string;
+        seller_id: string | null;
+        offers_shipping?: boolean | null;
+        offers_pickup?: boolean | null;
+        delivery_area_notes?: string | null;
+      };
+      listingMeta = {
+        cardName: row.card_name,
+        setName: row.set_name,
+        sellerHandle: row.seller_handle,
+        sellerId: row.seller_id,
+        offersShipping: Boolean(row.offers_shipping),
+        offersPickup: Boolean(row.offers_pickup),
+        deliveryAreaNotes: row.delivery_area_notes?.trim() || undefined,
+      };
+    }
+  }
+
+  const isBuyer = payment.buyerId === userId;
+  const isSeller = listingMeta?.sellerId === userId || payment.sellerId === userId;
+  if (!isBuyer && !isSeller) return null;
+
+  return {
+    ...payment,
+    listingCardName: listingMeta?.cardName,
+    listingSetName: listingMeta?.setName,
+    listingSellerHandle: listingMeta?.sellerHandle ?? payment.sellerHandle,
+    offersShipping: listingMeta?.offersShipping,
+    offersPickup: listingMeta?.offersPickup,
+    deliveryAreaNotes: listingMeta?.deliveryAreaNotes,
+  };
+}
+
 export async function updateFulfillmentStatus(
   input: UpdateFulfillmentInput,
 ): Promise<PaymentEvent> {

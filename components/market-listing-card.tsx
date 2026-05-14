@@ -11,9 +11,10 @@ type Props = {
   listing: Listing;
   pokemonTypes: PokemonTypeChip[] | null;
   isLoggedIn: boolean;
+  sellerReputation?: { average: number; count: number };
 };
 
-export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) {
+export function MarketListingCard({ listing, pokemonTypes, isLoggedIn, sellerReputation }: Props) {
   const sold = listing.status === "sold";
   const reserved = listing.status === "pending_payment";
   const formattedPrice = `ARS ${listing.priceArs.toLocaleString("es-AR")}`;
@@ -97,7 +98,17 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn }: Props) 
         )}
 
         <div className="mt-1 flex items-center justify-between gap-2 border-t border-[var(--hairline)] pt-2 t-xs t-soft">
-          <span className="truncate">@{listing.sellerHandle}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate">@{listing.sellerHandle}</span>
+            {sellerReputation && sellerReputation.count > 0 ? (
+              <span
+                className="inline-flex items-center gap-0.5 rounded-full bg-[var(--accent)]/15 px-1.5 py-0.5 font-semibold text-[var(--accent-hi)]"
+                title={`${sellerReputation.count} calificaciones`}
+              >
+                ★ {sellerReputation.average.toFixed(1)}
+              </span>
+            ) : null}
+          </span>
           <span className="shrink-0 font-semibold text-[var(--ink)]">Stock {listing.quantity}</span>
         </div>
 

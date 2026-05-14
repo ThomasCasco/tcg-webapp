@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MarketListingCard } from "@/components/market-listing-card";
-import { listListings } from "@/lib/server/repository";
+import { getSellerReputationSummaries, listListings } from "@/lib/server/repository";
 import { getPokemonTypesForCardTitle } from "@/lib/server/pokeapi";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
@@ -129,11 +129,27 @@ export default async function MarketPage({
     );
   }
 
+  const sellerIds = [
+    ...new Set(
+      listings
+        .map((l) => l.sellerId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const reputations: Record<string, { average: number; count: number }> =
+    sellerIds.length
+      ? await getSellerReputationSummaries(sellerIds).catch(() => ({}))
+      : {};
+
   const enriched = await Promise.all(
     listings.map(async (listing, index) => {
       const pokemonTypes =
         index >= 24 ? null : await getPokemonTypesForCardTitle(listing.cardName);
-      return { listing, pokemonTypes };
+      const sellerReputation =
+        listing.sellerId && reputations[listing.sellerId]
+          ? reputations[listing.sellerId]
+          : undefined;
+      return { listing, pokemonTypes, sellerReputation };
     }),
   );
 
@@ -280,12 +296,13 @@ export default async function MarketPage({
         />
       ) : (
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-          {enriched.map(({ listing, pokemonTypes }) => (
+          {enriched.map(({ listing, pokemonTypes, sellerReputation }) => (
             <MarketListingCard
               key={listing.id}
               listing={listing}
               pokemonTypes={pokemonTypes}
               isLoggedIn={Boolean(user)}
+              sellerReputation={sellerReputation}
             />
           ))}
         </section>

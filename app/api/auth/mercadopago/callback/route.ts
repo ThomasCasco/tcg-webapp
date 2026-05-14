@@ -26,7 +26,8 @@ export async function GET(request: Request): Promise<Response> {
   const error = searchParams.get("error");
   const errorDesc = searchParams.get("error_description");
 
-  const appUrl = process.env.APP_URL ?? "";
+  const { getAppUrl } = await import("@/lib/shared/app-url");
+  const appUrl = getAppUrl();
   const accountUrl = `${appUrl}/account`;
   const errorUrl = `${appUrl}/account?mp_error=`;
 
