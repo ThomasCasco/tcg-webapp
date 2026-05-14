@@ -52,31 +52,28 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn, sellerRep
         )}
 
         <div className="absolute left-2 top-2 flex flex-col gap-1">
-          <Chip size="sm">{formatConditionEs(listing.condition)}</Chip>
-          <Chip
-            size="sm"
-            variant={listing.sellerMpConnected ? "success" : "warning"}
-            title={
-              listing.sellerMpConnected
-                ? "El vendedor tiene Mercado Pago conectado: verificación automática."
-                : "El vendedor no tiene MP conectado: pago coordinado P2P."
-            }
-          >
-            {listing.sellerMpConnected ? "MP automático" : "Pago P2P"}
+          <Chip size="sm" className="backdrop-blur">
+            {formatConditionEs(listing.condition)}
           </Chip>
-        </div>
-
-        <div className="absolute bottom-2 right-2 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[0.6875rem] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
-          Ver carta
+          {listing.sellerMpConnected ? (
+            <Chip
+              size="sm"
+              variant="success"
+              className="backdrop-blur"
+              title="El vendedor tiene Mercado Pago conectado: verificación automática."
+            >
+              MP
+            </Chip>
+          ) : null}
         </div>
       </Link>
 
       <div className="flex flex-1 flex-col gap-1.5 border-t border-[var(--hairline)] p-3">
         <Link href={`/market/${listing.id}`} className="group/link">
-          <p className="t-mono text-[1.0625rem] font-extrabold leading-tight text-[var(--ink)]">
+          <p className="t-mono text-[1.125rem] font-extrabold leading-tight text-[var(--ink)]">
             {formattedPrice}
           </p>
-          <h3 className="mt-1 line-clamp-2 t-sm font-semibold text-[var(--ink)] group-hover/link:underline">
+          <h3 className="mt-1 line-clamp-2 t-sm font-semibold leading-snug text-[var(--ink)] group-hover/link:text-[var(--accent-hi)]">
             {listing.cardName}
           </h3>
         </Link>
