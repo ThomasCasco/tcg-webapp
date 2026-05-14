@@ -6,19 +6,12 @@ import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Filter, Search, ShoppingBag } from "@/components/ui/icon";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/ui/cn";
+import { Search, X } from "@/components/ui/icon";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
+import { MarketFiltersSheet } from "@/components/market-filters-sheet";
 import type { CardCondition } from "@/lib/domain/types";
 
 export const dynamic = "force-dynamic";
-
-const TABS = [
-  { key: "all", label: "Todo" },
-  { key: "cards", label: "Cartas" },
-] as const;
 
 const CONDITIONS: CardCondition[] = [
   "mint",
@@ -77,7 +70,7 @@ export default async function MarketPage({
   } = await searchParams;
   let listings: Awaited<ReturnType<typeof listListings>> = [];
   let loadError: string | null = null;
-  const activeTab = TABS.some((item) => item.key === tab) ? tab : "all";
+  const activeTab = tab === "cards" ? "cards" : "all";
   const minPrice = Number(min);
   const maxPrice = Number(max);
   const hasMin = Number.isFinite(minPrice) && minPrice > 0;
@@ -164,11 +157,40 @@ export default async function MarketPage({
     tab: activeTab,
   };
 
-  const selectClass =
-    "h-11 rounded-[var(--r-sm)] border border-[var(--glass-border)] bg-[var(--glass-fill)] backdrop-blur-md px-3.5 text-[var(--ink)] t-sm focus:border-[var(--accent-hi)] focus:bg-[var(--glass-fill-hi)] focus:outline-none focus:ring-2 focus:ring-[rgba(var(--accent-glow),0.3)]";
+  const activeFilters: Array<{ label: string; removeHref: string }> = [];
+  if (condition && isCondition(condition)) {
+    activeFilters.push({
+      label: formatConditionEs(condition),
+      removeHref: getParamHref({ condition: undefined }, currentParams),
+    });
+  }
+  if (delivery === "shipping" || delivery === "pickup") {
+    activeFilters.push({
+      label: delivery === "shipping" ? "Con envío" : "Con retiro",
+      removeHref: getParamHref({ delivery: undefined }, currentParams),
+    });
+  }
+  if (hasMin) {
+    activeFilters.push({
+      label: `Desde $${minPrice.toLocaleString("es-AR")}`,
+      removeHref: getParamHref({ min: undefined }, currentParams),
+    });
+  }
+  if (hasMax) {
+    activeFilters.push({
+      label: `Hasta $${maxPrice.toLocaleString("es-AR")}`,
+      removeHref: getParamHref({ max: undefined }, currentParams),
+    });
+  }
+  if (sort === "price_asc" || sort === "price_desc") {
+    activeFilters.push({
+      label: sort === "price_asc" ? "Menor precio" : "Mayor precio",
+      removeHref: getParamHref({ sort: undefined }, currentParams),
+    });
+  }
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-3 py-4 md:px-6 md:py-7">
+    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
       {!isSupabaseConfigured() && (
         <Card padding="md" className="chip-warning">
           <p className="t-sm">Configurá Supabase en producción para abrir el marketplace.</p>
@@ -181,100 +203,83 @@ export default async function MarketPage({
         </Card>
       )}
 
-      <header className="border-b border-[var(--hairline)] pb-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="t-eyebrow">Marketplace</p>
-            <h1 className="mt-1 t-display text-[2.25rem] text-[var(--ink)] md:text-[3rem]">
-              Mercado de cartas
-            </h1>
-            <p className="mt-2 max-w-2xl t-sm t-mute">
-              Singles publicados por coleccionistas, con búsqueda directa, precio en pesos
-              y filtros de compra.
-            </p>
-          </div>
-
-          <Card variant="muted" padding="none" className="grid grid-cols-3 text-center md:min-w-80">
-            <MarketMetric value={`${total}`} label="resultados" />
-            <MarketMetric value="ARS" label="moneda" divider />
-            <MarketMetric value="TCG" label="foco" divider />
-          </Card>
-        </div>
+      <header className="flex flex-col gap-1">
+        <p className="t-eyebrow">Marketplace</p>
+        <h1 className="t-display text-[1.875rem] leading-tight text-[var(--ink)] md:text-[2.5rem]">
+          Mercado de cartas
+        </h1>
+        <p className="t-sm t-mute">
+          {total} {total === 1 ? "publicación" : "publicaciones"} · singles en pesos
+        </p>
       </header>
 
-      <section className="sticky top-14 z-10 -mx-3 border-b border-[var(--hairline)] bg-[var(--bg-0)]/95 px-3 py-3 backdrop-blur md:top-16 md:mx-0 md:rounded-[var(--r-md)] md:border md:bg-[var(--bg-1)] md:p-4">
-        <form method="GET" className="space-y-3">
+      <section className="sticky top-14 z-10 -mx-3 bg-[var(--bg-0)]/95 px-3 py-3 backdrop-blur md:top-16 md:mx-0 md:rounded-[var(--r-md)] md:border md:border-[var(--hairline)] md:bg-[var(--bg-1)] md:p-3">
+        <form method="GET" className="flex items-center gap-2">
           <input type="hidden" name="tab" value={activeTab} />
-          <div className="grid gap-2 md:grid-cols-[1fr,auto]">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink-soft)]" />
-              <Input
-                name="q"
-                defaultValue={q}
-                placeholder="Buscar Charizard, Mew, Paradox Rift..."
-                className="pl-10"
-              />
-            </div>
-            <Button type="submit" size="md">
-              <Filter className="h-4 w-4" />
-              Aplicar
-            </Button>
+          {condition ? <input type="hidden" name="condition" value={condition} /> : null}
+          {delivery ? <input type="hidden" name="delivery" value={delivery} /> : null}
+          {min ? <input type="hidden" name="min" value={min} /> : null}
+          {max ? <input type="hidden" name="max" value={max} /> : null}
+          {sort && sort !== "recent" ? <input type="hidden" name="sort" value={sort} /> : null}
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink-soft)]" />
+            <input
+              name="q"
+              defaultValue={q}
+              type="search"
+              inputMode="search"
+              placeholder="Buscar Charizard, Mew, Paradox Rift…"
+              className="h-11 w-full rounded-full border border-[var(--glass-border)] bg-[var(--glass-fill)] pl-10 pr-10 t-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-soft)] focus:border-[var(--accent-hi)] focus:bg-[var(--glass-fill-hi)] focus:ring-2 focus:ring-[rgba(var(--accent-glow),0.3)]"
+              aria-label="Buscar publicaciones"
+            />
+            {q ? (
+              <Link
+                href={getParamHref({ q: undefined }, currentParams)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-[var(--ink-soft)] hover:bg-white/10 hover:text-[var(--ink)]"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="h-4 w-4" />
+              </Link>
+            ) : null}
           </div>
-
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr,1fr,1fr,1fr]">
-            <select name="condition" defaultValue={condition} className={selectClass}>
-              <option value="">Todas las condiciones</option>
-              {CONDITIONS.map((item) => (
-                <option key={item} value={item}>
-                  {formatConditionEs(item)}
-                </option>
-              ))}
-            </select>
-            <select name="delivery" defaultValue={delivery} className={selectClass}>
-              <option value="">Envío o retiro</option>
-              <option value="shipping">Con envío</option>
-              <option value="pickup">Con retiro</option>
-            </select>
-            <div className="grid grid-cols-2 gap-2">
-              <Input name="min" defaultValue={min} type="number" min={1} placeholder="Mín $" />
-              <Input name="max" defaultValue={max} type="number" min={1} placeholder="Máx $" />
-            </div>
-            <select name="sort" defaultValue={sort} className={selectClass}>
-              <option value="recent">Más recientes</option>
-              <option value="price_asc">Menor precio</option>
-              <option value="price_desc">Mayor precio</option>
-            </select>
-          </div>
+          <MarketFiltersSheet
+            initial={{ q, tab: activeTab, condition, delivery, min, max, sort: (sort === "price_asc" || sort === "price_desc" ? sort : "recent") }}
+            activeCount={activeFilters.length}
+          />
         </form>
 
-        <div className="mt-3 flex gap-1.5 overflow-x-auto scroll-x">
-          {TABS.map((t) => (
-            <Link
-              key={t.key}
-              href={getParamHref({ tab: t.key }, currentParams)}
-              className={cn("chip shrink-0", activeTab === t.key && "chip-active")}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </div>
+        {(activeFilters.length > 0 || q) && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            {q ? (
+              <Link
+                href={getParamHref({ q: undefined }, currentParams)}
+                className="inline-flex items-center gap-1 rounded-full bg-[var(--accent)]/15 px-2.5 py-1 t-xs font-semibold text-[var(--accent-hi)] hover:bg-[var(--accent)]/25"
+              >
+                <span>“{q}”</span>
+                <X className="h-3 w-3" />
+              </Link>
+            ) : null}
+            {activeFilters.map((f) => (
+              <Link
+                key={f.label}
+                href={f.removeHref}
+                className="inline-flex items-center gap-1 rounded-full border border-[var(--glass-border)] bg-[var(--glass-fill)] px-2.5 py-1 t-xs font-semibold text-[var(--ink)] hover:border-[var(--accent-hi)]"
+              >
+                <span>{f.label}</span>
+                <X className="h-3 w-3" />
+              </Link>
+            ))}
+            {(activeFilters.length > 0 || q) && (
+              <Link
+                href="/market"
+                className="ml-1 inline-flex items-center rounded-full px-2 py-1 t-xs font-semibold t-mute hover:text-[var(--ink)]"
+              >
+                Limpiar todo
+              </Link>
+            )}
+          </div>
+        )}
       </section>
-
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <p className="t-xs font-semibold t-mute">
-          {total} {total === 1 ? "publicación" : "publicaciones"}
-          {query && ` para "${q}"`}
-          {condition && isCondition(condition) ? ` · ${formatConditionEs(condition)}` : ""}
-          {delivery === "shipping" ? " · con envío" : delivery === "pickup" ? " · con retiro" : ""}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {["Venta directa", "Trades", "Mercado Pago"].map((label) => (
-            <span key={label} className="chip">
-              {label}
-            </span>
-          ))}
-        </div>
-      </div>
 
       {total === 0 ? (
         <EmptyState
@@ -311,11 +316,3 @@ export default async function MarketPage({
   );
 }
 
-function MarketMetric({ value, label, divider }: { value: string; label: string; divider?: boolean }) {
-  return (
-    <div className={cn("px-3 py-3", divider && "border-l border-[var(--hairline)]")}>
-      <p className="t-h3 t-mono font-extrabold">{value}</p>
-      <p className="t-eyebrow">{label}</p>
-    </div>
-  );
-}
