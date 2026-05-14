@@ -5,12 +5,26 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { AlertCircle, ArrowRight, CheckCircle, Eye, EyeOff } from "@/components/ui/icon";
+
+const MIN_PASSWORD = 8;
+
+function passwordStrength(value: string): { label: string; level: 0 | 1 | 2 | 3 } {
+  let score = 0;
+  if (value.length >= MIN_PASSWORD) score++;
+  if (/[A-Z]/.test(value) && /[a-z]/.test(value)) score++;
+  if (/\d/.test(value) || /[^A-Za-z0-9]/.test(value)) score++;
+  const labels = ["Muy débil", "Débil", "Aceptable", "Sólida"] as const;
+  return { label: labels[score], level: score as 0 | 1 | 2 | 3 };
+}
 
 export function RegisterForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,22 +91,52 @@ export function RegisterForm() {
         />
       </FormField>
       <FormField label="Contraseña" htmlFor="password" required hint="Mínimo 8 caracteres.">
-        <Input
-          id="password"
-          type="password"
-          name="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          placeholder="••••••••"
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            name="password"
+            autoComplete="new-password"
+            required
+            minLength={MIN_PASSWORD}
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="pr-11"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            className="absolute right-1 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-[var(--r-sm)] t-mute transition-colors hover:bg-white/5 hover:text-[var(--ink)]"
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+        {password.length > 0 && (() => {
+          const strength = passwordStrength(password);
+          const colors = ["bg-[var(--bad)]", "bg-[var(--bad)]", "bg-[var(--accent)]", "bg-[var(--ok)]"] as const;
+          return (
+            <div className="mt-2 flex items-center gap-2">
+              <div className="flex flex-1 gap-1">
+                {[0, 1, 2, 3].map((i) => (
+                  <span
+                    key={i}
+                    className={"h-1.5 flex-1 rounded-full " + (i < strength.level + 1 ? colors[strength.level] : "bg-white/10")}
+                  />
+                ))}
+              </div>
+              <span className="w-20 text-right t-xs font-semibold t-mute">{strength.label}</span>
+            </div>
+          );
+        })()}
       </FormField>
-      <label className="flex items-start gap-2 text-[0.875rem] text-[var(--color-ink-muted)]">
+      <label className="flex cursor-pointer items-start gap-3 rounded-[var(--r-sm)] border border-[var(--glass-border)] bg-white/[0.02] p-3 t-sm t-mute transition-colors hover:border-[var(--glass-border-hi)]">
         <input
           type="checkbox"
           required
           name="terms"
-          className="mt-1 h-4 w-4 accent-[var(--color-accent)]"
+          className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
         />
         <span>
           Soy mayor de 18 años y acepto los{" "}
@@ -100,7 +144,7 @@ export function RegisterForm() {
             href="/terms"
             target="_blank"
             rel="noreferrer"
-            className="text-[var(--color-accent-strong)] underline"
+            className="font-semibold text-[var(--accent-hi)] underline"
           >
             Términos y Condiciones
           </Link>
@@ -109,7 +153,7 @@ export function RegisterForm() {
             href="/privacy"
             target="_blank"
             rel="noreferrer"
-            className="text-[var(--color-accent-strong)] underline"
+            className="font-semibold text-[var(--accent-hi)] underline"
           >
             Política de Privacidad
           </Link>
@@ -117,21 +161,29 @@ export function RegisterForm() {
         </span>
       </label>
       {error && (
-        <p role="alert" className="text-[0.8125rem] text-[var(--color-danger)]">
-          {error}
-        </p>
+        <div role="alert" className="flex items-start gap-2 rounded-[var(--r-sm)] border border-[var(--bad)]/30 bg-[var(--color-danger-soft)] px-3 py-2 t-sm text-[var(--bad)]">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
       )}
       {success && (
-        <p role="status" className="text-[0.8125rem] text-[var(--color-success)]">
-          {success}
-        </p>
+        <div role="status" className="flex items-start gap-2 rounded-[var(--r-sm)] border border-[var(--ok)]/30 bg-[var(--color-success-soft)] px-3 py-2 t-sm text-[var(--ok)]">
+          <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{success}</span>
+        </div>
       )}
-      <Button type="submit" loading={loading} fullWidth size="lg">
+      <Button
+        type="submit"
+        loading={loading}
+        fullWidth
+        size="lg"
+        rightIcon={!loading ? <ArrowRight className="h-4 w-4" /> : undefined}
+      >
         Crear cuenta
       </Button>
-      <p className="text-center text-[0.8125rem] text-[var(--color-ink-muted)]">
+      <p className="text-center t-sm t-mute">
         ¿Ya tenés cuenta?{" "}
-        <Link href="/login" className="text-[var(--color-accent-strong)] hover:underline">
+        <Link href="/login" className="font-semibold text-[var(--accent-hi)] hover:underline">
           Iniciar sesión
         </Link>
       </p>
