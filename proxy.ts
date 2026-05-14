@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createClient, type Session } from "@supabase/supabase-js";
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/shared/auth-cookies";
+import { logger } from "@/lib/server/logger";
 
 const protectedPaths = ["/inventory", "/listings", "/transactions", "/disputes", "/alerts"];
 const authPaths = ["/login", "/register"];
@@ -114,7 +115,10 @@ export async function proxy(request: NextRequest) {
     // make downstream Server Components see the new tokens
     request.cookies.set(ACCESS_TOKEN_COOKIE, refresh.session.access_token);
     request.cookies.set(REFRESH_TOKEN_COOKIE, refresh.session.refresh_token);
+  } else if (refresh.kind === "failed") {
+    logger.warn("proxy.refresh_failed_transient", { path, requestId });
   } else if (refresh.kind === "invalid_grant") {
+    logger.info("proxy.refresh_invalid_grant", { path, requestId });
     // Refresh token is dead: drop the access cookie from this request too so
     // the protected-path redirect below fires correctly.
     request.cookies.delete(ACCESS_TOKEN_COOKIE);

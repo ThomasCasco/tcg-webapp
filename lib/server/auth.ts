@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import type { Session } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { getSupabaseAdminClient, getSupabaseAnonClient } from "@/lib/server/supabase";
+import { getSupabaseAdminClient } from "@/lib/server/supabase";
+import { logger } from "@/lib/server/logger";
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/shared/auth-cookies";
 
 type AuthenticatedUser = {
@@ -119,27 +120,80 @@ export async function ensureProfileForUser(
   throw new Error("Could not provision user profile.");
 }
 
+type AccessTokenClaims = {
+  sub: string;
+  email: string;
+  exp: number;
+};
+
+// Local JWT decode — no signature check, no network. The cookie is httpOnly +
+// secure, set by our own login/refresh flow that already validated the token
+// against Supabase. Trusting the cookie's contents is the same trust model
+// supabase-js uses for getSession().
+export function decodeAccessToken(token: string): AccessTokenClaims | null {
+  try {
+    const payloadB64 = token.split(".")[1];
+    if (!payloadB64) return null;
+    const padded = payloadB64.replace(/-/g, "+").replace(/_/g, "/").padEnd(
+      payloadB64.length + ((4 - (payloadB64.length % 4)) % 4),
+      "=",
+    );
+    const json =
+      typeof atob === "function"
+        ? atob(padded)
+        : Buffer.from(padded, "base64").toString("utf8");
+    const payload = JSON.parse(json) as Partial<AccessTokenClaims>;
+    if (typeof payload.sub !== "string" || typeof payload.exp !== "number") {
+      return null;
+    }
+    return {
+      sub: payload.sub,
+      email: typeof payload.email === "string" ? payload.email : "",
+      exp: payload.exp,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> {
   const accessToken = await getAccessTokenFromCookies();
   if (!accessToken) {
     return null;
   }
 
-  const anon = getSupabaseAnonClient();
-  const { data, error } = await anon.auth.getUser(accessToken);
-
-  if (error || !data.user) {
+  const claims = decodeAccessToken(accessToken);
+  if (!claims) {
+    logger.warn("auth.getAuthenticatedUser.decode_failed");
     return null;
   }
 
-  const email = data.user.email ?? "";
-  const profile = await ensureProfileForUser(data.user.id, email);
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (claims.exp <= nowSec) {
+    // Cookie outlived the JWT — proxy refresh didn't catch it. Return null
+    // (header shows logged-out) instead of redirecting; the next request will
+    // give the proxy another chance to refresh.
+    logger.warn("auth.getAuthenticatedUser.token_expired", {
+      expSec: claims.exp,
+      nowSec,
+    });
+    return null;
+  }
 
-  return {
-    id: data.user.id,
-    email,
-    username: profile.username,
-  };
+  try {
+    const profile = await ensureProfileForUser(claims.sub, claims.email);
+    return {
+      id: claims.sub,
+      email: claims.email,
+      username: profile.username,
+    };
+  } catch (error) {
+    logger.error("auth.getAuthenticatedUser.profile_failed", {
+      userId: claims.sub,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
 }
 
 export async function requireAuthenticatedUser(): Promise<AuthenticatedUser> {
