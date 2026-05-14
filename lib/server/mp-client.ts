@@ -160,7 +160,10 @@ export async function getMpPayment(mpPaymentId: string): Promise<MpPaymentInfo> 
     transaction_amount: number;
     currency_id: string;
     external_reference: string | null;
-    collector_id: number;
+    // MP marketplace responses sometimes return the collector as a nested
+    // object instead of the flat `collector_id` field. Accept both shapes.
+    collector_id?: number | string | null;
+    collector?: { id?: number | string | null } | null;
     marketplace_fee: number | null;
     preference_id?: string | null;
   };
@@ -177,10 +180,22 @@ export async function getMpPayment(mpPaymentId: string): Promise<MpPaymentInfo> 
     transactionAmount: raw.transaction_amount,
     currencyId: raw.currency_id,
     externalReference: raw.external_reference,
-    collectorId: raw.collector_id,
+    collectorId: pickCollectorId(raw.collector_id, raw.collector?.id),
     marketplaceFee: raw.marketplace_fee ?? 0,
     preferenceId: raw.preference_id ?? null,
   };
+}
+
+function pickCollectorId(
+  flat: number | string | null | undefined,
+  nested: number | string | null | undefined,
+): number {
+  const candidate = flat ?? nested;
+  if (candidate === null || candidate === undefined || candidate === "") {
+    return Number.NaN;
+  }
+  const n = typeof candidate === "number" ? candidate : Number(candidate);
+  return Number.isFinite(n) ? n : Number.NaN;
 }
 
 /**
@@ -204,7 +219,8 @@ export async function searchMpPaymentByExternalReference(
     transaction_amount: number;
     currency_id: string;
     external_reference: string | null;
-    collector_id: number;
+    collector_id?: number | string | null;
+    collector?: { id?: number | string | null } | null;
     marketplace_fee: number | null;
     preference_id?: string | null;
     date_created?: string;
@@ -242,7 +258,7 @@ export async function searchMpPaymentByExternalReference(
     transactionAmount: pick.transaction_amount,
     currencyId: pick.currency_id,
     externalReference: pick.external_reference,
-    collectorId: pick.collector_id,
+    collectorId: pickCollectorId(pick.collector_id, pick.collector?.id),
     marketplaceFee: pick.marketplace_fee ?? 0,
     preferenceId: pick.preference_id ?? null,
   };
