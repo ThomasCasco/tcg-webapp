@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useState } from "react";
+import { FormEvent, InvalidEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,25 @@ export function LoginForm() {
     }
   }
 
+  function onInvalid(event: InvalidEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    if (input.validity.valueMissing) {
+      input.setCustomValidity(
+        input.name === "email" ? "Ingresá tu email." : "Ingresá tu contraseña.",
+      );
+    } else if (input.validity.typeMismatch) {
+      input.setCustomValidity("Ingresá un email válido.");
+    } else if (input.validity.tooShort) {
+      input.setCustomValidity("La contraseña debe tener al menos 8 caracteres.");
+    } else {
+      input.setCustomValidity("Revisá este campo.");
+    }
+  }
+
+  function clearValidity(event: FormEvent<HTMLInputElement>) {
+    event.currentTarget.setCustomValidity("");
+  }
+
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <FormField label="Email" htmlFor="email" required>
@@ -50,6 +69,8 @@ export function LoginForm() {
           name="email"
           autoComplete="email"
           required
+          onInvalid={onInvalid}
+          onInput={clearValidity}
           placeholder="tu@email.com"
         />
       </FormField>
@@ -62,6 +83,8 @@ export function LoginForm() {
             autoComplete="current-password"
             required
             minLength={8}
+            onInvalid={onInvalid}
+            onInput={clearValidity}
             placeholder="••••••••"
             className="pr-11"
           />

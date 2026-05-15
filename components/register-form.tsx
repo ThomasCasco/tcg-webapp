@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useState } from "react";
+import { FormEvent, InvalidEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,28 @@ export function RegisterForm() {
     }
   }
 
+  function onInvalid(event: InvalidEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    if (input.validity.valueMissing) {
+      if (input.name === "username") input.setCustomValidity("Ingresá tu nombre público.");
+      else if (input.name === "email") input.setCustomValidity("Ingresá tu email.");
+      else if (input.name === "password") input.setCustomValidity("Ingresá una contraseña.");
+      else if (input.name === "terms") input.setCustomValidity("Tenés que aceptar los términos para continuar.");
+      else input.setCustomValidity("Completá este campo.");
+    } else if (input.validity.typeMismatch) {
+      input.setCustomValidity("Ingresá un email válido.");
+    } else if (input.validity.tooShort) {
+      const label = input.name === "username" ? "El nombre público" : "La contraseña";
+      input.setCustomValidity(`${label} debe tener al menos ${input.minLength} caracteres.`);
+    } else {
+      input.setCustomValidity("Revisá este campo.");
+    }
+  }
+
+  function clearValidity(event: FormEvent<HTMLInputElement>) {
+    event.currentTarget.setCustomValidity("");
+  }
+
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <FormField
@@ -77,6 +99,8 @@ export function RegisterForm() {
           required
           minLength={3}
           maxLength={24}
+          onInvalid={onInvalid}
+          onInput={clearValidity}
           placeholder="BinderBoss"
         />
       </FormField>
@@ -87,6 +111,8 @@ export function RegisterForm() {
           name="email"
           autoComplete="email"
           required
+          onInvalid={onInvalid}
+          onInput={clearValidity}
           placeholder="tu@email.com"
         />
       </FormField>
@@ -99,9 +125,13 @@ export function RegisterForm() {
             autoComplete="new-password"
             required
             minLength={MIN_PASSWORD}
+            onInvalid={onInvalid}
+            onInput={(event) => {
+              clearValidity(event);
+              setPassword(event.currentTarget.value);
+            }}
             placeholder="••••••••"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
             className="pr-11"
           />
           <button
@@ -136,6 +166,8 @@ export function RegisterForm() {
           type="checkbox"
           required
           name="terms"
+          onInvalid={onInvalid}
+          onInput={clearValidity}
           className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
         />
         <span>

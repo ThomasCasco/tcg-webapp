@@ -42,7 +42,7 @@ export default async function ListingsPage() {
           Tus ofertas visibles en el{" "}
           <Link href="/market" className="underline">Mercado</Link>. Para publicar
           una carta a precio fijo, cargala en{" "}
-          <Link href="/inventory" className="underline">Inventario</Link> y tocá
+          <Link href="/inventory" className="underline">Inventario</Link>{" "}y tocá
           &quot;Publicar en Mercado&quot;. Si preferís subastarla, andá a{" "}
           <Link href="/my-auctions" className="underline">Mis subastas</Link>.
         </p>
@@ -51,7 +51,7 @@ export default async function ListingsPage() {
       {!isSupabaseConfigured() ? (
         <Card as="article" padding="md" className="border-amber-300 bg-amber-50">
           <p className="text-sm text-amber-900">
-            Configura Supabase para publicar en produccion.
+            Configurá Supabase para publicar en producción.
           </p>
         </Card>
       ) : null}
@@ -76,7 +76,7 @@ export default async function ListingsPage() {
             title="Sin publicaciones activas"
             description={
               <>
-                Publica una carta desde{" "}
+                Publicá una carta desde{" "}
                 <Link href="/inventory" className="underline">Inventario</Link> o
                 marca cartas disponibles para trade.
               </>

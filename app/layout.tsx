@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sora, Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/toast";
+import { getAppUrl } from "@/lib/shared/app-url";
 import "./globals.css";
 
 const displayFont = Sora({
@@ -21,6 +22,7 @@ const monoFont = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getAppUrl()),
   title: {
     default: "TCG Marketplace AR",
     template: "%s | TCG Marketplace AR",

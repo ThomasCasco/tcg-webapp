@@ -51,8 +51,8 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn, sellerRep
           </div>
         )}
 
-        <div className="absolute left-2 top-2 flex flex-col gap-1">
-          <Chip size="sm" className="backdrop-blur">
+        <div className="absolute left-2 right-2 top-2 flex flex-col items-start gap-1">
+          <Chip size="sm" className="max-w-full whitespace-normal text-left leading-tight backdrop-blur">
             {formatConditionEs(listing.condition)}
           </Chip>
           {listing.sellerMpConnected ? (
