@@ -7,7 +7,6 @@ import { getAuthenticatedUser } from "@/lib/server/auth";
 import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Tag } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 

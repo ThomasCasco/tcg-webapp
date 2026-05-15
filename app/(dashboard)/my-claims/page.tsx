@@ -7,7 +7,6 @@ import { ClaimCreateForm } from "@/components/claim-create-form";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Layers } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 

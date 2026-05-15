@@ -2355,13 +2355,19 @@ export async function releasePendingCheckoutReservation(input: {
   assertSupabaseReady();
   const client = getSupabaseAdminClient();
 
-  await client
+  const { error: deleteError } = await client
     .from(PAYMENTS_TABLE)
     .delete()
     .eq("transaction_id", input.transactionId)
     .eq("listing_id", input.listingId)
     .eq("provider_status", "pending")
     .eq("verification_status", "pending_review");
+
+  if (deleteError) {
+    throw new Error(
+      `releasePendingCheckoutReservation: delete payment_event failed: ${deleteError.message}`,
+    );
+  }
 
   const { error } = await client
     .from(LISTINGS_TABLE)

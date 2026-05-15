@@ -26,6 +26,13 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "images.pokemontcg.io" },
+      { protocol: "https", hostname: "assets.tcgdex.net" },
+      { protocol: "https", hostname: "*.supabase.co" },
+    ],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

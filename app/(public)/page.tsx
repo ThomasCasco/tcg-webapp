@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -90,12 +91,13 @@ export default async function HomePage() {
             </div>
           ) : (
             <div className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/img/hero/banner.png"
                 alt="TCG.ar - cartas Pokémon: Charizard 1ra edición, Mew ex, Mega Charizard X"
-                className="w-full h-auto rounded-[var(--r-md)]"
-                loading="eager"
+                width={1200}
+                height={675}
+                priority
+                className="h-auto w-full rounded-[var(--r-md)]"
               />
             </div>
           )}

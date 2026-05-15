@@ -8,7 +8,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Info, Package } from "@/components/ui/icon";
+import { Info } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 
