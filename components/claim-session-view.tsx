@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { ClaimSession, ClaimSessionCard } from "@/lib/domain/types";
@@ -150,9 +151,11 @@ export function ClaimSessionView({ session: initialSession, isSeller, viewerUser
           <p className="text-overline text-[var(--color-ink-subtle)]">Carta actual</p>
           <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-center">
             {current.imageUrl && (
-              <img
+              <Image
                 src={current.imageUrl}
                 alt={current.cardName}
+                width={160}
+                height={224}
                 className="h-40 w-auto rounded-[var(--radius-card)] object-contain"
               />
             )}
@@ -237,7 +240,13 @@ export function ClaimSessionView({ session: initialSession, isSeller, viewerUser
                 }`}
               >
                 {card.imageUrl && (
-                  <img src={card.imageUrl} alt={card.cardName} className="h-8 w-auto rounded object-contain" />
+                  <Image
+                    src={card.imageUrl}
+                    alt={card.cardName}
+                    width={32}
+                    height={45}
+                    className="h-8 w-auto rounded object-contain"
+                  />
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{card.cardName}</p>

@@ -47,10 +47,6 @@ export default async function TransactionDetailPage({
   if (!tx) notFound();
 
   const isBuyer = tx.buyerId === user.id;
-  const priceArs = 0; // computed below via listing price; payment_event stores fee but not price
-  // We do have priceArs via tx.listingCardName context — but repository's
-  // PaymentEventWithListing does not include it. Pull from listing separately
-  // to keep the order page self-contained.
   const { getSupabaseAdminClient } = await import("@/lib/server/supabase");
   const sb = getSupabaseAdminClient();
   let listingPriceArs = 0;

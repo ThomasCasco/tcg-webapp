@@ -5,7 +5,7 @@ import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ArrowLeftRight, Search } from "@/components/ui/icon";
+import { Search } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 import type { InventoryEntry } from "@/lib/domain/types";
@@ -178,7 +179,13 @@ export function ClaimCreateForm({ inventory, defaultOpen = false }: Props) {
               {cards.map((card, i) => (
                 <li key={i} className="flex items-center gap-3 rounded-[var(--radius-input)] border border-[var(--color-border-default)] p-2">
                   {card.imageUrl && (
-                    <img src={card.imageUrl} alt={card.cardName} className="h-10 w-7 rounded object-cover" />
+                    <Image
+                      src={card.imageUrl}
+                      alt={card.cardName}
+                      width={28}
+                      height={40}
+                      className="h-10 w-7 rounded object-cover"
+                    />
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-body-sm font-semibold">{card.cardName}</p>

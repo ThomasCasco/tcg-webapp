@@ -5,7 +5,6 @@ import { getAuthenticatedUser } from "@/lib/server/auth";
 import { listNotificationsForUser } from "@/lib/server/repository";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Bell } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 
