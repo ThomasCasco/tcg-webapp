@@ -28,7 +28,7 @@ import { log } from "@/lib/server/logger";
 const MONEY_TOLERANCE_ARS = 0.01;
 
 export type ReconcileOutcome =
-  | { kind: "verified"; mpPaymentId: string }
+  | { kind: "verified"; mpPaymentId: string; wasAlreadyVerified: boolean }
   | { kind: "still_pending"; reason: string }
   | { kind: "not_found"; reason: string }
   | { kind: "blocked"; reason: string };
@@ -48,6 +48,7 @@ export async function reconcileMpTransaction(opts: {
     return {
       kind: "verified",
       mpPaymentId: paymentEvent.providerPaymentId ?? "",
+      wasAlreadyVerified: true,
     };
   }
 
@@ -122,7 +123,7 @@ export async function reconcileMpTransaction(opts: {
     mpPaymentId: mpPaymentIdStr,
   });
 
-  return { kind: "verified", mpPaymentId: mpPaymentIdStr };
+  return { kind: "verified", mpPaymentId: mpPaymentIdStr, wasAlreadyVerified: false };
 }
 
 async function runHardChecks(

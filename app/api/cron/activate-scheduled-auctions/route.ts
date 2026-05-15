@@ -1,5 +1,6 @@
 import { activateScheduledAuctions, closeAuction, listAuctions } from "@/lib/server/repository";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
+import { log } from "@/lib/server/logger";
 
 /**
  * Pasar subastas en `scheduled` a `active` cuando ya llegó su starts_at.
@@ -31,18 +32,26 @@ export async function GET(request: Request) {
     const now = Date.now();
     const active = await listAuctions({ statuses: ["active"] });
     let closed = 0;
+    const closeFailures: Array<{ auctionId: string; error: string }> = [];
     for (const auction of active) {
       if (new Date(auction.endsAt).getTime() <= now && auction.sellerId) {
         try {
           await closeAuction({ auctionId: auction.id, actorUserId: auction.sellerId });
           closed += 1;
-        } catch {
-          // continuar con el resto
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          log.error("cron.activate-scheduled-auctions.close_failed", {
+            auctionId: auction.id,
+            sellerId: auction.sellerId,
+            endsAt: auction.endsAt,
+            error: message,
+          });
+          closeFailures.push({ auctionId: auction.id, error: message });
         }
       }
     }
 
-    return Response.json({ ok: true, activated, closed });
+    return Response.json({ ok: true, activated, closed, closeFailures });
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : "Error al activar subastas." },

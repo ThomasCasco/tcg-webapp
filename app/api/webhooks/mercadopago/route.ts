@@ -202,11 +202,17 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: true });
   }
 
-  // verified — fire-and-forget emails
+  // verified — fire-and-forget emails (only on first verification; webhook
+  // retries with already-verified payments must not re-notify).
   log.info("MP webhook: transaction verified", {
     transactionId: externalRef,
     mpPaymentId: outcome.mpPaymentId,
+    wasAlreadyVerified: outcome.wasAlreadyVerified,
   });
+
+  if (outcome.wasAlreadyVerified) {
+    return Response.json({ ok: true });
+  }
 
   const paymentEvent = await getPaymentEventByExternalRef(externalRef);
   if (paymentEvent) {
