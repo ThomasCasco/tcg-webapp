@@ -1,10 +1,18 @@
 import type { NextConfig } from "next";
 
+const scriptSources = [
+  "'self'",
+  "'unsafe-inline'",
+  ...(process.env.NODE_ENV === "development" ? ["'unsafe-eval'"] : []),
+  "https://www.mercadopago.com",
+  "https://sdk.mercadopago.com",
+];
+
 const cspDirectives = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://www.mercadopago.com https://sdk.mercadopago.com",
+  `script-src ${scriptSources.join(" ")}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.supabase.co https://images.pokemontcg.io https://assets.tcgdex.net https://*.mercadopago.com",
+  "img-src 'self' data: blob: https://*.supabase.co https://images.pokemontcg.io https://assets.tcgdex.net https://*.mercadopago.com https://raw.githubusercontent.com",
   "connect-src 'self' https://*.supabase.co https://api.mercadopago.com https://*.ingest.sentry.io",
   "frame-src https://www.mercadopago.com.ar https://www.mercadopago.com",
   "font-src 'self' https://fonts.gstatic.com data:",
@@ -31,6 +39,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.pokemontcg.io" },
       { protocol: "https", hostname: "assets.tcgdex.net" },
       { protocol: "https", hostname: "*.supabase.co" },
+      { protocol: "https", hostname: "raw.githubusercontent.com" },
     ],
   },
   async headers() {

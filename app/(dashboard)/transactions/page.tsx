@@ -225,8 +225,8 @@ export default async function TransactionsPage({
           Tus compras y ventas
         </h1>
         <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
-          Aca ves el estado de cada operacion. El pago se confirma por Mercado Pago
-          cuando corresponde; despues se coordina envio, retiro o recepcion.
+          Acá ves el estado de cada operación. El pago se confirma por Mercado Pago
+          cuando corresponde; después se coordina envío, retiro o recepción.
         </p>
       </Card>
 
@@ -269,11 +269,11 @@ export default async function TransactionsPage({
             <Input
               name="q"
               defaultValue={q}
-              placeholder="Buscar carta, usuario, operacion..."
+              placeholder="Buscar carta, usuario, operación..."
               className="pl-9"
             />
           </div>
-          <Select name="role" defaultValue={role} aria-label="Tipo de operacion">
+          <Select name="role" defaultValue={role} aria-label="Tipo de operación">
             <option value="all">Todas</option>
             <option value="buyer">Compras</option>
             <option value="seller">Ventas</option>

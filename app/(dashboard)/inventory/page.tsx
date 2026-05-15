@@ -49,7 +49,7 @@ export default async function InventoryPage() {
         <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
           Cargá acá las cartas que tenés físicamente. Es tu stock privado.
           Cuando estés listo, poné un precio y tocá <strong>Publicar en Mercado</strong> para
-          que otros usuarios puedan comprarla. Tambien podes marcarlas como disponibles
+          que otros usuarios puedan comprarla. También podés marcarlas como disponibles
           para trade y sumar notas de intercambio.
         </p>
       </Card>
