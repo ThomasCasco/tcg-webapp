@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { ImageUploader } from "@/components/ui/image-uploader";
+import { CardPhotoUploader } from "@/components/ui/card-photo-uploader";
 import { ArrowLeftRight, CheckCircle, Plus, Star } from "@/components/ui/icon";
 import { cn } from "@/lib/ui/cn";
 
@@ -35,7 +35,8 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
   const [picked, setPicked] = useState<PickedCard | null>(null);
   const [customName, setCustomName] = useState("");
   const [customSet, setCustomSet] = useState("");
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [frontPhotoUrl, setFrontPhotoUrl] = useState<string | null>(null);
+  const [backPhotoUrl, setBackPhotoUrl] = useState<string | null>(null);
   const [availableForTrade, setAvailableForTrade] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -59,7 +60,8 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
       cardName,
       setName: setName || undefined,
       catalogCardId: picked?.id,
-      imageUrl: photoUrl ?? picked?.imageSmall ?? undefined,
+      imageUrl: frontPhotoUrl ?? picked?.imageSmall ?? undefined,
+      backImageUrl: backPhotoUrl ?? undefined,
       condition: String(form.get("condition") ?? "near_mint"),
       quantity: Number(form.get("quantity") ?? 1),
       askingPriceArs: Number(form.get("askingPriceArs") ?? 0) || undefined,
@@ -84,7 +86,8 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
       setPicked(null);
       setCustomName("");
       setCustomSet("");
-      setPhotoUrl(null);
+      setFrontPhotoUrl(null);
+      setBackPhotoUrl(null);
       setAvailableForTrade(false);
       router.refresh();
     } catch (submitError) {
@@ -98,7 +101,7 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
 
   const displayName = picked?.name ?? (customName.trim() || null);
   const displaySet = picked?.setName ?? (customSet.trim() || null);
-  const previewImage = photoUrl ?? picked?.imageSmall ?? null;
+  const previewImage = frontPhotoUrl ?? picked?.imageSmall ?? null;
   const canSubmit = Boolean(displayName);
 
   return (
@@ -124,6 +127,7 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
 
         <form onSubmit={onSubmit} className="grid gap-0 md:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-6 p-5 md:p-6">
+            {/* Step 1: Card search */}
             <section className="space-y-3">
               <StepHeader index={1} title="Buscá tu carta" subtitle="Tipeá un nombre y elegí del catálogo." />
               <CardPicker onPick={(p) => setPicked(p)} />
@@ -165,17 +169,21 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
 
             <div className="h-px bg-[var(--hairline)]" />
 
-            <section className="space-y-3">
-              <StepHeader index={2} title="Foto y detalles" subtitle="Sumá una foto real y cargá la info técnica." />
+            {/* Step 2: Photos + details */}
+            <section className="space-y-4">
+              <StepHeader
+                index={2}
+                title="Fotos y detalles"
+                subtitle="Subí frente y reverso para generar confianza."
+              />
+
               <div className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)]">
-                <div className="flex flex-col items-center gap-2 sm:items-start">
-                  <ImageUploader
-                    value={photoUrl ?? picked?.imageSmall ?? null}
-                    onChange={setPhotoUrl}
-                    variant="card"
-                    emptyLabel="Subir foto"
-                  />
-                </div>
+                <CardPhotoUploader
+                  frontUrl={frontPhotoUrl ?? picked?.imageSmall ?? null}
+                  backUrl={backPhotoUrl}
+                  onFrontChange={setFrontPhotoUrl}
+                  onBackChange={setBackPhotoUrl}
+                />
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <FormField label="Condición" htmlFor="condition">
@@ -218,6 +226,7 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
 
             <div className="h-px bg-[var(--hairline)]" />
 
+            {/* Step 3: Trade */}
             <section className="space-y-3">
               <StepHeader index={3} title="Disponibilidad" subtitle="Definí si la querés tradear además de venderla." />
               <TradeToggle active={availableForTrade} onChange={setAvailableForTrade} />
@@ -268,10 +277,11 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
             </div>
           </div>
 
+          {/* Preview sidebar */}
           <aside className="hidden border-l border-[var(--hairline)] bg-white/[0.02] p-5 md:block md:p-6">
             <p className="t-eyebrow">Vista previa</p>
             <div className="glass mt-3 overflow-hidden">
-              <div className="aspect-[3/4] w-full overflow-hidden bg-[var(--bg-2)]">
+              <div className="relative aspect-[3/4] w-full overflow-hidden bg-[var(--bg-2)]">
                 {previewImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -287,6 +297,12 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
                     </div>
                   </div>
                 )}
+                {backPhotoUrl && (
+                  <div className="absolute bottom-2 right-2 h-12 w-9 overflow-hidden rounded border-2 border-white/20 shadow-lg">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={backPhotoUrl} alt="Reverso" className="h-full w-full object-cover" />
+                  </div>
+                )}
               </div>
               <div className="space-y-1 p-3">
                 <p className="line-clamp-1 t-sm font-bold text-[var(--ink)]">
@@ -295,17 +311,28 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
                 {displaySet && (
                   <p className="line-clamp-1 t-xs t-mute">{displaySet}</p>
                 )}
-                {availableForTrade && (
-                  <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 t-xs font-semibold text-[var(--accent-hi)]">
-                    <ArrowLeftRight className="h-3 w-3" />
-                    Disponible para trade
-                  </span>
-                )}
+                <div className="flex flex-wrap gap-1 pt-0.5">
+                  {frontPhotoUrl && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--glass-fill-hi)] px-2 py-0.5 t-xs font-medium text-[var(--ok)]">
+                      ✓ Frente
+                    </span>
+                  )}
+                  {backPhotoUrl && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--glass-fill-hi)] px-2 py-0.5 t-xs font-medium text-[var(--ok)]">
+                      ✓ Reverso
+                    </span>
+                  )}
+                  {availableForTrade && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 t-xs font-semibold text-[var(--accent-hi)]">
+                      <ArrowLeftRight className="h-3 w-3" />
+                      Trade
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <p className="mt-4 t-xs t-soft">
-              La foto que subas pisa la del catálogo. Mostrá la carta real para
-              generar confianza.
+              Las fotos reales generan más confianza. Subí frente y reverso para destacarte.
             </p>
           </aside>
         </form>

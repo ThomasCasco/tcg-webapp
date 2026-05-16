@@ -1,9 +1,7 @@
 "use client";
 /**
  * ImageUploader — file picker with preview that uploads to /api/upload/card-image.
- *
- * Stateful: holds the current image URL internally and notifies the parent via
- * `onChange(url | null)`. Parent can also seed an initial value via `value`.
+ * Supports drag-and-drop on the card variant.
  */
 
 import { useRef, useState } from "react";
@@ -35,6 +33,7 @@ export function ImageUploader({
   const [url, setUrl] = useState<string | null>(value ?? null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function setAndNotify(next: string | null) {
@@ -73,8 +72,19 @@ export function ImageUploader({
   function handlePick(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (file) void upload(file);
-    // Reset value so the same file can be picked again later
     event.target.value = "";
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) void upload(file);
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(true);
   }
 
   function clear() {
@@ -82,9 +92,9 @@ export function ImageUploader({
     if (fileRef.current) fileRef.current.value = "";
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
   // Compact variant (small, horizontal — for inline editing)
-  // ──────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
   if (variant === "compact") {
     return (
       <div className={cn("flex items-center gap-3", className)}>
@@ -142,17 +152,21 @@ export function ImageUploader({
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Card variant (large drop zone with preview)
-  // ──────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
+  // Card variant (large drop zone with preview + drag-and-drop)
+  // ────────────────────────────────────────────────────────────────────────────
   return (
     <div className={cn("space-y-2", className)}>
       {url ? (
-        <div className="relative aspect-[3/4] w-full max-w-[180px] overflow-hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass-fill)]">
+        <div className="group relative aspect-[3/4] w-full max-w-[180px] overflow-hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass-fill)] shadow-md">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt="Vista previa" className="h-full w-full object-cover" />
+          <img
+            src={url}
+            alt="Vista previa"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
           {uploading && (
-            <div className="absolute inset-0 grid place-items-center bg-black/40">
+            <div className="absolute inset-0 grid place-items-center bg-black/50 backdrop-blur-sm">
               <Loader2 className="h-6 w-6 animate-spin text-white" />
             </div>
           )}
@@ -161,7 +175,7 @@ export function ImageUploader({
             onClick={clear}
             disabled={uploading}
             aria-label="Quitar foto"
-            className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80 disabled:opacity-60"
+            className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100 disabled:opacity-60"
           >
             <X className="h-4 w-4" />
           </button>
@@ -169,7 +183,7 @@ export function ImageUploader({
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="absolute inset-x-1.5 bottom-1.5 inline-flex h-8 items-center justify-center gap-1.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hi)] text-[0.75rem] font-semibold text-white disabled:opacity-60"
+            className="absolute inset-x-1.5 bottom-1.5 inline-flex h-8 items-center justify-center gap-1.5 rounded-full bg-[var(--accent)]/90 backdrop-blur-sm hover:bg-[var(--accent-hi)] text-[0.75rem] font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-60"
           >
             <ImagePlus className="h-3.5 w-3.5" />
             Cambiar
@@ -180,24 +194,40 @@ export function ImageUploader({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="flex aspect-[3/4] w-full max-w-[180px] flex-col items-center justify-center gap-2 rounded-[var(--r-md)] border-2 border-dashed border-[var(--glass-border)] bg-[var(--glass-fill)] p-4 text-center transition-colors hover:border-[var(--accent-hi)] hover:bg-[rgba(var(--accent-glow),0.15)] disabled:opacity-60"
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={() => setDragOver(false)}
+          className={cn(
+            "flex aspect-[3/4] w-full max-w-[180px] flex-col items-center justify-center gap-3 rounded-[var(--r-md)] border-2 border-dashed p-4 text-center transition-all",
+            dragOver
+              ? "border-[var(--accent)] bg-[rgba(var(--accent-glow),0.2)] scale-[1.02]"
+              : "border-[var(--glass-border)] bg-[var(--glass-fill)] hover:border-[var(--accent-hi)] hover:bg-[rgba(var(--accent-glow),0.1)]",
+            "disabled:opacity-60",
+          )}
         >
           {uploading ? (
-            <Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" />
+            <Loader2 className="h-7 w-7 animate-spin text-[var(--accent)]" />
           ) : (
-            <ImagePlus className="h-6 w-6 text-[var(--color-ink-muted)]" />
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--glass-fill-hi)]">
+              <ImagePlus className="h-5 w-5 text-[var(--ink-mute)]" />
+            </div>
           )}
-          <p className="text-[0.8125rem] font-semibold text-[var(--color-ink)]">
-            {emptyLabel}
-          </p>
-          <p className="text-caption text-[var(--color-ink-muted)]">
-            JPG, PNG o WebP · máx {maxMb} MB
+          <div>
+            <p className="text-[0.8125rem] font-semibold text-[var(--ink)]">
+              {dragOver ? "Soltar aquí" : emptyLabel}
+            </p>
+            <p className="mt-0.5 text-[0.6875rem] text-[var(--ink-soft)]">
+              {dragOver ? "Suelta la imagen" : "Arrastrá o hacé clic"}
+            </p>
+          </div>
+          <p className="text-[0.625rem] text-[var(--ink-soft)]">
+            JPG · PNG · WebP · máx {maxMb} MB
           </p>
         </button>
       )}
 
       {error && (
-        <p role="alert" className="text-caption text-[var(--color-danger)]">
+        <p role="alert" className="text-[0.6875rem] text-[var(--bad)]">
           {error}
         </p>
       )}

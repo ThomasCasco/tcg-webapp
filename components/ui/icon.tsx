@@ -55,6 +55,7 @@ export {
   ListChecks,
   Sparkles,
   Flame,
+  RotateCcw,
 } from "lucide-react";
 
 export type { LucideIcon } from "lucide-react";

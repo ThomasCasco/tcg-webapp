@@ -22,6 +22,7 @@ type CreateInventoryPayload = {
   setName?: string;
   catalogCardId?: string;
   imageUrl?: string;
+  backImageUrl?: string;
   condition?: CardCondition;
   quantity?: number;
   askingPriceArs?: number;
@@ -34,6 +35,7 @@ type UpdateInventoryPayload = {
   quantity?: number;
   askingPriceArs?: number;
   imageUrl?: string | null;
+  backImageUrl?: string | null;
   availableForTrade?: boolean;
   tradeNotes?: string | null;
 };
@@ -127,6 +129,7 @@ export async function POST(request: Request) {
       setName: payload.setName?.trim(),
       catalogCardId: payload.catalogCardId?.trim() || undefined,
       imageUrl: payload.imageUrl?.trim() || undefined,
+      backImageUrl: payload.backImageUrl?.trim() || undefined,
       condition: payload.condition,
       quantity,
       askingPriceArs: payload.askingPriceArs,
@@ -170,6 +173,7 @@ export async function PATCH(request: Request) {
       quantity: payload.quantity,
       askingPriceArs: payload.askingPriceArs,
       imageUrl: payload.imageUrl,
+      backImageUrl: payload.backImageUrl,
       availableForTrade: payload.availableForTrade,
       tradeNotes: payload.tradeNotes,
     });

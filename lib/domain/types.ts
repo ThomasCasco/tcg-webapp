@@ -56,6 +56,7 @@ export interface InventoryEntry {
   setName?: string;
   catalogCardId?: string;
   imageUrl?: string;
+  backImageUrl?: string;
   condition: CardCondition;
   quantity: number;
   askingPriceArs?: number;
