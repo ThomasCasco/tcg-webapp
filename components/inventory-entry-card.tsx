@@ -8,7 +8,7 @@ import { assertListingLogisticsValid } from "@/lib/shared/listing-logistics";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
-import { ImageUploader } from "@/components/ui/image-uploader";
+import { CardPhotoUploaderCompact } from "@/components/ui/card-photo-uploader";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/ui/form-field";
@@ -40,6 +40,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
   );
   const [quantity, setQuantity] = useState<number>(entry.quantity);
   const [imageUrl, setImageUrl] = useState<string | null>(entry.imageUrl ?? null);
+  const [backImageUrl, setBackImageUrl] = useState<string | null>(entry.backImageUrl ?? null);
   const [availableForTrade, setAvailableForTrade] = useState(Boolean(entry.availableForTrade));
   const [tradeNotes, setTradeNotes] = useState(entry.tradeNotes ?? "");
 
@@ -54,6 +55,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
     Number(price || 0) !== (entry.askingPriceArs ?? 0) ||
     quantity !== entry.quantity ||
     (imageUrl ?? "") !== (entry.imageUrl ?? "") ||
+    (backImageUrl ?? "") !== (entry.backImageUrl ?? "") ||
     availableForTrade !== Boolean(entry.availableForTrade) ||
     tradeNotes.trim() !== (entry.tradeNotes ?? "");
 
@@ -69,6 +71,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
           quantity,
           askingPriceArs: Number(price) || undefined,
           imageUrl: imageUrl || null,
+          backImageUrl: backImageUrl || null,
           availableForTrade,
           tradeNotes: tradeNotes.trim() || null,
         }),
@@ -157,13 +160,23 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
     <Card as="article" padding="md">
       {/* ── Header (always visible) ── */}
       <div className="flex gap-3">
-        <div className="glass-soft h-24 w-[68px] shrink-0 overflow-hidden rounded-lg">
+        <div className="relative glass-soft h-24 w-[68px] shrink-0 overflow-hidden rounded-lg">
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={preview} alt={entry.cardName} className="h-full w-full object-cover" />
           ) : (
             <div className="grid h-full w-full place-items-center text-caption text-[var(--color-ink-subtle)]">
               Sin foto
+            </div>
+          )}
+          {(entry.backImageUrl ?? backImageUrl) && (
+            <div className="absolute bottom-1 right-1 h-7 w-5 overflow-hidden rounded border border-white/30 shadow">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={entry.backImageUrl ?? backImageUrl ?? ""}
+                alt="Reverso"
+                className="h-full w-full object-cover"
+              />
             </div>
           )}
         </div>
@@ -243,8 +256,13 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
         <div className="glass-soft mt-4 space-y-4 rounded-[var(--r-md)] p-4">
           <div className="grid gap-4 md:grid-cols-[auto,1fr]">
             <div>
-              <p className="mb-2 text-caption font-medium">Foto</p>
-              <ImageUploader value={imageUrl} onChange={setImageUrl} variant="card" />
+              <p className="mb-2 text-caption font-medium">Fotos</p>
+              <CardPhotoUploaderCompact
+                frontUrl={imageUrl}
+                backUrl={backImageUrl}
+                onFrontChange={setImageUrl}
+                onBackChange={setBackImageUrl}
+              />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <FormField label="Precio ARS" htmlFor={`price-${entry.id}`}>

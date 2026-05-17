@@ -60,6 +60,7 @@ type InventoryRow = {
   set_name: string | null;
   catalog_card_id: string | null;
   image_url: string | null;
+  back_image_url?: string | null;
   condition: CardCondition;
   quantity: number;
   asking_price_ars: number | null;
@@ -266,6 +267,7 @@ type CreateInventoryInput = {
   setName?: string;
   catalogCardId?: string;
   imageUrl?: string;
+  backImageUrl?: string;
   condition: CardCondition;
   quantity: number;
   askingPriceArs?: number;
@@ -315,6 +317,7 @@ type UpdateInventoryInput = {
   askingPriceArs?: number;
   quantity?: number;
   imageUrl?: string | null;
+  backImageUrl?: string | null;
   availableForTrade?: boolean;
   tradeNotes?: string | null;
 };
@@ -412,6 +415,7 @@ function mapInventoryRow(row: InventoryRow): InventoryEntry {
     setName: row.set_name ?? undefined,
     catalogCardId: row.catalog_card_id ?? undefined,
     imageUrl: row.image_url ?? undefined,
+    backImageUrl: row.back_image_url ?? undefined,
     condition: row.condition,
     quantity: row.quantity,
     askingPriceArs: row.asking_price_ars ?? undefined,
@@ -948,6 +952,7 @@ export async function createInventoryEntry(
       set_name: input.setName?.trim() || null,
       catalog_card_id: input.catalogCardId ?? null,
       image_url: input.imageUrl ?? null,
+      back_image_url: input.backImageUrl ?? null,
       condition: input.condition,
       quantity: input.quantity,
       asking_price_ars: input.askingPriceArs ?? null,
@@ -980,6 +985,10 @@ export async function updateInventoryEntry(
   if (input.imageUrl !== undefined) {
     const trimmed = input.imageUrl?.trim();
     updates.image_url = trimmed && trimmed.length > 0 ? trimmed : null;
+  }
+  if (input.backImageUrl !== undefined) {
+    const trimmed = input.backImageUrl?.trim();
+    updates.back_image_url = trimmed && trimmed.length > 0 ? trimmed : null;
   }
   if (typeof input.availableForTrade === "boolean") {
     updates.available_for_trade = input.availableForTrade;
