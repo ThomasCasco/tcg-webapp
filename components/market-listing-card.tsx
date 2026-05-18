@@ -1,17 +1,19 @@
 import Link from "next/link";
 import type { Listing } from "@/lib/domain/types";
+import type { SellerReputationSummary } from "@/lib/domain/reputation";
 import type { PokemonTypeChip } from "@/lib/server/pokeapi";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { ReserveListingButton } from "@/components/reserve-listing-button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { ShieldCheck, Star } from "@/components/ui/icon";
 import { PokemonTypeIcon } from "@/components/ui/pokemon-type-icon";
 
 type Props = {
   listing: Listing;
   pokemonTypes: PokemonTypeChip[] | null;
   isLoggedIn: boolean;
-  sellerReputation?: { average: number; count: number };
+  sellerReputation?: SellerReputationSummary;
 };
 
 export function MarketListingCard({ listing, pokemonTypes, isLoggedIn, sellerReputation }: Props) {
@@ -95,17 +97,10 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn, sellerRep
         )}
 
         <div className="mt-1 flex items-center justify-between gap-2 border-t border-[var(--hairline)] pt-2 t-xs t-soft">
-          <span className="flex min-w-0 items-center gap-1.5">
+          <div className="flex min-w-0 flex-col gap-1">
             <span className="truncate">@{listing.sellerHandle}</span>
-            {sellerReputation && sellerReputation.count > 0 ? (
-              <span
-                className="inline-flex items-center gap-0.5 rounded-full bg-[var(--accent)]/15 px-1.5 py-0.5 font-semibold text-[var(--accent-hi)]"
-                title={`${sellerReputation.count} calificaciones`}
-              >
-                ★ {sellerReputation.average.toFixed(1)}
-              </span>
-            ) : null}
-          </span>
+            <SellerTrustLine reputation={sellerReputation} />
+          </div>
           <span className="shrink-0 font-semibold text-[var(--ink)]">Stock {listing.quantity}</span>
         </div>
 
@@ -128,5 +123,29 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn, sellerRep
         )}
       </div>
     </Card>
+  );
+}
+
+function SellerTrustLine({ reputation }: { reputation?: SellerReputationSummary }) {
+  if (!reputation || reputation.ratingCount === 0) {
+    return <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--ink-soft)]">Vendedor nuevo</span>;
+  }
+
+  return (
+    <span className="flex min-w-0 flex-wrap items-center gap-1 text-[10px] font-semibold text-[var(--ink-soft)]">
+      <span
+        className="inline-flex items-center gap-0.5 rounded-full bg-[var(--accent)]/15 px-1.5 py-0.5 text-[var(--accent-hi)]"
+        title={`${reputation.ratingCount} calificaciones`}
+      >
+        <Star className="h-3 w-3 fill-current" />
+        {reputation.averageRating.toFixed(1)}
+      </span>
+      <span>{reputation.completedSalesCount} ventas</span>
+      {reputation.verifiedSeller ? (
+        <span title="Vendedor con Mercado Pago conectado">
+          <ShieldCheck className="h-3 w-3 text-[var(--accent-hi)]" />
+        </span>
+      ) : null}
+    </span>
   );
 }

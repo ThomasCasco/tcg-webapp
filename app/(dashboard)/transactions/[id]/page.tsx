@@ -2,10 +2,12 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import {
-  getRatingByTransactionAndRater,
-  getSellerReputationSummary,
   getTransactionWithListingForUser,
 } from "@/lib/server/repository";
+import {
+  getRatingByTransactionAndRater,
+  getSellerReputationSummary,
+} from "@/lib/server/reputation/queries";
 import { reconcileMpTransaction } from "@/lib/server/mp-reconcile";
 import { OrderPanel } from "@/components/order-panel";
 import { Card } from "@/components/ui/card";

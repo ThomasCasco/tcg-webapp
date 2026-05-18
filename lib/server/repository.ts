@@ -2613,10 +2613,12 @@ export async function createRating(input: {
     .from("reputation_events")
     .insert({
       seller_id: input.sellerId,
-      event_type: "rating",
+      event_type: "rating_submitted",
       score_delta: input.stars,
       metadata: {
         rater_id: input.raterId,
+        rated_user_id: input.sellerId,
+        rated_role: "seller",
         transaction_id: input.transactionId,
         stars: input.stars,
         comment: input.comment ?? null,
@@ -2637,7 +2639,7 @@ export async function getRatingByTransactionAndRater(
   const { data, error } = await client
     .from("reputation_events")
     .select("id, seller_id, score_delta, metadata, created_at")
-    .eq("event_type", "rating")
+    .in("event_type", ["rating", "rating_submitted"])
     .eq("metadata->>transaction_id", transactionId)
     .eq("metadata->>rater_id", raterId)
     .maybeSingle();
@@ -2655,7 +2657,7 @@ export async function getSellerReputationSummary(
     .from("reputation_events")
     .select("score_delta")
     .eq("seller_id", sellerId)
-    .eq("event_type", "rating");
+    .in("event_type", ["rating", "rating_submitted"]);
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as Array<{ score_delta: number }>;
   if (rows.length === 0) return { average: 0, count: 0 };
@@ -2673,7 +2675,7 @@ export async function getSellerReputationSummaries(
     .from("reputation_events")
     .select("seller_id, score_delta")
     .in("seller_id", sellerIds)
-    .eq("event_type", "rating");
+    .in("event_type", ["rating", "rating_submitted"]);
   if (error) throw new Error(error.message);
   const acc: Record<string, { sum: number; count: number }> = {};
   for (const raw of data ?? []) {
