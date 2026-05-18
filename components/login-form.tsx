@@ -98,6 +98,14 @@ export function LoginForm() {
           </button>
         </div>
       </FormField>
+      <div className="-mt-2 text-right">
+        <Link
+          href="/forgot-password"
+          className="t-sm font-semibold text-[var(--accent-hi)] hover:underline"
+        >
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </div>
       {error && (
         <div
           role="alert"
