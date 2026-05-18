@@ -5,6 +5,8 @@ import { getAuthenticatedUser } from "@/lib/server/auth";
 import { ReserveListingButton } from "@/components/reserve-listing-button";
 import { WatchFromListingButton } from "@/components/watch-from-listing-button";
 import { getListingById } from "@/lib/server/repository";
+import { getSellerReputationSummary } from "@/lib/server/reputation/queries";
+import type { SellerReputationSummary } from "@/lib/domain/reputation";
 import { getPokemonTypesForCardTitle } from "@/lib/server/pokeapi";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { fetchCatalogCardById } from "@/lib/server/tcgdex";
@@ -17,7 +19,9 @@ import {
   CreditCard,
   Package,
   ShieldCheck,
+  Star,
   Truck,
+  User,
 } from "@/components/ui/icon";
 import { getAppUrl } from "@/lib/shared/app-url";
 
@@ -56,12 +60,17 @@ export default async function ListingDetailPage({
   if (!listing) notFound();
   if (listing.listingType === "mystery_pack") notFound();
 
-  const catalog = listing.catalogCardId
-    ? await fetchCatalogCardById(listing.catalogCardId).catch(() => null)
-    : null;
+  const [catalog, pokemonTypes, sellerReputation] = await Promise.all([
+    listing.catalogCardId
+      ? fetchCatalogCardById(listing.catalogCardId).catch(() => null)
+      : Promise.resolve(null),
+    getPokemonTypesForCardTitle(listing.cardName),
+    listing.sellerId
+      ? getSellerReputationSummary(listing.sellerId).catch(() => null)
+      : Promise.resolve(null),
+  ]);
   const image = listing.imageUrl ?? catalog?.imageLarge ?? catalog?.imageSmall ?? null;
   const isPack = false;
-  const pokemonTypes = await getPokemonTypesForCardTitle(listing.cardName);
   const status = statusMeta[listing.status] ?? {
     label: listing.status,
     variant: "default" as const,
@@ -157,6 +166,7 @@ export default async function ListingDetailPage({
                 <span className="font-semibold">@{listing.sellerHandle}</span>
                 <Chip size="sm" variant="info">Perfil activo</Chip>
               </div>
+              <SellerTrustBlock reputation={sellerReputation} sellerHandle={listing.sellerHandle} />
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[var(--color-ink-subtle)]">Forma de pago:</span>
                 {listing.sellerMpConnected ? (
@@ -280,6 +290,60 @@ export default async function ListingDetailPage({
         ) : null}
       </Card>
     </main>
+  );
+}
+
+function SellerTrustBlock({
+  reputation,
+  sellerHandle,
+}: {
+  reputation: SellerReputationSummary | null;
+  sellerHandle: string;
+}) {
+  if (!reputation || reputation.ratingCount === 0) {
+    return (
+      <div className="glass-soft rounded-[var(--r-md)] p-4">
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-[var(--color-accent-strong)]" />
+          <p className="text-body-sm font-semibold">@{sellerHandle} todavia no tiene calificaciones.</p>
+        </div>
+        <p className="mt-1 text-caption text-[var(--color-ink-muted)]">
+          Es un vendedor nuevo. Antes de pagar, coordina por chat y guarda el comprobante.
+        </p>
+      </div>
+    );
+  }
+
+  const tierLabel =
+    reputation.tier === "elite"
+      ? "Elite"
+      : reputation.tier === "trusted"
+        ? "Confiable"
+        : "Nuevo";
+
+  return (
+    <div className="glass-soft rounded-[var(--r-md)] p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Chip size="sm" variant={reputation.tier === "new" ? "info" : "success"}>
+          <Star className="h-3 w-3 fill-current" />
+          {reputation.averageRating.toFixed(1)} ({reputation.ratingCount})
+        </Chip>
+        <Chip size="sm">{reputation.completedSalesCount} ventas cerradas</Chip>
+        <Chip size="sm" variant={reputation.disputeRate > 0.08 ? "warning" : "success"}>
+          {(reputation.disputeRate * 100).toFixed(0)}% disputas
+        </Chip>
+        {reputation.verifiedSeller ? (
+          <Chip size="sm" variant="success">
+            <ShieldCheck className="h-3 w-3" />
+            MP conectado
+          </Chip>
+        ) : null}
+      </div>
+      <p className="mt-2 text-caption text-[var(--color-ink-muted)]">
+        Nivel {tierLabel}. Esta reputacion se calcula con operaciones entregadas,
+        calificaciones y disputas registradas en la plataforma.
+      </p>
+    </div>
   );
 }
 

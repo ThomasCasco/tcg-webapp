@@ -1,17 +1,13 @@
 /**
  * POST /api/transactions/[id]/rate
  *
- * Buyer rates the seller after delivery. Writes the rating event, transitions
- * the transaction to `closed`, notifies the seller. Idempotent — a second
- * submission from the same buyer/transaction returns the existing rating.
+ * Buyer rates the seller after delivery. The domain mutation enforces the
+ * buyer-only, delivered-only and one-rating-per-transaction rules.
  */
 
 import { requireAuthenticatedUser } from "@/lib/server/auth";
-import {
-  createRating,
-  getRatingByTransactionAndRater,
-  updateFulfillmentStatus,
-} from "@/lib/server/repository";
+import { updateFulfillmentStatus } from "@/lib/server/repository";
+import { submitSellerRating } from "@/lib/server/reputation/mutations";
 import { getTransactionContext } from "@/lib/server/transaction-context";
 import { createNotification } from "@/lib/server/notifications";
 import { sendRatingReceived } from "@/lib/server/email";
@@ -50,39 +46,22 @@ export async function POST(
 
   const { id: transactionId } = await context.params;
 
-  const ctx = await getTransactionContext(transactionId);
-  if (!ctx) {
-    return Response.json({ error: "Transacción no encontrada." }, { status: 404 });
-  }
-
-  // Only the buyer rates the seller (one-way for now).
-  if (ctx.buyer.id !== user.id) {
-    return Response.json(
-      { error: "Solo el comprador puede calificar al vendedor." },
-      { status: 403 },
-    );
-  }
-  if (!ctx.seller.id) {
-    return Response.json({ error: "Falta el vendedor en la operación." }, { status: 422 });
-  }
-
-  // Idempotent: return existing rating if already submitted.
-  const existing = await getRatingByTransactionAndRater(transactionId, user.id);
-  if (existing) {
-    return Response.json({ rating: existing, idempotent: true });
-  }
-
   try {
-    const rating = await createRating({
+    const result = await submitSellerRating({
       transactionId,
-      sellerId: ctx.seller.id,
-      raterId: user.id,
+      actorUserId: user.id,
       stars,
       comment: comment.length > 0 ? comment : undefined,
     });
 
-    // Close the transaction. Caller is the buyer; this transition is allowed
-    // by updateFulfillmentStatus (no role restriction on "closed").
+    if (!result.ok) {
+      return Response.json({ error: result.error }, { status: result.status });
+    }
+
+    if (!result.created) {
+      return Response.json({ rating: result.rating, idempotent: true });
+    }
+
     try {
       await updateFulfillmentStatus({
         transactionId,
@@ -96,7 +75,12 @@ export async function POST(
       });
     }
 
-    // Notify seller.
+    const ctx = await getTransactionContext(transactionId);
+    if (!ctx?.seller.id) {
+      log.warn("rate: missing transaction context after rating", { transactionId });
+      return Response.json({ rating: result.rating });
+    }
+
     const linkPath = `/transactions/${transactionId}`;
     if (ctx.seller.email) {
       await sendRatingReceived({
@@ -109,15 +93,16 @@ export async function POST(
         transactionId,
       }).catch((e) => log.error("rating email failed", { error: String(e) }));
     }
+
     await createNotification({
       userId: ctx.seller.id,
       type: "rating_received_seller",
       title: `Te calificaron ${stars}/5`,
-      body: `${ctx.buyer.username} valoró la operación de ${ctx.cardName}.`,
+      body: `${ctx.buyer.username} valoro la operacion de ${ctx.cardName}.`,
       linkPath,
     });
 
-    return Response.json({ rating });
+    return Response.json({ rating: result.rating });
   } catch (error) {
     return Response.json(
       {
