@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e": "tsx scripts/e2e.ts",
+    "e2e:cleanup": "tsx scripts/e2e.ts --cleanup"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
@@ -40,6 +42,7 @@
     "eslint-config-next": "16.2.4",
     "jsdom": "^29.1.0",
     "tailwindcss": "^4",
+    "tsx": "^4.19.2",
     "typescript": "^5",
     "vitest": "^3.2.4"
   }
