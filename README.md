@@ -7,7 +7,7 @@ Current implementation focus:
 - Inventory and listing flows with persistent backend
 - Supabase Auth real con sesion por cookies
 - Hybrid pricing suggestion endpoint
-- Payment verification endpoint connected to transaction state
+- Mercado Pago OAuth, checkout, webhook y reconciliacion conectados a transaction state
 - Post-venta: fulfillment status + dispute workflows
 - Supabase schema for beta launch
 
@@ -23,12 +23,19 @@ Current implementation focus:
 	- [supabase/migrate-v6.sql](supabase/migrate-v6.sql) (envío / retiro + texto de ubicación en `market_listings`).
 	- [supabase/migrate-v7.sql](supabase/migrate-v7.sql) (chat P2P por `transaction_id` en `transaction_chat_messages`).
 3. Add env vars in local and production:
+	- APP_URL / NEXT_PUBLIC_APP_URL
 	- NEXT_PUBLIC_SUPABASE_URL
 	- NEXT_PUBLIC_SUPABASE_ANON_KEY
 	- SUPABASE_SERVICE_ROLE_KEY
-	- MERCADO_PAGO_ACCESS_TOKEN (para validar pagos MP via API)
-	- STRIPE_SECRET_KEY (para validar payment intents via API)
-	- `CRON_SECRET` (opcional, string largo aleatorio): protege `GET /api/cron/release-stale-reservations` para liberar publicaciones `pending_payment` viejas (típico 24 h sin pago verificado).
+	- MP_APP_ID
+	- MP_CLIENT_SECRET
+	- MP_ACCESS_TOKEN
+	- MP_REDIRECT_URI
+	- MP_WEBHOOK_SECRET
+	- PLATFORM_FEE_PERCENT
+	- RESEND_API_KEY / EMAIL_FROM
+	- ADMIN_SECRET
+	- CRON_SECRET
 4. Start the app with npm run dev and verifica con `GET /api/health` que `backend.connected` sea `true`.
 
 ## Fotos de cartas y storage gratuito
@@ -84,6 +91,8 @@ npm run test
 - `/` product landing
 - `/login` login real con Supabase Auth
 - `/register` registro real con Supabase Auth
+- `/forgot-password` recuperacion de password por email
+- `/reset-password` cambio de password desde link de Supabase
 - `/inventory` seller inventory panel (protegido)
 - `/listings` seller listing panel (protegido, soporta mystery packs)
 - `/transactions` seguimiento post-venta (protegido)
@@ -96,6 +105,7 @@ npm run test
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/forgot-password`
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
 - `GET /api/health`
@@ -103,7 +113,9 @@ npm run test
 - `GET,POST,PATCH /api/listings` (PATCH: actualizar activa con `priceArs`/`quantity`/`imageUrl`, o cancelar solo con `{ id }`; soporta `listingType: "mystery_pack"` en POST)
 - `POST /api/listings/:id/reserve`
 - `POST /api/pricing/suggest`
-- `POST /api/payments/verify` (consulta Mercado Pago/Stripe en server antes de marcar `verified`)
+- `POST /api/payments/checkout` (crea checkout Mercado Pago en cuenta del vendedor)
+- `POST /api/webhooks/mercadopago` (verifica firma, reconcilia pago y dispara emails)
+- `POST /api/payments/verify` (fallback legacy/manual)
 - `POST /api/upload/card-image` (multipart campo `file`, max 5 MB)
 - `GET /api/cron/release-stale-reservations` (header `Authorization: Bearer CRON_SECRET`)
 - `GET,PATCH /api/profile/seller-payment`
@@ -155,11 +167,9 @@ checklist de compliance.
 
 ## Next Steps
 
-1. Activar email templates/confirmacion y recuperacion de password en Supabase Auth.
-2. Completar integracion Mercado Pago real (leer estado de pago con su API y
-   cerrar loop automatico sin que el comprador tenga que pegar el ID).
-3. Agregar carga de evidencia de disputa (Supabase Storage + adjuntos).
+1. Configurar templates de Supabase Auth en produccion (confirmacion y recovery).
+2. Agregar carga de evidencia de disputa (Supabase Storage + adjuntos).
+3. Crear panel admin para pagos trabados, disputas, usuarios y vendedores verificados.
 4. OCR de cartas: capturar foto y usar el catalog_card_id detectado
    para prellenar el formulario.
 5. Verificacion de ID del vendedor (badge "verified") con DNI en Storage.
-

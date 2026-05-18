@@ -3,8 +3,9 @@ import Link from "next/link";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { listDisputesForUser } from "@/lib/server/repository";
 import { Card } from "@/components/ui/card";
+import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Scale } from "@/components/ui/icon";
+import { ArrowRight, Scale } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 
@@ -52,15 +53,28 @@ export default async function DisputesPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {disputes.map((dispute) => (
-            <Card as="article" key={dispute.id} padding="md">
-              <p className="text-overline text-[var(--color-ink-subtle)]">{dispute.transactionId}</p>
-              <p className="mt-1 font-semibold text-[var(--color-ink)]">{dispute.reason}</p>
-              <p className="mt-1 text-body-sm text-[var(--color-ink-muted)]">{dispute.details}</p>
-              <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
-                Abierta por: {dispute.openedByHandle}
-              </p>
-              <p className="text-body-sm text-[var(--color-ink-muted)]">Estado: {dispute.status}</p>
-            </Card>
+            <Link key={dispute.id} href={`/disputes/${dispute.id}`} className="block">
+              <Card as="article" variant="interactive" padding="md" className="h-full">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-overline text-[var(--color-ink-subtle)]">
+                      {dispute.transactionId}
+                    </p>
+                    <p className="mt-1 font-semibold text-[var(--color-ink)]">{dispute.reason}</p>
+                  </div>
+                  <Chip size="sm" variant={dispute.status === "open" ? "warning" : "info"}>
+                    {dispute.status}
+                  </Chip>
+                </div>
+                <p className="mt-2 line-clamp-3 text-body-sm text-[var(--color-ink-muted)]">
+                  {dispute.details}
+                </p>
+                <p className="mt-3 flex items-center justify-between text-body-sm font-semibold text-[var(--color-accent-strong)]">
+                  <span>Ver caso</span>
+                  <ArrowRight className="h-4 w-4" />
+                </p>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

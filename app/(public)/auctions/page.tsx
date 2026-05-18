@@ -67,7 +67,7 @@ export default async function PublicAuctionsPage() {
             </Button>
             {viewer ? (
               <Button asChild>
-                <Link href="/auctions">
+                <Link href="/my-auctions">
                   <Gavel className="h-4 w-4" />
                   Crear subasta
                 </Link>

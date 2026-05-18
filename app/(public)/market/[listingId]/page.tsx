@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { ReserveListingButton } from "@/components/reserve-listing-button";
@@ -18,8 +19,13 @@ import {
   ShieldCheck,
   Truck,
 } from "@/components/ui/icon";
+import { getAppUrl } from "@/lib/shared/app-url";
 
 export const dynamic = "force-dynamic";
+
+type PageProps = {
+  params: Promise<{ listingId: string }>;
+};
 
 function getChipTextColor(hex: string): string {
   const value = hex.replace("#", "");
@@ -43,9 +49,7 @@ const statusMeta: Record<
 
 export default async function ListingDetailPage({
   params,
-}: {
-  params: Promise<{ listingId: string }>;
-}) {
+}: PageProps) {
   const user = await getAuthenticatedUser();
   const { listingId } = await params;
   const listing = await getListingById(listingId);
@@ -277,4 +281,48 @@ export default async function ListingDetailPage({
       </Card>
     </main>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { listingId } = await params;
+  const listing = await getListingById(listingId).catch(() => null);
+
+  if (!listing || listing.listingType === "mystery_pack") {
+    return {
+      title: "Publicación no encontrada",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const price = new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  }).format(listing.priceArs);
+  const title = `${listing.cardName} por ${price}`;
+  const description = `${listing.cardName} (${formatConditionEs(listing.condition)}) en ${listing.setName}. Publicada por @${listing.sellerHandle} en TCG Marketplace AR.`;
+  const url = `${getAppUrl()}/market/${listing.id}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url,
+      images: listing.imageUrl
+        ? [{ url: listing.imageUrl, alt: listing.cardName }]
+        : undefined,
+    },
+    twitter: {
+      card: listing.imageUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: listing.imageUrl ? [listing.imageUrl] : undefined,
+    },
+  };
 }

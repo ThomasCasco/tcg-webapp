@@ -16,20 +16,23 @@ Esto es equivalente al modelo de **Mercado Libre Classifieds** o **OLX**:
 el pago lo hace el comprador **directo al vendedor**, y la plataforma
 solo guarda la evidencia.
 
-## Flujo de pago que usamos
+## Flujo de pago que usamos ahora
 
 1. Comprador toca "Reservar compra" en un listing.
    - El sistema marca el listing como `pending_payment` y crea un
      `transaction_id`.
-2. Se muestran al comprador los datos de cobro del vendedor
-   (alias MP / CBU / link de cobro).
-3. Comprador paga **directo al vendedor** via Mercado Pago (u otro).
-4. Comprador pega el `providerPaymentId` (ID de Mercado Pago) en la app.
-5. Llamamos a la API de MP para **verificar** que ese pago existe y su
-   estado es `approved`. La verificacion NO mueve plata: solo lee.
-6. Si verifica, la transaccion pasa a `seller_confirmed` y el listing a
-   `sold`. Si no, queda en `pending_review` para chequeo manual.
-7. Post-venta: `shipped` -> `delivered`. Ambas partes confirman.
+2. Si el vendedor conecto Mercado Pago, `POST /api/payments/checkout`
+   crea una preferencia en la cuenta del vendedor con comision de plataforma.
+3. Comprador paga en Mercado Pago. La plata va directo al vendedor; la
+   plataforma no custodia fondos.
+4. `POST /api/webhooks/mercadopago` valida la firma HMAC, lee el pago desde
+   la API de MP y reconcilia la transaccion.
+5. Si verifica, la transaccion pasa a `seller_confirmed` y el listing a
+   `sold`. Si el webhook no llega, el redirect de exito y el cron de
+   reconciliacion intentan cerrar el loop.
+6. Si el vendedor no tiene MP conectado, queda el flujo P2P de respaldo con
+   alias/CBU y revision manual.
+7. Post-venta: `shipped` -> `delivered` -> rating/cierre.
 8. Si algo falla: sistema de disputas (no vinculante, pero registra
    evidencia y afecta reputacion).
 
@@ -73,34 +76,21 @@ El comprador paga un desconocido. Para que no duela:
 6. **Alertas de fraude**: mismo buyer abriendo disputas contra muchos
    sellers -> se suspende. Vendedor con >10% de disputas -> suspendido.
 
-## Proveedores de pago soportados por el verifier
+## Proveedores de pago soportados
 
-El endpoint `POST /api/payments/verify` acepta:
+El flujo principal es Mercado Pago automatico:
 
-- `mercado_pago` (recomendado AR): ID de pago MP.
-- `stripe` (para sellers internacionales): `payment_intent`.
-- `external_link`: flujo manual (review humano).
+- `POST /api/auth/mercadopago` inicia OAuth para el vendedor.
+- `POST /api/payments/checkout` crea la preferencia MP con `external_reference`.
+- `POST /api/webhooks/mercadopago` valida firma y reconcilia.
+- `GET /api/cron/reconcile-mp-payments` y `GET /api/cron/daily` cubren pagos
+  pendientes si el webhook falla.
 
-El payload espera:
+`POST /api/payments/verify` queda como fallback legacy/manual para revisar
+transacciones puntuales. El endpoint admin
+`POST /api/admin/payments/manual-verify` esta protegido por `ADMIN_SECRET`.
 
-```json
-{
-  "transactionId": "tx_...",
-   "providerPaymentId": "123456789"
-}
-```
-
-El backend obtiene automaticamente el `provider` esperado desde la
-transaccion reservada para evitar errores del cliente.
-
-Para `mercado_pago` y `stripe`, el backend ignora cualquier status enviado
-por cliente y consulta el proveedor por API en server-side. Solo
-`external_link` mantiene flujo manual con `providerStatus` opcional.
-
-Webhook firmado opcional: header `x-webhook-secret` con el valor de la
-env `PAYMENT_WEBHOOK_SECRET`. Esto permite a MP/Stripe avisarnos
-automaticamente cuando el pago se aprueba, en vez de depender del
-comprador pegando el ID.
+Stripe no es parte del flujo v1 Argentina.
 
 ## Checklist legal mínimo para salir vivos
 
@@ -120,10 +110,8 @@ comprador pegando el ID.
 
 ## Siguientes pasos recomendados
 
-1. Integrar Mercado Pago **read-only**: token de MP (OAuth publico) para
-   que la app consulte el pago y confirme `approved` automaticamente.
-2. Agregar UI donde el seller pega su **CBU/alias MP** una sola vez, y
-   nosotros lo mostramos al buyer al momento de reservar.
-3. Terminos y condiciones visibles en el registro (checkbox obligatorio).
+1. Panel admin para ver webhooks fallidos, pagos pendientes y verificacion manual.
+2. Evidencia de disputas con adjuntos en Supabase Storage.
+3. Automatizar alertas antifraude para sellers/buyers con demasiadas disputas.
 4. Badge "ID verificado" despues de subir DNI a Storage (moderacion manual
    al principio).
