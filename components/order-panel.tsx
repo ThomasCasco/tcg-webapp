@@ -7,7 +7,7 @@ import type {
   PaymentProvider,
   PaymentVerificationStatus,
 } from "@/lib/domain/types";
-import type { RatingRecord } from "@/lib/server/repository";
+import type { RatingRecord } from "@/lib/domain/reputation";
 import { TransactionChat } from "@/components/transaction-chat";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

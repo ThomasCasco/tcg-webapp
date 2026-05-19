@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MarketListingCard } from "@/components/market-listing-card";
-import { getSellerReputationSummaries, listListings } from "@/lib/server/repository";
+import { listListings } from "@/lib/server/repository";
+import { getSellerReputationSummaries } from "@/lib/server/reputation/queries";
 import { getPokemonTypesForCardTitle } from "@/lib/server/pokeapi";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
@@ -10,6 +11,7 @@ import { Search, X } from "@/components/ui/icon";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { MarketFiltersSheet } from "@/components/market-filters-sheet";
 import type { CardCondition } from "@/lib/domain/types";
+import type { SellerReputationSummary } from "@/lib/domain/reputation";
 
 export const dynamic = "force-dynamic";
 
@@ -129,7 +131,7 @@ export default async function MarketPage({
         .filter((id): id is string => Boolean(id)),
     ),
   ];
-  const reputations: Record<string, { average: number; count: number }> =
+  const reputations: Record<string, SellerReputationSummary> =
     sellerIds.length
       ? await getSellerReputationSummaries(sellerIds).catch(() => ({}))
       : {};
