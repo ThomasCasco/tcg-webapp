@@ -134,7 +134,7 @@ export function SocialProfileForm({ initialProfile }: Props) {
                     onChange={(e) => setBio(e.target.value)}
                     maxLength={BIO_MAX}
                     rows={4}
-                    placeholder="Colecciono Pokemon vintage, hago trades en persona y busco completar sets de Scarlet & Violet."
+                    placeholder="Colecciono Pokémon vintage, hago trades en persona y busco completar sets de Scarlet & Violet."
                   />
                   <div className="flex justify-end">
                     <span className="t-xs t-soft">{bioLeft} caracteres restantes</span>
@@ -156,7 +156,7 @@ export function SocialProfileForm({ initialProfile }: Props) {
                 name="favoriteGame"
                 defaultValue={initialProfile.favoriteGame ?? ""}
                 maxLength={60}
-                placeholder="Pokemon"
+                placeholder="Pokémon"
               />
             </FormField>
             <FormField label="Carta favorita" htmlFor="favoriteCard">

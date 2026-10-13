@@ -168,7 +168,7 @@ export function RegisterForm() {
           name="terms"
           onInvalid={onInvalid}
           onInput={clearValidity}
-          className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+          className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--accent)]"
         />
         <span>
           Soy mayor de 18 años y acepto los{" "}

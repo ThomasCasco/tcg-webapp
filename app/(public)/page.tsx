@@ -17,7 +17,9 @@ export default async function HomePage() {
   if (isSupabaseConfigured()) {
     try {
       const all = await listListings({ statuses: ["active"], onlyPublic: true });
-      featured = all.filter((listing) => listing.listingType !== "mystery_pack").slice(0, 8);
+      featured = all
+        .filter((listing) => listing.listingType !== "mystery_pack" && listing.status === "active")
+        .slice(0, 8);
     } catch {
       // Landing still renders without listings.
     }

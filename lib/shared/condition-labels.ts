@@ -1,10 +1,10 @@
 import type { CardCondition } from "@/lib/domain/types";
 
 export const conditionLabelEs: Record<CardCondition, string> = {
-  mint: "Mint (NM+)",
+  mint: "Mint",
   near_mint: "Casi mint (NM)",
   lightly_played: "Ligeramente jugada (LP)",
-  moderately_played: "Moderadamente jugada (MP)",
+  moderately_played: "Moderadamente jugada",
   heavily_played: "Muy jugada (HP)",
   damaged: "Dañada",
 };

@@ -143,9 +143,9 @@ export default async function PublicUserPage({
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-overline text-[var(--color-ink-subtle)]">Trade</p>
-              <h2 className="mt-1 text-h3">Inicia sesion para proponer intercambio</h2>
+              <h2 className="mt-1 text-h3">Iniciá sesión para proponer un intercambio</h2>
               <p className="mt-1 text-body-sm text-[var(--color-ink-muted)]">
-                Necesitas una cuenta y cartas cargadas en tu inventario para enviar una propuesta.
+                Necesitás una cuenta y cartas cargadas en tu inventario para enviar una propuesta.
               </p>
             </div>
             <Button asChild>
@@ -182,7 +182,7 @@ export default async function PublicUserPage({
             <EmptyState
               icon={<Package className="h-7 w-7" />}
               title="Sin cartas para trade"
-              description="Este perfil todavia no marco cartas disponibles."
+              description="Este perfil todavía no marcó cartas disponibles."
             />
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
@@ -228,7 +228,7 @@ export default async function PublicUserPage({
             <EmptyState
               icon={<Search className="h-7 w-7" />}
               title="Sin buscadas publicas"
-              description="Este perfil todavia no publico cartas buscadas."
+              description="Este perfil todavía no publicó cartas buscadas."
             />
           ) : (
             <div className="flex flex-wrap gap-2">

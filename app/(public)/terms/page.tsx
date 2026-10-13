@@ -71,7 +71,7 @@ export default function TermsPage() {
             Solicitar pagos fuera de los canales detectables (efectivo, cripto
             sin trazabilidad): limita nuestra capacidad de mediar disputas.
           </li>
-          <li>Crear cuentas multiples para manipular reputacion o alertas.</li>
+          <li>Crear cuentas múltiples para manipular la reputación o las alertas.</li>
           <li>Recolectar datos personales de otros usuarios.</li>
         </ul>
 

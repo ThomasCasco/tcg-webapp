@@ -22,12 +22,9 @@ type CheckoutResponse = {
 };
 
 function friendlyError(status: number, message?: string): string {
-  if (status === 409) return "Alguien la está comprando ahora mismo. Probá de nuevo en un rato.";
-  if (status === 422) return "Este vendedor todavía no puede cobrar por Mercado Pago.";
-  if (status === 429) return "Demasiados intentos seguidos. Esperá un minuto y volvé a probar.";
-  return message && /[áéíóúñ¿]/i.test(message)
-    ? message
-    : "No pudimos abrir el pago. Probá de nuevo en unos segundos.";
+  if (message) return message; // The checkout API already answers in Spanish.
+  if (status === 401) return "Tu sesión venció. Volvé a ingresar.";
+  return "No pudimos abrir el pago. Probá de nuevo en unos segundos.";
 }
 
 export function ReserveListingButton({ listingId, size = "md" }: Props) {
@@ -48,7 +45,7 @@ export function ReserveListingButton({ listingId, size = "md" }: Props) {
         window.location.href = data.checkoutUrl;
         return;
       }
-      setError(friendlyError(res.status, data.error));
+      setError(friendlyError(res.status, res.status === 401 ? undefined : data.error));
     } catch {
       setError("Sin conexión. Revisá tu internet y probá de nuevo.");
     }

@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Search, X } from "@/components/ui/icon";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { MarketFiltersSheet } from "@/components/market-filters-sheet";
+import { log } from "@/lib/server/logger";
 import type { CardCondition } from "@/lib/domain/types";
 import type { SellerReputationSummary } from "@/lib/domain/reputation";
 
@@ -78,9 +79,14 @@ export default async function MarketPage({
 
   try {
     listings = await listListings({ onlyPublic: true });
-    listings = listings.filter((listing) => listing.listingType !== "mystery_pack");
+    listings = listings.filter(
+      (listing) => listing.listingType !== "mystery_pack" && listing.status !== "sold",
+    );
   } catch (error) {
-    loadError = error instanceof Error ? error.message : "Failed to load market listings.";
+    log.error("market: failed to load listings", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    loadError = "No pudimos cargar el mercado. Recargá la página en unos segundos.";
   }
 
   const query = q.trim().toLowerCase();
@@ -199,7 +205,7 @@ export default async function MarketPage({
 
       {loadError && (
         <Card padding="md" className="chip-danger">
-          <p className="t-sm">Error: {loadError}</p>
+          <p className="t-sm">{loadError}</p>
         </Card>
       )}
 
@@ -209,7 +215,7 @@ export default async function MarketPage({
           Mercado de cartas
         </h1>
         <p className="t-sm t-mute">
-          {total} {total === 1 ? "publicación" : "publicaciones"} · singles en pesos
+          {total} {total === 1 ? "carta a la venta" : "cartas a la venta"} · precios en pesos
         </p>
       </header>
 
@@ -281,14 +287,18 @@ export default async function MarketPage({
         )}
       </section>
 
-      {total === 0 ? (
+      {loadError ? null : total === 0 ? (
         <EmptyState
           image="/img/empty-states/market-empty.png"
           imageAlt="Caja de cartas vacía"
           title="Sin publicaciones"
           description={
             <>
-              <p>Todavía no hay publicaciones que coincidan.</p>
+              <p>
+                {query || activeFilters.length > 0
+                  ? "No encontramos cartas con esa búsqueda. Probá con otro nombre o sacá filtros."
+                  : "Todavía no hay cartas publicadas."}
+              </p>
               <p className="mt-1 t-xs">
                 ¿Vendés cartas? Cargalas en{" "}
                 <Link href="/inventory" className="font-semibold text-[var(--accent-hi)] underline">
