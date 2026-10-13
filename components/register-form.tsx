@@ -53,7 +53,7 @@ export function RegisterForm() {
       if (data.requiresEmailConfirmation) {
         setSuccess("Cuenta creada. Revisá tu email para confirmar.");
       } else {
-        router.push("/inventory");
+        router.push("/onboarding");
         router.refresh();
       }
     } catch (submitError) {

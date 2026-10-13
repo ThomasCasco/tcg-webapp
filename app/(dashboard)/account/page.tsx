@@ -1,16 +1,11 @@
 import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/server/auth";
-import {
-  getSellerPaymentProfile,
-  getMpConnectionStatus,
-  getSocialProfile,
-} from "@/lib/server/repository";
-import { SellerPaymentProfileForm } from "@/components/seller-payment-profile-form";
+import { getMpConnectionStatus, getSocialProfile } from "@/lib/server/repository";
 import { SocialProfileForm } from "@/components/social-profile-form";
 import { MpConnectButton } from "@/components/mp-connect-button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
-import { CreditCard, Wallet } from "@/components/ui/icon";
+import { Wallet } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +30,8 @@ export default async function AccountPage({
     mpStatus = "connected";
   } else if (params.mp_error) {
     mpStatus = "error";
-    mpFeedback = decodeURIComponent(params.mp_error);
+    // Fixed copy: never echo query-string text into the page.
+    mpFeedback = "No se pudo conectar Mercado Pago. Probá de nuevo.";
   }
 
   // Override with DB state (source of truth)
@@ -52,17 +48,13 @@ export default async function AccountPage({
     // Non-fatal — show UI based on query param only
   }
 
-  let paymentProfile: Awaited<ReturnType<typeof getSellerPaymentProfile>> | null = null;
   let socialProfile: Awaited<ReturnType<typeof getSocialProfile>> | null = null;
   let profileError: string | null = null;
 
   try {
-    [paymentProfile, socialProfile] = await Promise.all([
-      getSellerPaymentProfile(user.id),
-      getSocialProfile(user.id),
-    ]);
-  } catch (err) {
-    profileError = err instanceof Error ? err.message : "Error al cargar perfil.";
+    socialProfile = await getSocialProfile(user.id);
+  } catch {
+    profileError = "No pudimos cargar tu perfil. Recargá la página.";
   }
 
   return (
@@ -101,20 +93,6 @@ export default async function AccountPage({
           mpUserId={mpUserId ?? undefined}
           feedback={mpFeedback}
         />
-      </Card>
-
-      {/* ── P2P payment profile (fallback for sellers not on MP) ── */}
-      <Card padding="lg">
-        <div className="mb-4 flex items-center gap-2">
-          <CreditCard className="h-5 w-5 text-[var(--color-accent-strong)]" />
-          <h2 className="text-h2">Datos de cobro manual</h2>
-        </div>
-        <p className="mb-4 text-body-sm text-[var(--color-ink-muted)]">
-          Estos datos se muestran a los compradores que coordinen el pago directamente
-          (transferencia, efectivo, etc.). Opcional si ya tenés Mercado Pago conectado.
-        </p>
-
-        {paymentProfile ? <SellerPaymentProfileForm initialProfile={paymentProfile} /> : null}
       </Card>
 
       {/* ── Account info ── */}

@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import {
   getMpConnectionStatus,
-  getSellerPaymentProfile,
   getSocialProfile,
   listAuctions,
   listInventoryEntries,
@@ -55,7 +54,6 @@ export default async function DashboardHomePage() {
 
   const [
     profile,
-    sellerPayment,
     mpStatus,
     inventory,
     myListings,
@@ -65,7 +63,6 @@ export default async function DashboardHomePage() {
     notifications,
   ] = await Promise.all([
     getSocialProfile(user.id).catch(() => null),
-    getSellerPaymentProfile(user.id).catch(() => null),
     getMpConnectionStatus(user.id).catch(() => ({ mpConnected: false, mpUserId: null })),
     listInventoryEntries({ ownerId: user.id }).catch(() => []),
     listListings({ sellerId: user.id }).catch(() => []),
@@ -85,9 +82,6 @@ export default async function DashboardHomePage() {
   const hasProfile = Boolean(profile?.displayName || profile?.bio);
   const hasAvatar = Boolean(profile?.avatarUrl);
   const hasMp = mpStatus.mpConnected;
-  const hasPaymentFallback = Boolean(
-    sellerPayment?.paymentAlias || sellerPayment?.paymentInstructions,
-  );
   const hasInventory = inventory.length > 0;
   const hasListing = myListings.length > 0;
 
@@ -102,18 +96,10 @@ export default async function DashboardHomePage() {
     {
       key: "mp",
       title: "Conectá Mercado Pago",
-      description:
-        "Recomendado. Cobros verificados automáticamente, menos fricción para el comprador.",
+      description: "Necesario para vender: los compradores te pagan directo a tu cuenta.",
       href: "/account",
       done: hasMp,
       cta: "Conectar",
-    },
-    {
-      key: "fallback-payment",
-      title: "Cargá un método P2P de respaldo",
-      description: "Alias, CBU o instrucciones para vender sin MP.",
-      href: "/account",
-      done: hasPaymentFallback,
     },
     {
       key: "inventory",
@@ -293,10 +279,10 @@ export default async function DashboardHomePage() {
               </div>
               <div>
                 <p className="text-body-sm font-semibold">
-                  Conectá Mercado Pago para vender mejor
+                  Conectá Mercado Pago para vender
                 </p>
                 <p className="text-caption text-[var(--color-ink-muted)]">
-                  Sin MP los compradores ven el badge &quot;Pago P2P&quot; y suelen dudar más.
+                  Sin Mercado Pago conectado no podés publicar cartas.
                 </p>
               </div>
             </div>

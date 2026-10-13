@@ -46,7 +46,7 @@ const statusMeta: Record<
   { label: string; variant: "default" | "success" | "warning" }
 > = {
   active: { label: "Activa", variant: "success" },
-  pending_payment: { label: "Pago pendiente", variant: "warning" },
+  pending_payment: { label: "Reservada: alguien la está pagando", variant: "warning" },
   sold: { label: "Vendida", variant: "default" },
   cancelled: { label: "Cancelada", variant: "default" },
 };
@@ -70,14 +70,18 @@ export default async function ListingDetailPage({
       : Promise.resolve(null),
   ]);
   const image = listing.imageUrl ?? catalog?.imageLarge ?? catalog?.imageSmall ?? null;
+  // Sellers who skip the photo get the catalog scan; say so instead of passing it off as theirs.
+  const isCatalogPhoto = !image || isCatalogImageUrl(image);
   const isPack = false;
+  const canBuy = listing.status === "active" && listing.sellerMpConnected;
+  const loginHref = `/login?next=${encodeURIComponent(`/market/${listing.id}`)}`;
   const status = statusMeta[listing.status] ?? {
     label: listing.status,
     variant: "default" as const,
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-6 md:py-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 pb-28 pt-6 md:py-8">
       <div>
         <Link
           href="/market"
@@ -92,12 +96,19 @@ export default async function ListingDetailPage({
         <div className="grid gap-0 md:grid-cols-[minmax(280px,380px)_1fr]">
           <div className="relative aspect-[3/4] w-full overflow-hidden bg-[rgba(8,12,28,0.6)] md:aspect-auto md:min-h-[520px]">
             {image ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={image}
-                alt={listing.cardName}
-                className="h-full w-full object-contain p-4"
-              />
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={image}
+                  alt={listing.cardName}
+                  className="h-full w-full object-contain p-4"
+                />
+                {isCatalogPhoto ? (
+                  <span className="absolute bottom-3 left-3 rounded-full bg-black/70 px-3 py-1 t-xs font-semibold text-white">
+                    Foto de catálogo, no de la carta real
+                  </span>
+                ) : null}
+              </>
             ) : (
               <div className="grid h-full w-full place-items-center text-[var(--color-ink-subtle)]">
                 <div className="text-center">
@@ -154,8 +165,11 @@ export default async function ListingDetailPage({
               </p>
               {catalog?.marketPriceEur ? (
                 <div className="mt-2 space-y-0.5 text-caption text-[var(--color-ink-muted)]">
-                  <p className="font-medium">Referencia internacional:</p>
-                  <p>EUR {catalog.marketPriceEur.toFixed(2)} · Cardmarket</p>
+                  <p>
+                    Referencia en Europa (Cardmarket):{" "}
+                    <span className="font-medium">EUR {catalog.marketPriceEur.toFixed(2)}</span>
+                  </p>
+                  <p>Precio promedio allá; no incluye envío ni costos de importación.</p>
                 </div>
               ) : null}
             </div>
@@ -163,28 +177,20 @@ export default async function ListingDetailPage({
             <div className="grid gap-3 text-body-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[var(--color-ink-subtle)]">Vendedor:</span>
-                <span className="font-semibold">@{listing.sellerHandle}</span>
-                <Chip size="sm" variant="info">Perfil activo</Chip>
+                <Link
+                  href={`/u/${encodeURIComponent(listing.sellerHandle)}`}
+                  className="font-semibold underline-offset-2 hover:underline"
+                >
+                  @{listing.sellerHandle}
+                </Link>
               </div>
               <SellerTrustBlock reputation={sellerReputation} sellerHandle={listing.sellerHandle} />
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[var(--color-ink-subtle)]">Forma de pago:</span>
-                {listing.sellerMpConnected ? (
-                  <Chip size="sm" variant="success" title="Verificación automática por Mercado Pago">
-                    <CreditCard className="h-3 w-3" />
-                    Mercado Pago automático
-                  </Chip>
-                ) : (
-                  <Chip size="sm" variant="warning" title="Pago coordinado fuera de la plataforma">
-                    Pago P2P (alias/CBU)
-                  </Chip>
-                )}
-                <Link
-                  href="/how-it-works#pagos"
-                  className="text-caption font-semibold text-[var(--color-accent-strong)] underline"
-                >
-                  ¿Qué es esto?
-                </Link>
+                <span className="text-[var(--color-ink-subtle)]">Pago:</span>
+                <Chip size="sm" variant="success" title="Le pagás directo al vendedor por Mercado Pago">
+                  <CreditCard className="h-3 w-3" />
+                  Mercado Pago a la cuenta del vendedor
+                </Chip>
               </div>
               {catalog ? (
                 <div className="text-caption text-[var(--color-ink-muted)]">
@@ -195,25 +201,32 @@ export default async function ListingDetailPage({
               ) : null}
             </div>
 
+            {/* Mobile: fixed to the bottom, within thumb reach. Desktop: inline. */}
+            <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--hairline)] bg-[var(--bg-0)]/95 px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3 backdrop-blur md:static md:z-auto md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
+              <div className="mx-auto flex max-w-6xl items-center gap-3">
+                <p className="shrink-0 t-mono text-lg font-extrabold md:hidden">
+                  ARS {listing.priceArs.toLocaleString("es-AR")}
+                </p>
+                <div className="min-w-0 flex-1 md:max-w-sm">
+                  {canBuy ? (
+                    user ? (
+                      <ReserveListingButton listingId={listing.id} />
+                    ) : (
+                      <Button asChild fullWidth>
+                        <Link href={loginHref}>Ingresá para comprar</Link>
+                      </Button>
+                    )
+                  ) : (
+                    <Chip>
+                      {listing.status === "active"
+                        ? "Este vendedor todavía no puede cobrar"
+                        : status.label}
+                    </Chip>
+                  )}
+                </div>
+              </div>
+            </div>
             <div className="flex flex-wrap gap-2">
-              {listing.status === "active" ? (
-                user ? (
-                  <ReserveListingButton
-                    listingId={listing.id}
-                    sellerMpConnected={listing.sellerMpConnected}
-                  />
-                ) : (
-                  <Button asChild>
-                    <Link href="/login">Iniciá sesión para reservar</Link>
-                  </Button>
-                )
-              ) : (
-                <Chip>
-                  {listing.status === "pending_payment"
-                    ? "Reservado (pago pendiente)"
-                    : listing.status}
-                </Chip>
-              )}
               {user && listing.status === "active" ? (
                 <WatchFromListingButton
                   query={listing.cardName.toLowerCase()}
@@ -243,7 +256,7 @@ export default async function ListingDetailPage({
           </p>
         ) : (
           <p className="mt-3 text-body-sm text-[var(--color-ink-subtle)]">
-            El vendedor no cargó detalle de zona. Coordinalo por chat antes de pagar.
+            El vendedor no cargó detalle de zona. Después de pagar lo coordinan por el chat de la operación.
           </p>
         )}
       </Card>
@@ -260,18 +273,17 @@ export default async function ListingDetailPage({
             <CheckCircle className="h-5 w-5 text-[var(--color-accent)]" />
             <p className="mt-2 text-body-sm font-semibold">1. Reservás</p>
             <p className="mt-0.5 text-caption text-[var(--color-ink-muted)]">
-              La publicación queda en pago pendiente a tu nombre por 24 h.
+              La carta queda reservada a tu nombre por 30 minutos mientras pagás.
             </p>
           </li>
           <li className="glass-soft rounded-[var(--r-md)] p-4">
             <CreditCard className="h-5 w-5 text-[var(--color-accent)]" />
             <p className="mt-2 text-body-sm font-semibold">
-              2. {listing.sellerMpConnected ? "Pagás por Mercado Pago" : "Coordinás el pago"}
+              2. Pagás por Mercado Pago
             </p>
             <p className="mt-0.5 text-caption text-[var(--color-ink-muted)]">
-              {listing.sellerMpConnected
-                ? "Te abrimos el checkout de MP. Apenas confirma el pago, se verifica solo."
-                : "El vendedor te pasa alias o CBU. Transferís y avisás por el chat."}
+              Le pagás directo al vendedor con la protección de Mercado Pago. El pago se confirma
+              solo, sin capturas ni comprobantes.
             </p>
           </li>
           <li className="glass-soft rounded-[var(--r-md)] p-4">
@@ -282,15 +294,22 @@ export default async function ListingDetailPage({
             </p>
           </li>
         </ol>
-        {!listing.sellerMpConnected ? (
-          <p className="mt-3 rounded-[var(--radius-input)] border border-[var(--color-warning)] bg-[var(--color-warning-soft)] p-3 text-caption text-[var(--color-warning)]">
-            Como no hay MP, nuestra plataforma no verifica el pago automáticamente.
-            Revisá la reputación del vendedor antes de transferir y guardá comprobante.
-          </p>
-        ) : null}
+        <p className="mt-3 text-caption text-[var(--color-ink-muted)]">
+          Pagá siempre desde este botón: si alguien te pide una transferencia o un pago por
+          afuera, no lo hagas y avisanos. Fuera de la app no podemos ayudarte.
+        </p>
       </Card>
     </main>
   );
+}
+
+function isCatalogImageUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host.endsWith("tcgdex.net") || host === "images.pokemontcg.io";
+  } catch {
+    return false;
+  }
 }
 
 function SellerTrustBlock({
@@ -305,10 +324,10 @@ function SellerTrustBlock({
       <div className="glass-soft rounded-[var(--r-md)] p-4">
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-[var(--color-accent-strong)]" />
-          <p className="text-body-sm font-semibold">@{sellerHandle} todavia no tiene calificaciones.</p>
+          <p className="text-body-sm font-semibold">@{sellerHandle} todavía no tiene calificaciones.</p>
         </div>
         <p className="mt-1 text-caption text-[var(--color-ink-muted)]">
-          Es un vendedor nuevo. Antes de pagar, coordina por chat y guarda el comprobante.
+          Es un vendedor nuevo. Fijate las fotos y la condición antes de comprar.
         </p>
       </div>
     );
@@ -333,15 +352,15 @@ function SellerTrustBlock({
           {(reputation.disputeRate * 100).toFixed(0)}% disputas
         </Chip>
         {reputation.verifiedSeller ? (
-          <Chip size="sm" variant="success">
+          <Chip size="sm" variant="success" title="Mercado Pago validó la identidad de esta cuenta">
             <ShieldCheck className="h-3 w-3" />
-            MP conectado
+            Identidad validada por Mercado Pago
           </Chip>
         ) : null}
       </div>
       <p className="mt-2 text-caption text-[var(--color-ink-muted)]">
-        Nivel {tierLabel}. Esta reputacion se calcula con operaciones entregadas,
-        calificaciones y disputas registradas en la plataforma.
+        Nivel {tierLabel}. Esta reputación se calcula con operaciones pagadas por la app,
+        calificaciones y disputas.
       </p>
     </div>
   );

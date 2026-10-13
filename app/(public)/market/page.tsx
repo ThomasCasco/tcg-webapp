@@ -308,7 +308,6 @@ export default async function MarketPage({
               key={listing.id}
               listing={listing}
               pokemonTypes={pokemonTypes}
-              isLoggedIn={Boolean(user)}
               sellerReputation={sellerReputation}
             />
           ))}

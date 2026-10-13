@@ -130,7 +130,6 @@ export default async function HomePage() {
                   key={listing.id}
                   listing={listing}
                   pokemonTypes={null}
-                  isLoggedIn={Boolean(user)}
                 />
               ))}
             </div>

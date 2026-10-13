@@ -3,7 +3,6 @@ import type { Listing } from "@/lib/domain/types";
 import type { SellerReputationSummary } from "@/lib/domain/reputation";
 import type { PokemonTypeChip } from "@/lib/server/pokeapi";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
-import { ReserveListingButton } from "@/components/reserve-listing-button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { ShieldCheck, Star } from "@/components/ui/icon";
@@ -12,11 +11,10 @@ import { PokemonTypeIcon } from "@/components/ui/pokemon-type-icon";
 type Props = {
   listing: Listing;
   pokemonTypes: PokemonTypeChip[] | null;
-  isLoggedIn: boolean;
   sellerReputation?: SellerReputationSummary;
 };
 
-export function MarketListingCard({ listing, pokemonTypes, isLoggedIn, sellerReputation }: Props) {
+export function MarketListingCard({ listing, pokemonTypes, sellerReputation }: Props) {
   const sold = listing.status === "sold";
   const reserved = listing.status === "pending_payment";
   const formattedPrice = `ARS ${listing.priceArs.toLocaleString("es-AR")}`;
@@ -57,16 +55,6 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn, sellerRep
           <Chip size="sm" className="max-w-full whitespace-normal text-left leading-tight backdrop-blur">
             {formatConditionEs(listing.condition)}
           </Chip>
-          {listing.sellerMpConnected ? (
-            <Chip
-              size="sm"
-              variant="success"
-              className="backdrop-blur"
-              title="El vendedor tiene Mercado Pago conectado: verificación automática."
-            >
-              MP
-            </Chip>
-          ) : null}
         </div>
       </Link>
 
@@ -106,19 +94,13 @@ export function MarketListingCard({ listing, pokemonTypes, isLoggedIn, sellerRep
 
         {listing.status === "active" && (
           <div className="mt-3">
-            {isLoggedIn ? (
-              <ReserveListingButton
-                listingId={listing.id}
-                sellerMpConnected={listing.sellerMpConnected}
-              />
-            ) : (
-              <Link
-                href="/login"
-                className="btn btn-primary block w-full text-center"
-              >
-                Iniciá sesión para comprar
-              </Link>
-            )}
+            {/* Buying happens on the listing page, where the trust details are. */}
+            <Link
+              href={`/market/${listing.id}`}
+              className="btn btn-primary block w-full text-center"
+            >
+              Ver y comprar
+            </Link>
           </div>
         )}
       </div>
@@ -142,7 +124,7 @@ function SellerTrustLine({ reputation }: { reputation?: SellerReputationSummary 
       </span>
       <span>{reputation.completedSalesCount} ventas</span>
       {reputation.verifiedSeller ? (
-        <span title="Vendedor con Mercado Pago conectado">
+        <span title="Identidad validada por Mercado Pago">
           <ShieldCheck className="h-3 w-3 text-[var(--accent-hi)]" />
         </span>
       ) : null}

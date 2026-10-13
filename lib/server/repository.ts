@@ -2063,8 +2063,13 @@ export async function listListings(options?: {
     throw new Error(error.message);
   }
 
-  const listings = ((data ?? []) as ListingRow[]).map(mapListingRow);
-  return enrichListingsWithMpStatus(listings);
+  const listings = await enrichListingsWithMpStatus(
+    ((data ?? []) as ListingRow[]).map(mapListingRow),
+  );
+  // Buyers only see what they can actually pay for through Mercado Pago.
+  return options?.onlyPublic
+    ? listings.filter((listing) => listing.sellerMpConnected)
+    : listings;
 }
 
 async function enrichListingsWithMpStatus(listings: Listing[]): Promise<Listing[]> {
