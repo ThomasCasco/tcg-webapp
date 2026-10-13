@@ -1,6 +1,6 @@
 import type { FulfillmentStatus } from "@/lib/domain/types";
 import { requireAuthenticatedUser } from "@/lib/server/auth";
-import { updateFulfillmentStatus } from "@/lib/server/repository";
+import { FulfillmentTransitionError, updateFulfillmentStatus } from "@/lib/server/repository";
 import { getTransactionContext, inferDeliveryMode } from "@/lib/server/transaction-context";
 import { createNotification } from "@/lib/server/notifications";
 import { sendShippedToBuyer, sendDeliveredToSeller } from "@/lib/server/email";
@@ -11,13 +11,9 @@ type FulfillmentPayload = {
   trackingNumber?: string;
 };
 
-const allowedStatuses: FulfillmentStatus[] = [
-  "seller_confirmed",
-  "shipped",
-  "delivered",
-  "disputed",
-  "closed",
-];
+// seller_confirmed comes from payment verification, disputed from the disputes
+// API and closed from the rating endpoint; none can be requested here.
+const allowedStatuses: FulfillmentStatus[] = ["shipped", "delivered"];
 
 function isStatus(value: unknown): value is FulfillmentStatus {
   return typeof value === "string" && allowedStatuses.includes(value as FulfillmentStatus);
@@ -88,6 +84,9 @@ export async function PATCH(
 
     return Response.json({ payment });
   } catch (error) {
+    if (error instanceof FulfillmentTransitionError) {
+      return Response.json({ error: error.message }, { status: 409 });
+    }
     return Response.json(
       {
         error:
@@ -111,7 +110,8 @@ async function notifyAfterFulfillmentChange(opts: {
   const mode = inferDeliveryMode(ctx);
 
   if (opts.nextStatus === "shipped" && ctx.buyer.id) {
-    if (ctx.buyer.email) {
+    // The shipping email talks about tracking; a pickup handover only needs the in-app notice.
+    if (ctx.buyer.email && mode !== "pickup") {
       await sendShippedToBuyer({
         to: ctx.buyer.email,
         buyerName: ctx.buyer.username,
@@ -124,10 +124,10 @@ async function notifyAfterFulfillmentChange(opts: {
     await createNotification({
       userId: ctx.buyer.id,
       type: "shipped_to_buyer",
-      title: mode === "pickup" ? "Coordinen el retiro" : "Tu carta ya viaja",
+      title: mode === "pickup" ? "¿Ya tenés tu carta?" : "Tu carta ya viaja",
       body:
         mode === "pickup"
-          ? `${ctx.seller.username} marcó la entrega de ${ctx.cardName} como coordinada.`
+          ? `${ctx.seller.username} marcó ${ctx.cardName} como entregada en persona. Confirmá la recepción.`
           : `${ctx.seller.username} envió ${ctx.cardName}${opts.tracking ? ` (tracking: ${opts.tracking})` : ""}.`,
       linkPath,
     });

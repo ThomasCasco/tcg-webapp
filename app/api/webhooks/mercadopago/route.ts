@@ -23,8 +23,6 @@ import { sendPaymentConfirmedBuyer, sendSaleConfirmedSeller } from "@/lib/server
 import { createNotification } from "@/lib/server/notifications";
 import { log } from "@/lib/server/logger";
 
-const PLATFORM_FEE_PERCENT = Number(process.env.PLATFORM_FEE_PERCENT ?? "1") / 100;
-
 type MpWebhookBody = {
   action?: string;
   api_version?: string;
@@ -244,9 +242,9 @@ async function sendEmailsAfterPayment(opts: {
   const ctx = await getTransactionContext(paymentEvent.transactionId);
   if (!ctx) return;
 
-  const netArs = Math.round(priceArs - platformFeeArs);
-  const feeFallback = Math.round(priceArs * PLATFORM_FEE_PERCENT);
-  const feeArs = platformFeeArs > 0 ? platformFeeArs : feeFallback;
+  // platformFeeArs is what MP actually withheld (0 while there is no commission).
+  const feeArs = Math.max(0, Math.round(platformFeeArs));
+  const netArs = Math.round(priceArs - feeArs);
 
   const linkPath = `/transactions/${ctx.transactionId}`;
 

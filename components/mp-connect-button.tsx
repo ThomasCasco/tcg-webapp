@@ -42,8 +42,8 @@ export function MpConnectButton({
           )}
         </div>
         <p className="text-caption text-[var(--color-ink-muted)]">
-          Los compradores pueden pagarte automáticamente. La plataforma retiene el 1&nbsp;% de
-          comisión sobre cada venta.
+          Los compradores te pagan directo a tu cuenta de Mercado Pago y la venta se confirma
+          sola.
         </p>
       </div>
     );
@@ -79,8 +79,8 @@ export function MpConnectButton({
   return (
     <div className="space-y-3">
       <p className="text-body-sm text-[var(--color-ink-muted)]">
-        Conectá tu cuenta de Mercado Pago para recibir pagos automáticos de los compradores.
-        La plataforma retiene el 1&nbsp;% de comisión sobre cada venta.
+        Conectá tu cuenta de Mercado Pago para vender: los compradores te pagan directo a tu
+        cuenta y la venta se confirma sola. TCG nunca toca tu dinero.
       </p>
       <Button
         variant="primary"

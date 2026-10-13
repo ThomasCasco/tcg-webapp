@@ -1,5 +1,9 @@
 import { requireAuthenticatedUser } from "@/lib/server/auth";
-import { createDispute, listDisputesForUser } from "@/lib/server/repository";
+import {
+  FulfillmentTransitionError,
+  createDispute,
+  listDisputesForUser,
+} from "@/lib/server/repository";
 import { getTransactionContext } from "@/lib/server/transaction-context";
 import { createNotification } from "@/lib/server/notifications";
 import { sendDisputeOpened } from "@/lib/server/email";
@@ -87,6 +91,9 @@ export async function POST(request: Request) {
 
     return Response.json({ dispute }, { status: 201 });
   } catch (error) {
+    if (error instanceof FulfillmentTransitionError) {
+      return Response.json({ error: error.message }, { status: 409 });
+    }
     return Response.json(
       {
         error:

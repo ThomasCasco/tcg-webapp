@@ -8,6 +8,9 @@
 :root {
   /* Accent */
   --accent: #3D7BFD;
+  /* Button fill: white text on #3D7BFD is 3.85:1 (fails AA); these pass. */
+  --accent-btn: #2563EB;
+  --accent-btn-hover: #1D5BE0;
   --accent-hi: #6DA1FF;
   --accent-glow: 61, 123, 253;
 
@@ -52,7 +55,8 @@
   --bg-2: #111A38;
   --ink:      #F4F6FB;
   --ink-mute: rgba(244, 246, 251, 0.66);
-  --ink-soft: rgba(244, 246, 251, 0.42);
+  /* 0.56 keeps hints/placeholders at ≥5.7:1 on every dark surface (WCAG AA). */
+  --ink-soft: rgba(244, 246, 251, 0.56);
 
   --glass-fill:      rgba(255, 255, 255, 0.045);
   --glass-fill-hi:   rgba(255, 255, 255, 0.085);
@@ -270,13 +274,19 @@ input, textarea, select { font: inherit; color: inherit; }
 }
 .btn:active { transform: scale(0.96); }
 .btn-primary {
-  background: var(--accent);
+  background: var(--accent-btn);
   color: white;
   padding: 12px 18px;
   box-shadow: 0 1px 0 rgba(255,255,255,0.10) inset;
   border: 0;
 }
-.btn-primary:hover { background: var(--accent-hi); }
+.btn-primary:hover { background: var(--accent-btn-hover); }
+
+/* Visible keyboard focus everywhere, not only on <Button>. */
+:where(a, button, summary, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--accent-hi);
+  outline-offset: 2px;
+}
 .btn-ghost {
   background: var(--glass-fill);
   border: 1px solid var(--glass-border);

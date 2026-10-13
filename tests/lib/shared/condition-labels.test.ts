@@ -3,10 +3,10 @@ import { formatConditionEs, conditionLabelEs } from "@/lib/shared/condition-labe
 
 describe("formatConditionEs", () => {
   it("maps each known condition to its Spanish label", () => {
-    expect(formatConditionEs("mint")).toBe("Mint (NM+)");
+    expect(formatConditionEs("mint")).toBe("Mint");
     expect(formatConditionEs("near_mint")).toBe("Casi mint (NM)");
     expect(formatConditionEs("lightly_played")).toBe("Ligeramente jugada (LP)");
-    expect(formatConditionEs("moderately_played")).toBe("Moderadamente jugada (MP)");
+    expect(formatConditionEs("moderately_played")).toBe("Moderadamente jugada");
     expect(formatConditionEs("heavily_played")).toBe("Muy jugada (HP)");
     expect(formatConditionEs("damaged")).toBe("Dañada");
   });

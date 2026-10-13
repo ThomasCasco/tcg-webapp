@@ -29,6 +29,8 @@ type Tx = {
   cardName: string;
   provider: PaymentProvider;
   providerPaymentId?: string;
+  /** "cancelled" once the buyer gave up the reservation. */
+  providerStatus: string;
   verificationStatus: PaymentVerificationStatus;
   fulfillmentStatus?: FulfillmentStatus;
   shippingTracking?: string;
@@ -40,7 +42,13 @@ type Tx = {
   priceArs: number;
   platformFeeArs: number;
   netArs: number;
+  /** MP checkout link stored at reservation time. */
+  mpCheckoutUrl?: string;
+  /** When the MP checkout stops accepting payments (ISO). */
+  checkoutDeadline: string;
 };
+
+const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
 
 type Props = {
   transaction: Tx;
@@ -56,6 +64,10 @@ function fmtArs(n: number): string {
     currency: "ARS",
     maximumFractionDigits: 0,
   }).format(n);
+}
+
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
 }
 
 function fmtDate(iso: string): string {
@@ -87,6 +99,27 @@ export function OrderPanel({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [panel, setPanel] = useState<"none" | "ship" | "dispute" | "rate" | "chat">("none");
+  // Captured once per mount: enough to decide whether the checkout link still works.
+  const [checkoutOpen] = useState(() => Date.now() < new Date(tx.checkoutDeadline).getTime());
+
+  async function cancelReservation() {
+    if (!window.confirm("¿Cancelar la reserva? La carta vuelve a estar disponible para otros.")) {
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/transactions/${tx.transactionId}/cancel`, { method: "POST" });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "No se pudo cancelar la reserva.");
+      setMsg({ kind: "ok", text: "Reserva cancelada." });
+      router.refresh();
+    } catch (err) {
+      setMsg({ kind: "err", text: err instanceof Error ? err.message : "Error." });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function patchFulfillment(nextStatus: FulfillmentStatus, trackingNumber?: string) {
     setBusy(true);
@@ -173,26 +206,84 @@ export function OrderPanel({
 
       <Card padding="md" className="space-y-3">
         <p className="t-eyebrow">Montos</p>
-        <dl className="grid grid-cols-2 gap-y-1.5 t-sm">
-          <dt className="t-mute">Precio bruto</dt>
-          <dd className="text-right">{fmtArs(tx.priceArs)}</dd>
-          <dt className="t-mute">Comisión plataforma</dt>
-          <dd className="text-right">−{fmtArs(tx.platformFeeArs)}</dd>
-          <dt className="font-semibold">{isSeller ? "Tu ingreso neto" : "Total que pagaste"}</dt>
-          <dd className="text-right font-semibold">
-            {fmtArs(isSeller ? tx.netArs : tx.priceArs)}
-          </dd>
-        </dl>
+        {isSeller ? (
+          <dl className="grid grid-cols-2 gap-y-1.5 t-sm">
+            <dt className="t-mute">Precio</dt>
+            <dd className="text-right">{fmtArs(tx.priceArs)}</dd>
+            {tx.platformFeeArs > 0 ? (
+              <>
+                <dt className="t-mute">Comisión TCG</dt>
+                <dd className="text-right">−{fmtArs(tx.platformFeeArs)}</dd>
+              </>
+            ) : null}
+            <dt className="font-semibold">Te queda</dt>
+            <dd className="text-right font-semibold">{fmtArs(tx.netArs)}</dd>
+          </dl>
+        ) : (
+          <dl className="grid grid-cols-2 gap-y-1.5 t-sm">
+            <dt className="font-semibold">{isPaid ? "Pagaste" : "Total a pagar"}</dt>
+            <dd className="text-right font-semibold">{fmtArs(tx.priceArs)}</dd>
+          </dl>
+        )}
+        {isSeller ? (
+          <p className="t-xs t-mute">
+            Mercado Pago descuenta además su comisión según el plazo de acreditación de tu cuenta.
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-2 pt-1 t-xs t-mute">
-          {tx.provider === "mercado_pago" ? <Chip size="sm" variant="info">Mercado Pago</Chip> : <Chip size="sm">P2P</Chip>}
+          <Chip size="sm" variant="info">Mercado Pago</Chip>
           {tx.providerPaymentId ? (
-            <Chip size="sm">MP ID: {tx.providerPaymentId}</Chip>
+            <Chip size="sm">Operación MP: {tx.providerPaymentId}</Chip>
           ) : null}
           <Chip size="sm" variant={isPaid ? "success" : "warning"}>
-            {isPaid ? "Pago verificado" : "Pago pendiente"}
+            {isPaid ? "Pago acreditado" : "Pago pendiente"}
           </Chip>
         </div>
       </Card>
+
+      {!isPaid && tx.providerStatus !== "cancelled" && (
+        <Card padding="md" className="space-y-3">
+          <p className="t-eyebrow">Esperando el pago</p>
+          {viewerIsBuyer ? (
+            checkoutOpen ? (
+              <>
+                <p className="t-sm">
+                  Tenés hasta las <strong>{fmtTime(tx.checkoutDeadline)}</strong> para pagar con
+                  Mercado Pago. Si ya pagaste, se acredita solo en unos segundos.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {tx.mpCheckoutUrl ? (
+                    <Button asChild size="md">
+                      <a href={tx.mpCheckoutUrl}>Pagar con Mercado Pago</a>
+                    </Button>
+                  ) : null}
+                  <Button size="md" variant="ghost" onClick={cancelReservation} disabled={busy}>
+                    Cancelar reserva
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <p className="t-sm">
+                La reserva venció sin un pago acreditado. Si la carta sigue disponible, podés
+                volver a comprarla desde el mercado.
+              </p>
+            )
+          ) : (
+            <p className="t-sm t-mute">
+              {tx.buyerHandle} está pagando con Mercado Pago. Si no paga antes de las{" "}
+              {fmtTime(tx.checkoutDeadline)}, la carta vuelve a estar disponible. No envíes nada
+              hasta que el pago figure como acreditado.
+            </p>
+          )}
+        </Card>
+      )}
+
+      {!isPaid && tx.providerStatus === "cancelled" && (
+        <Card padding="md" className="space-y-2">
+          <p className="font-semibold">Reserva cancelada</p>
+          <p className="t-sm t-mute">Esta compra no se pagó. No hace falta hacer nada más.</p>
+        </Card>
+      )}
 
       {/* Acción principal por estado/rol/modo */}
       {isPaid && status !== "closed" && status !== "disputed" && (
@@ -204,17 +295,17 @@ export function OrderPanel({
               deliveryMode === "pickup" ? (
                 <>
                   <p className="t-sm">
-                    Coordiná retiro por chat con <strong>{tx.buyerHandle}</strong>.
-                    Cuando entregues la carta en persona, marcala como entregada.
+                    Coordiná el retiro por el chat con <strong>{tx.buyerHandle}</strong>.
+                    Cuando le entregues la carta, avisá acá.
                   </p>
                   <Button
                     size="md"
-                    onClick={() => patchFulfillment("delivered")}
+                    onClick={() => patchFulfillment("shipped")}
                     disabled={busy}
                     loading={busy}
                   >
                     <HandshakeIcon className="h-4 w-4" />
-                    Marcar entregada en persona
+                    Ya la entregué en persona
                   </Button>
                 </>
               ) : (
@@ -260,21 +351,40 @@ export function OrderPanel({
                   )}
                 </>
               )
+            ) : deliveryMode === "pickup" ? (
+              <>
+                <p className="t-sm">
+                  Coordiná el retiro por el chat con <strong>{tx.sellerHandle}</strong>. Cuando
+                  tengas la carta, confirmá la recepción.
+                </p>
+                <Button
+                  size="md"
+                  onClick={() => patchFulfillment("delivered")}
+                  disabled={busy}
+                  loading={busy}
+                >
+                  <Check className="h-4 w-4" />
+                  Ya tengo la carta
+                </Button>
+              </>
             ) : (
               <p className="t-sm t-mute">
-                Esperando al vendedor.{" "}
-                {deliveryMode === "pickup"
-                  ? "Coordinen el retiro por el chat."
-                  : "Te avisamos cuando despache el envío."}
+                Esperando al vendedor. Te avisamos cuando despache el envío.
               </p>
             )
           ) : status === "shipped" ? (
             viewerIsBuyer ? (
               <>
                 <p className="t-sm">
-                  El vendedor marcó el envío
-                  {tx.shippingTracking ? <> con tracking <code className="t-mono">{tx.shippingTracking}</code></> : null}.
-                  Cuando recibas la carta, confirmá la recepción.
+                  {deliveryMode === "pickup" ? (
+                    <>El vendedor marcó la carta como entregada en persona.</>
+                  ) : (
+                    <>
+                      El vendedor marcó el envío
+                      {tx.shippingTracking ? <> con tracking <code className="t-mono">{tx.shippingTracking}</code></> : null}.
+                    </>
+                  )}{" "}
+                  Cuando tengas la carta, confirmá la recepción.
                 </p>
                 <Button
                   size="md"
@@ -320,8 +430,7 @@ export function OrderPanel({
               )
             ) : viewerIsBuyer && existingRating ? (
               <p className="t-sm t-mute">
-                Ya calificaste con {"★".repeat(existingRating.stars)}. Esperamos a que el
-                sistema cierre la operación en segundos.
+                Ya calificaste con {"★".repeat(existingRating.stars)}. ¡Gracias!
               </p>
             ) : (
               <p className="t-sm t-mute">
@@ -336,8 +445,16 @@ export function OrderPanel({
         <Card padding="md" className="chip-danger space-y-2">
           <p className="font-semibold">Operación en disputa</p>
           <p className="t-sm">
-            Coordinen por el chat. Si no llegan a acuerdo, el equipo de moderación
-            interviene.
+            Coordinen por el chat para resolverlo.
+            {SUPPORT_EMAIL ? (
+              <>
+                {" "}Si no llegan a un acuerdo, escribinos a{" "}
+                <a className="underline" href={`mailto:${SUPPORT_EMAIL}?subject=Disputa ${tx.transactionId}`}>
+                  {SUPPORT_EMAIL}
+                </a>{" "}
+                con el número de operación.
+              </>
+            ) : null}
           </p>
         </Card>
       )}

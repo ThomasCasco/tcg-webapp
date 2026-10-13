@@ -63,8 +63,8 @@ export async function GET(request: Request) {
 
   // ── 2. Release stale pending listings ───────────────────────────────────
   try {
-    // 30 min: MP checkout sessions die quickly; longer holds just lock listings.
-    const released = await releaseStalePendingListings(0.5);
+    // Same TTL the app applies lazily (checkout window + grace).
+    const released = await releaseStalePendingListings();
     results.staleListings = { released };
   } catch (err) {
     results.staleListings = { error: err instanceof Error ? err.message : String(err) };

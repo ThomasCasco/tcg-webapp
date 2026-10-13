@@ -3,16 +3,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ShoppingBag,
-  ArrowLeftRight,
   Layers,
-  ListChecks,
   Tag,
   Package,
   Bell,
   Scale,
-  Users,
   Wallet,
-  Gavel,
   Home,
   Info,
 } from "@/components/ui/icon";
@@ -39,21 +35,14 @@ const sections: NavSection[] = [
     label: "Comprar",
     items: [
       { href: "/market", label: "Mercado", icon: ShoppingBag },
-      { href: "/auctions", label: "Subastas", icon: Gavel },
-      { href: "/claims", label: "Claims", icon: ListChecks },
-      { href: "/trades", label: "Trades", icon: ArrowLeftRight },
-      { href: "/profiles", label: "Perfiles", icon: Users },
-      { href: "/trade-proposals", label: "Propuestas", icon: ArrowLeftRight },
-      { href: "/transactions", label: "Operaciones", icon: Package },
+      { href: "/transactions", label: "Compras y ventas", icon: Package },
     ],
   },
   {
     label: "Vender",
     items: [
       { href: "/inventory", label: "Inventario", icon: Layers },
-      { href: "/listings", label: "Mis ventas", icon: Tag },
-      { href: "/my-auctions", label: "Mis subastas", icon: Gavel },
-      { href: "/my-claims", label: "Mis claims", icon: ListChecks },
+      { href: "/listings", label: "Mis publicaciones", icon: Tag },
     ],
   },
   {

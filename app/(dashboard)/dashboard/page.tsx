@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import {
   getMpConnectionStatus,
-  getSellerPaymentProfile,
   getSocialProfile,
   listAuctions,
   listInventoryEntries,
@@ -13,6 +12,7 @@ import {
   listNotificationsForUser,
 } from "@/lib/server/repository";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
+import { secondaryFormatsEnabled } from "@/lib/shared/features";
 import {
   SellerSetupChecklist,
   type ChecklistStep,
@@ -55,7 +55,6 @@ export default async function DashboardHomePage() {
 
   const [
     profile,
-    sellerPayment,
     mpStatus,
     inventory,
     myListings,
@@ -65,7 +64,6 @@ export default async function DashboardHomePage() {
     notifications,
   ] = await Promise.all([
     getSocialProfile(user.id).catch(() => null),
-    getSellerPaymentProfile(user.id).catch(() => null),
     getMpConnectionStatus(user.id).catch(() => ({ mpConnected: false, mpUserId: null })),
     listInventoryEntries({ ownerId: user.id }).catch(() => []),
     listListings({ sellerId: user.id }).catch(() => []),
@@ -85,9 +83,6 @@ export default async function DashboardHomePage() {
   const hasProfile = Boolean(profile?.displayName || profile?.bio);
   const hasAvatar = Boolean(profile?.avatarUrl);
   const hasMp = mpStatus.mpConnected;
-  const hasPaymentFallback = Boolean(
-    sellerPayment?.paymentAlias || sellerPayment?.paymentInstructions,
-  );
   const hasInventory = inventory.length > 0;
   const hasListing = myListings.length > 0;
 
@@ -102,18 +97,10 @@ export default async function DashboardHomePage() {
     {
       key: "mp",
       title: "Conectá Mercado Pago",
-      description:
-        "Recomendado. Cobros verificados automáticamente, menos fricción para el comprador.",
+      description: "Necesario para vender: los compradores te pagan directo a tu cuenta.",
       href: "/account",
       done: hasMp,
       cta: "Conectar",
-    },
-    {
-      key: "fallback-payment",
-      title: "Cargá un método P2P de respaldo",
-      description: "Alias, CBU o instrucciones para vender sin MP.",
-      href: "/account",
-      done: hasPaymentFallback,
     },
     {
       key: "inventory",
@@ -178,16 +165,14 @@ export default async function DashboardHomePage() {
 
       <SellerSetupChecklist steps={steps} />
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2">
         <ContextCard
           icon={<ShoppingBag className="h-5 w-5" />}
           eyebrow="Comprar"
           title="Buscás algo"
-          description="Mercado, subastas y alertas para que no se te escapen las cartas que te faltan."
+          description="El mercado y tus alertas para que no se te escapen las cartas que te faltan."
           links={[
             { href: "/market", label: "Mercado" },
-            { href: "/auctions", label: "Subastas" },
-            { href: "/claims", label: "Claims en vivo" },
             { href: "/alerts", label: "Mis alertas" },
             { href: "/transactions", label: `Mis compras${pendingTransactions ? ` (${pendingTransactions})` : ""}` },
           ]}
@@ -196,33 +181,18 @@ export default async function DashboardHomePage() {
           icon={<Tag className="h-5 w-5" />}
           eyebrow="Vender"
           title="Tenés cartas para mover"
-          description="Cargá stock, publicá precios o programá una subasta."
+          description="Cargá tu stock y publicá con precio en pesos."
           links={[
             { href: "/inventory", label: `Inventario (${inventory.length})` },
-            { href: "/listings", label: `Mis ventas (${myListings.length})` },
-            { href: "/my-auctions", label: `Mis subastas${myAuctions.length ? ` (${myAuctions.length})` : ""}` },
-            { href: "/my-claims", label: "Mis claims" },
-            { href: "/account", label: "Cobros y MP" },
-          ]}
-        />
-        <ContextCard
-          icon={<ArrowLeftRight className="h-5 w-5" />}
-          eyebrow="Intercambiar"
-          title="Querés tradear"
-          description="Cartas que ofrecés y que buscás. Otros coleccionistas te proponen swaps."
-          links={[
-            { href: "/trades", label: "Explorar trades" },
-            { href: "/inventory", label: "Marcar disponibles" },
-            {
-              href: "/trade-proposals",
-              label: `Propuestas${pendingProposals ? ` (${pendingProposals})` : ""}`,
-            },
-            { href: "/profiles", label: "Perfiles" },
+            { href: "/listings", label: `Mis publicaciones (${myListings.length})` },
+            { href: "/account", label: "Cobros y Mercado Pago" },
           ]}
         />
       </section>
 
-      {(scheduledAuctions > 0 || activeAuctions > 0 || pendingTransactions > 0 || pendingProposals > 0) ? (
+      {(pendingTransactions > 0 ||
+        (secondaryFormatsEnabled() &&
+          (scheduledAuctions > 0 || activeAuctions > 0 || pendingProposals > 0))) ? (
         <Card padding="md">
           <p className="text-overline text-[var(--color-ink-subtle)]">Lo que tenés activo</p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -234,7 +204,7 @@ export default async function DashboardHomePage() {
                 label={`${pendingTransactions} operación${pendingTransactions === 1 ? "" : "es"} en curso`}
               />
             ) : null}
-            {pendingProposals > 0 ? (
+            {secondaryFormatsEnabled() && pendingProposals > 0 ? (
               <ActivityChip
                 href="/trade-proposals"
                 icon={<ArrowLeftRight className="h-3 w-3" />}
@@ -242,7 +212,7 @@ export default async function DashboardHomePage() {
                 label={`${pendingProposals} propuesta${pendingProposals === 1 ? "" : "s"} de trade`}
               />
             ) : null}
-            {scheduledAuctions > 0 ? (
+            {secondaryFormatsEnabled() && scheduledAuctions > 0 ? (
               <ActivityChip
                 href="/my-auctions"
                 icon={<CalendarClock className="h-3 w-3" />}
@@ -250,7 +220,7 @@ export default async function DashboardHomePage() {
                 label={`${scheduledAuctions} subasta${scheduledAuctions === 1 ? "" : "s"} programada${scheduledAuctions === 1 ? "" : "s"}`}
               />
             ) : null}
-            {activeAuctions > 0 ? (
+            {secondaryFormatsEnabled() && activeAuctions > 0 ? (
               <ActivityChip
                 href="/my-auctions"
                 icon={<Gavel className="h-3 w-3" />}
@@ -267,8 +237,8 @@ export default async function DashboardHomePage() {
           <Layers className="mx-auto h-10 w-10 text-[var(--color-ink-subtle)]" />
           <h2 className="mt-3 text-h3">¿Recién empezás?</h2>
           <p className="mx-auto mt-1 max-w-md text-body-sm text-[var(--color-ink-muted)]">
-            Mirá la guía para entender cómo funcionan el marketplace, los trades
-            y las subastas. Te ahorra muchas vueltas.
+            Mirá la guía para entender cómo se compra, se vende y se paga. Te
+            ahorra muchas vueltas.
           </p>
           <div className="mt-3 flex justify-center gap-2">
             <Button asChild>
@@ -293,10 +263,10 @@ export default async function DashboardHomePage() {
               </div>
               <div>
                 <p className="text-body-sm font-semibold">
-                  Conectá Mercado Pago para vender mejor
+                  Conectá Mercado Pago para vender
                 </p>
                 <p className="text-caption text-[var(--color-ink-muted)]">
-                  Sin MP los compradores ven el badge &quot;Pago P2P&quot; y suelen dudar más.
+                  Sin Mercado Pago conectado no podés publicar cartas.
                 </p>
               </div>
             </div>

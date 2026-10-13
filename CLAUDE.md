@@ -24,7 +24,7 @@ npm run lint         # eslint
 npm run typecheck    # tsc --noEmit
 npm run test         # vitest run (all tests)
 npm run test -- tests/lib/server/auth.test.ts   # single file
-npm run test -- -t "decodeAccessToken"          # by test name
+npm run test -- -t "verifyAccessToken"          # by test name
 npm run e2e          # HTTP-driven scenarios against http://localhost:3000 (start dev first)
 npm run e2e -- post-payment-shipping-happy      # single scenario; see scripts/README.md
 npm run e2e:cleanup  # remove leftover e2e_* / [E2E] rows older than 10 min
@@ -49,8 +49,9 @@ E2E targets that are non-localhost require `E2E_ALLOW_PROD=1` and may need `VERC
 ### Auth (custom cookie session, not `@supabase/ssr`)
 
 - `proxy.ts` runs on every request, reads `tcg_access_token` / `tcg_refresh_token` (httpOnly cookies — names in `lib/shared/auth-cookies.ts`), and refreshes the Supabase session itself when the access JWT is within 60s of expiry. Three outcomes: `refreshed` (rewrites both cookies on the response and on the in-flight request so RSCs see them), `invalid_grant` (wipes cookies), `failed` (transient — keeps cookies so the next request retries).
-- `proxy.ts` also handles the protected-path redirect (`/inventory`, `/listings`, `/transactions`, `/disputes`, `/alerts` → `/login?next=…`) and the inverse for `/login` and `/register` when already signed in.
-- `lib/server/auth.ts` is the **server-side** auth entry. `decodeAccessToken` reads the JWT **without verifying the signature** — this is intentional: the cookie is httpOnly+secure and was set by our own login/refresh flow that already validated the token against Supabase. Match this trust model rather than re-validating in route handlers.
+- `proxy.ts` also handles the protected-path redirect (`/inventory`, `/listings`, `/transactions`, `/disputes`, `/alerts`, `/account`, `/dashboard`, `/onboarding` → `/login?next=…`; the login page honours `next` through `lib/shared/safe-next.ts`) and the inverse for `/login` and `/register` when already signed in.
+- `proxy.ts` first checks `lib/shared/features.ts`: auctions, claims, trades and `/profiles` are frozen for v0 (pages redirect to `/market`, their APIs answer 404) unless `ENABLE_SECONDARY_FORMATS=1`. `/ui-kit` is hidden in production.
+- `lib/server/auth.ts` is the **server-side** auth entry. `verifyAccessToken` checks the JWT signature with `supabase.auth.getClaims()`: ES256 tokens are verified locally against the project's cached JWKS (no network per request); anything else falls back to the Auth server and fails closed. Never decode the cookie without verifying it — httpOnly stops scripts from reading the cookie, not users from forging one. Route handlers don't need to re-validate; call `getAuthenticatedUser()` / `requireAuthenticatedUser()`.
 - `getAuthenticatedUser()` returns `null` on missing/expired tokens (UI shows logged-out). `requireAuthenticatedUser()` throws — handlers usually do `.catch(() => null)` and return 401 themselves.
 
 ### Supabase clients
@@ -60,7 +61,7 @@ E2E targets that are non-localhost require `E2E_ALLOW_PROD=1` and may need `VERC
 
 ### Database migrations
 
-- Greenfield install: run `supabase/schema.sql` first, then **every** `supabase/migrate-v*.sql` in numeric order (currently up to v15). Newer per-feature migrations live under `supabase/migrations/` with timestamp prefixes (Supabase CLI format). Both directories are authoritative; both must be applied.
+- Greenfield install: run `supabase/schema.sql` first, then **every** `supabase/migrate-v*.sql` in numeric order (currently up to v15), then `supabase/migrations/` (timestamp prefixes, Supabase CLI format). `20261013000001_v0_lockdown.sql` must run **last**: it enables RLS on every public table and drops all policies, because the app only talks to Postgres through the service role. Don't add RLS policies for the anon key; expose data through route handlers instead.
 - When adding schema: add a new `migrate-vN.sql` (or a timestamped file under `migrations/`), and update `supabase/schema.sql` so fresh projects don't need every migration replayed.
 
 ### Payments (Mercado Pago, no escrow)
@@ -68,14 +69,17 @@ E2E targets that are non-localhost require `E2E_ALLOW_PROD=1` and may need `VERC
 Read `PAYMENTS.md` before touching payment code. Design constraint: **the platform never custodies funds.** That keeps the project out of BCRA / PSP territory in Argentina.
 
 - OAuth: `app/api/auth/mercadopago/*` connects a seller's MP account. Tokens stored per-seller; refreshed by `app/api/cron/refresh-mp-tokens`.
-- Checkout: `POST /api/payments/checkout` creates an MP preference **in the seller's account** with a platform fee. Buyer pays seller directly.
+- Checkout: `POST /api/payments/checkout` creates an MP preference **in the seller's account**, with `binary_mode` and an expiry of `CHECKOUT_WINDOW_MINUTES` (`lib/shared/reservations.ts`). Buyer pays seller directly. Mercado Pago is mandatory: there is no alias/CBU path (`/api/listings/:id/reserve` answers 410) and publishing requires a connected MP account.
+- Commission: `lib/shared/platform-fee.ts` is the only source (`PLATFORM_FEE_PERCENT`, `PLATFORM_FEE_MIN_ARS`, default 0). Server code reads the config; client components get it as props. Show the stored `platform_fee_ars`, never a recomputation.
+- Reservations last `RESERVATION_TTL_MINUTES` (checkout window + grace). Expiry is lazy: `mapListingRow` shows expired reservations as `active` and `reserveListing` accepts them, so nothing depends on the daily cron.
 - Webhook: `POST /api/webhooks/mercadopago` validates HMAC with `MP_WEBHOOK_SECRET` (mandatory in prod; permissive in dev), fetches the payment from MP, and calls into `lib/server/mp-reconcile.ts` to flip transaction + listing state.
-- Safety nets if the webhook is lost: success-redirect re-verifies, plus `app/api/cron/reconcile-mp-payments` and `app/api/cron/daily`. `POST /api/payments/verify` and `POST /api/admin/payments/manual-verify` (guarded by `ADMIN_SECRET`) are manual fallbacks.
+- Safety nets if the webhook is lost: success-redirect re-verifies, plus `app/api/cron/reconcile-mp-payments` and `app/api/cron/daily`. `POST /api/admin/payments/manual-verify` (guarded by `ADMIN_SECRET`) is the manual fallback. Never trust a payment id sent by a buyer: verification goes through `reconcileMpTransaction` (amount, currency, collector checks).
+- `verifyTransaction` is idempotent and settles the listing once: one unit off the stock (back to `active` if any is left, else `sold`); a payment for a listing already sold/cancelled notifies both parties (`sale_conflict`).
 - `lib/server/mp-client.ts` uses raw `fetch` (no SDK) and distinguishes per-seller tokens from `MP_ACCESS_TOKEN` (platform).
 
 ### Transaction lifecycle
 
-`pending` → `seller_confirmed` (payment verified) → `shipped` (requires tracking) → `delivered` → `closed` (after buyer rating). `disputed` is an orthogonal branch from any state. The state machine is driven from `PATCH /api/transactions/:id/fulfillment`; `lib/server/transaction-context.ts` is the single helper that loads buyer/seller/listing/payment together for emails and notifications — use it instead of re-querying.
+`pending` → `seller_confirmed` (payment verified) → `shipped` (seller; tracking required for shipping, "handed over" for pickup) → `delivered` (buyer) → `closed` (after buyer rating). `disputed` comes only from `POST /api/disputes` on a verified, open transaction. Allowed transitions live in `lib/domain/fulfillment.ts` and are enforced in `updateFulfillmentStatus` (`FulfillmentTransitionError` → 409); `PATCH /api/transactions/:id/fulfillment` only accepts `shipped` and `delivered`. Buyers can cancel an unpaid reservation with `POST /api/transactions/:id/cancel`. `lib/server/transaction-context.ts` is the single helper that loads buyer/seller/listing/payment together for emails and notifications — use it instead of re-querying.
 
 ### Cron endpoints
 

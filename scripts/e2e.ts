@@ -301,8 +301,12 @@ async function createTestListing(
     listingType: "single",
     offersShipping: !opts?.pickupOnly,
     offersPickup: Boolean(opts?.pickupOnly),
-    deliveryAreaNotes: opts?.pickupOnly ? "Retiro CABA microcentro" : "",
+    deliveryAreaNotes: opts?.pickupOnly
+      ? "Retiro CABA microcentro"
+      : "Envío por Correo Argentino a todo el país",
   };
+  // Publishing requires a connected Mercado Pago account; simulate it.
+  await admin().from("profiles").update({ mp_connected: true }).eq("id", seller.id);
   const res = await req(baseUrl, "POST", "/api/listings", body, seller.jar);
   if (!res.ok) throw new Error(`createListing failed: ${JSON.stringify(res.data)}`);
   const id = (res.data as { listing: { id: string } }).listing.id;
@@ -386,24 +390,21 @@ const scenarios: Scenario[] = [
     },
   },
   {
-    name: "reserve-and-self-purchase-blocked",
+    name: "purchase-guards",
     run: async ({ baseUrl, tracker }) => {
       const a = makeAsserter();
       const seller = await createTestUser(baseUrl, tracker, "seller");
       const buyer = await createTestUser(baseUrl, tracker, "buyer");
       const listing = await createTestListing(baseUrl, tracker, seller);
-      // Self-purchase: seller tries to reserve own listing.
-      const own = await req(baseUrl, "POST", `/api/listings/${listing.id}/reserve`, {}, seller.jar);
-      expect(a, "seller can't reserve own listing (5xx/4xx)", !own.ok);
-      // Buyer reserves.
-      const r = await req(baseUrl, "POST", `/api/listings/${listing.id}/reserve`, {}, buyer.jar);
-      expectEq(a, "buyer reserves 200", r.status, 200);
-      const txId = (r.data as { transactionId: string }).transactionId;
-      tracker.transactionIds.push(txId);
-      // Reservation flips listing to pending_payment.
-      const db = admin();
-      const { data: row } = await db.from("market_listings").select("status").eq("id", listing.id).maybeSingle();
-      expectEq(a, "listing pending_payment after reserve", (row as { status: string }).status, "pending_payment");
+      // Self-purchase is rejected before touching Mercado Pago.
+      const own = await req(baseUrl, "POST", "/api/payments/checkout", { listingId: listing.id }, seller.jar);
+      expectEq(a, "seller can't buy own listing", own.status, 409);
+      // The old alias/CBU reservation path is retired.
+      const legacy = await req(baseUrl, "POST", `/api/listings/${listing.id}/reserve`, {}, buyer.jar);
+      expectEq(a, "legacy reserve is gone", legacy.status, 410);
+      // Nothing got reserved along the way.
+      const { data: row } = await admin().from("market_listings").select("status").eq("id", listing.id).maybeSingle();
+      expectEq(a, "listing still active", (row as { status: string }).status, "active");
       return a;
     },
   },

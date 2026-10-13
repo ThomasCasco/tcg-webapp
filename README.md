@@ -1,42 +1,20 @@
 # TCG Marketplace AR
 
-Pokemon-first marketplace MVP for semi-vendedores in Argentina.
+Marketplace P2P de cartas Pokémon para Argentina. La v0 es solo **compra y venta
+de cartas sueltas con Mercado Pago**: el comprador le paga directo a la cuenta
+del vendedor (la plataforma no custodia fondos, ver [PAYMENTS.md](PAYMENTS.md)).
 
-Current implementation focus:
-- Web PWA foundation with Next.js App Router
-- Inventory and listing flows with persistent backend
-- Supabase Auth real con sesion por cookies
-- Hybrid pricing suggestion endpoint
-- Mercado Pago OAuth, checkout, webhook y reconciliacion conectados a transaction state
-- Post-venta: fulfillment status + dispute workflows
-- Supabase schema for beta launch
+- Next.js 16 (App Router) + Supabase (Postgres, Auth, Storage) + Mercado Pago OAuth.
+- Subastas, claims, trades y el directorio de perfiles están congelados
+  (`lib/shared/features.ts`, `ENABLE_SECONDARY_FORMATS=1` para encenderlos).
 
-## Backend Setup (Supabase)
+## Puesta en marcha
 
-1. Create a Supabase project.
-2. Open SQL Editor and run en este orden:
-   - [supabase/schema.sql](supabase/schema.sql) (solo si es un proyecto nuevo).
-   - [supabase/migrate-v2.sql](supabase/migrate-v2.sql) (columnas de ownership — owner_id, seller_id, buyer_id, etc.).
-   - [supabase/migrate-v3.sql](supabase/migrate-v3.sql) (catalogo Pokemon TCG, alertas, notificaciones, mystery packs).
-	- [supabase/migrate-v4.sql](supabase/migrate-v4.sql) (perfil de cobro del vendedor para flujo P2P).
-	- [supabase/migrate-v5.sql](supabase/migrate-v5.sql) (bucket `card-images` en Storage + columna `reserved_at` en publicaciones).
-	- [supabase/migrate-v6.sql](supabase/migrate-v6.sql) (envío / retiro + texto de ubicación en `market_listings`).
-	- [supabase/migrate-v7.sql](supabase/migrate-v7.sql) (chat P2P por `transaction_id` en `transaction_chat_messages`).
-3. Add env vars in local and production:
-	- APP_URL / NEXT_PUBLIC_APP_URL
-	- NEXT_PUBLIC_SUPABASE_URL
-	- NEXT_PUBLIC_SUPABASE_ANON_KEY
-	- SUPABASE_SERVICE_ROLE_KEY
-	- MP_APP_ID
-	- MP_CLIENT_SECRET
-	- MP_ACCESS_TOKEN
-	- MP_REDIRECT_URI
-	- MP_WEBHOOK_SECRET
-	- PLATFORM_FEE_PERCENT
-	- RESEND_API_KEY / EMAIL_FROM
-	- ADMIN_SECRET
-	- CRON_SECRET
-4. Start the app with npm run dev and verifica con `GET /api/health` que `backend.connected` sea `true`.
+- Producción: seguí [DEPLOY.md](DEPLOY.md) (checklist de lanzamiento v0).
+- Local: `npm install`, copiá `.env.example` a `.env.local`, `npm run dev` y
+  verificá `GET /api/health`.
+- Base nueva: `supabase/schema.sql`, después `supabase/migrate-v*.sql` en orden,
+  después `supabase/migrations/` (el lockdown va último).
 
 ## Fotos de cartas y storage gratuito
 
@@ -54,10 +32,11 @@ Para esta app, **Supabase es la mejor relación simplicidad + costo cero** porqu
 ## Tests
 
 ```bash
-npm run test
+npm run lint && npm run typecheck && npm run test
 ```
 
-Ejecuta Vitest sobre `tests/*.test.ts` (smoke de utilidades).
+Vitest cubre auth (tokens falsificados), reglas de reserva, comisión,
+transiciones de estado, feature flags y utilidades.
 
 ## Catalogo de cartas
 
@@ -66,67 +45,32 @@ open source (no requiere API key). Trae imagenes y precios de referencia de
 Cardmarket (EUR). Si en el futuro queres datos pagos de USD / graded, se puede
 reemplazar el cliente en `lib/server/tcgdex.ts` por uno de Scrydex.
 
-## Getting Started
+## Rutas principales
 
-Install dependencies and run local dev server:
-
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## Scripts
-
-```bash
-npm run dev
-npm run lint
-npm run build
-npm run test
-```
-
-## Key Routes
-
-- `/` product landing
-- `/login` login real con Supabase Auth
-- `/register` registro real con Supabase Auth
-- `/forgot-password` recuperacion de password por email
-- `/reset-password` cambio de password desde link de Supabase
-- `/inventory` seller inventory panel (protegido)
-- `/listings` seller listing panel (protegido, soporta mystery packs)
-- `/transactions` seguimiento post-venta (protegido)
-- `/disputes` centro de disputas (protegido)
-- `/alerts` watchlist + notificaciones (protegido)
-- `/market` buyer-facing market index (filtros por cartas o packs, busqueda)
-- `/terms` Terminos y Condiciones
+- `/` landing · `/market` mercado · `/market/:id` ficha y compra
+- `/login`, `/register`, `/forgot-password`, `/reset-password`
+- `/onboarding` perfil → conectar Mercado Pago → primera carta
+- `/inventory` stock y publicación · `/listings` publicaciones
+- `/transactions`, `/transactions/:id` compras y ventas (pago, envío, chat, calificación)
+- `/disputes`, `/alerts`, `/account`, `/u/:username` (tienda del vendedor)
+- `/how-it-works`, `/terms`, `/privacy`
 
 ## API
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/forgot-password`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
+- Auth: `POST /api/auth/{register,login,logout,forgot-password}`, `GET /api/auth/mercadopago` (+ `/callback`)
 - `GET /api/health`
-- `GET,POST,PATCH,DELETE /api/inventory`
-- `GET,POST,PATCH /api/listings` (PATCH: actualizar activa con `priceArs`/`quantity`/`imageUrl`, o cancelar solo con `{ id }`; soporta `listingType: "mystery_pack"` en POST)
-- `POST /api/listings/:id/reserve`
-- `POST /api/pricing/suggest`
-- `POST /api/payments/checkout` (crea checkout Mercado Pago en cuenta del vendedor)
-- `POST /api/webhooks/mercadopago` (verifica firma, reconcilia pago y dispara emails)
-- `POST /api/payments/verify` (fallback legacy/manual)
-- `POST /api/upload/card-image` (multipart campo `file`, max 5 MB)
-- `GET /api/cron/release-stale-reservations` (header `Authorization: Bearer CRON_SECRET`)
-- `GET,PATCH /api/profile/seller-payment`
-- `GET /api/transactions`
-- `GET,POST /api/transactions/:id/messages` (chat P2P por transacción; cuerpo POST `{ "body": "..." }`)
-- `PATCH /api/transactions/:id/fulfillment`
-- `GET,POST /api/disputes`
-- `GET /api/catalog/search?q=...&set=...` (proxy TCGdex)
-- `GET /api/catalog/sets` (lista sets para filtrar)
-- `GET,POST,DELETE /api/watchlist`
-- `GET,PATCH /api/notifications`
+- `GET,POST,PATCH,DELETE /api/inventory` · `POST /api/upload/card-image`
+- `GET,POST,PATCH /api/listings` (publicar exige Mercado Pago conectado)
+- `POST /api/payments/checkout` (preferencia MP en la cuenta del vendedor, vence a los 30 min)
+- `POST /api/webhooks/mercadopago` (firma HMAC + reconciliación)
+- `PATCH /api/transactions/:id/fulfillment` (`shipped` / `delivered`, validado por rol y estado)
+- `POST /api/transactions/:id/cancel` · `POST /api/transactions/:id/rate`
+- `GET,POST /api/transactions/:id/messages` (chat)
+- `GET,POST /api/disputes` · `GET,POST,DELETE /api/watchlist` · `GET,PATCH /api/notifications`
+- `GET /api/catalog/search`, `GET /api/catalog/sets` (proxy TCGdex)
+- Cron (`Authorization: Bearer CRON_SECRET`): `/api/cron/daily` y afines
+- Admin (`Authorization: Bearer ADMIN_SECRET`): `POST /api/admin/payments/manual-verify`
+- Retirados: `POST /api/listings/:id/reserve` (410, era el pago por alias) y `POST /api/payments/verify`
 
 ## Project Structure
 
@@ -153,23 +97,8 @@ Useful docs:
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
 - [Supabase Docs](https://supabase.com/docs) - auth, database, storage and RLS.
 
-## Go Live
+## Próximos pasos
 
-- See deployment guide: [DEPLOY.md](DEPLOY.md)
-- CI for lint/build on GitHub: [.github/workflows/ci.yml](.github/workflows/ci.yml)
-
-## Estrategia de pagos
-
-Ver [PAYMENTS.md](PAYMENTS.md): diseño explicito para NO ser PSP.
-La plataforma solo registra evidencia, los pagos van directo entre
-comprador y vendedor (Mercado Pago). Incluye disclaimer legal y
-checklist de compliance.
-
-## Next Steps
-
-1. Configurar templates de Supabase Auth en produccion (confirmacion y recovery).
-2. Agregar carga de evidencia de disputa (Supabase Storage + adjuntos).
-3. Crear panel admin para pagos trabados, disputas, usuarios y vendedores verificados.
-4. OCR de cartas: capturar foto y usar el catalog_card_id detectado
-   para prellenar el formulario.
-5. Verificacion de ID del vendedor (badge "verified") con DNI en Storage.
+Ver `docs/analisis-producto.md` (diagnóstico y plan). Lo más urgente después del
+lanzamiento: dominio propio (emails), panel admin para disputas y pagos
+trabados, costo de envío dentro del checkout y carrito por vendedor.

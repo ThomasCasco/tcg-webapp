@@ -94,19 +94,26 @@ export function TopBar({ user }: Props) {
           </form>
         )}
 
-        {hideSearch && <div className="hidden flex-1 md:block" />}
+        {/* Mobile: the search form is hidden, so this spacer pushes actions right. */}
+        <div className={cn("flex-1", hideSearch ? "" : "md:hidden")} />
 
         {showNav && (
-          <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegacion publica">
+          <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegación pública">
             {navLink("/market", "Mercado")}
-            {navLink("/auctions", "Subastas")}
-            {navLink("/claims", "Claims")}
-            {navLink("/trades", "Trades")}
             {navLink("/how-it-works", "Cómo funciona")}
           </nav>
         )}
 
         <div className="flex shrink-0 items-center gap-1 md:gap-2">
+          {!hideSearch && (
+            <Link
+              href="/market"
+              className="grid h-11 w-11 place-items-center rounded-full text-[var(--ink-mute)] hover:bg-white/5 hover:text-[var(--ink)] md:hidden"
+              aria-label="Buscar cartas"
+            >
+              <Search className="h-5 w-5" />
+            </Link>
+          )}
           {user ? (
             <>
               <NotificationsBell />
@@ -116,7 +123,7 @@ export function TopBar({ user }: Props) {
             <>
               <Link
                 href="/login"
-                className="hidden rounded-full px-3 py-2 t-sm font-semibold text-[var(--ink-mute)] hover:bg-white/5 hover:text-[var(--ink)] sm:inline-block"
+                className="inline-flex h-11 items-center rounded-full px-3 t-sm font-semibold text-[var(--ink-mute)] hover:bg-white/5 hover:text-[var(--ink)]"
               >
                 Ingresar
               </Link>

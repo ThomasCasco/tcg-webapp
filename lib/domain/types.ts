@@ -117,6 +117,8 @@ export interface PaymentEventWithListing extends PaymentEvent {
   offersShipping?: boolean;
   offersPickup?: boolean;
   deliveryAreaNotes?: string;
+  /** Unit price of the listing (or winning bid) the transaction is for. */
+  priceArs?: number;
 }
 
 /** Mensaje de chat ligado a una transacción (mismo hilo comprador–vendedor). */
@@ -269,6 +271,10 @@ export interface PaymentEvent {
   verificationStatus: PaymentVerificationStatus;
   fulfillmentStatus?: FulfillmentStatus;
   shippingTracking?: string;
+  /** MP checkout link, so the buyer can resume a payment within the window. */
+  mpCheckoutUrl?: string;
+  /** Commission recorded when the checkout was created. */
+  platformFeeArs?: number;
   checkedAt: string;
   createdAt: string;
 }

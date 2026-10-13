@@ -14,11 +14,9 @@ import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { ArrowLeftRight } from "@/components/ui/icon";
 import { log } from "@/lib/server/logger";
+import { checkoutExpiresAt } from "@/lib/shared/reservations";
 
 export const dynamic = "force-dynamic";
-
-const PLATFORM_FEE_PERCENT =
-  Number(process.env.PLATFORM_FEE_PERCENT ?? "1") / 100;
 
 export default async function TransactionDetailPage({
   params,
@@ -49,23 +47,11 @@ export default async function TransactionDetailPage({
   if (!tx) notFound();
 
   const isBuyer = tx.buyerId === user.id;
-  const { getSupabaseAdminClient } = await import("@/lib/server/supabase");
-  const sb = getSupabaseAdminClient();
-  let listingPriceArs = 0;
-  if (tx.listingId) {
-    const { data } = await sb
-      .from("market_listings")
-      .select("price_ars")
-      .eq("id", tx.listingId)
-      .maybeSingle();
-    if (data) listingPriceArs = Number((data as { price_ars: number }).price_ars);
-  }
-
-  const feeArs =
-    typeof tx.fulfillmentStatus !== "undefined" && listingPriceArs
-      ? Math.max(1, Math.round(listingPriceArs * PLATFORM_FEE_PERCENT))
-      : 0;
+  const listingPriceArs = tx.priceArs ?? 0;
+  // The commission recorded at checkout, not a recomputation with today's price.
+  const feeArs = tx.platformFeeArs ?? 0;
   const netArs = Math.max(0, listingPriceArs - feeArs);
+  const checkoutDeadline = checkoutExpiresAt(new Date(tx.createdAt)).toISOString();
 
   const sellerRep = tx.sellerId ? await getSellerReputationSummary(tx.sellerId) : null;
   const existingRating = await getRatingByTransactionAndRater(tx.transactionId, user.id);
@@ -125,6 +111,7 @@ export default async function TransactionDetailPage({
           cardName: tx.listingCardName ?? "Publicación",
           provider: tx.provider,
           providerPaymentId: tx.providerPaymentId,
+          providerStatus: tx.providerStatus,
           verificationStatus: tx.verificationStatus,
           fulfillmentStatus: tx.fulfillmentStatus,
           shippingTracking: tx.shippingTracking,
@@ -136,6 +123,8 @@ export default async function TransactionDetailPage({
           priceArs: listingPriceArs,
           platformFeeArs: feeArs,
           netArs,
+          mpCheckoutUrl: tx.mpCheckoutUrl,
+          checkoutDeadline,
         }}
         viewerUserId={user.id}
         viewerIsBuyer={isBuyer}

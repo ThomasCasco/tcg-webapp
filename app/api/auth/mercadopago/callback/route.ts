@@ -17,7 +17,11 @@ import { getAuthenticatedUser } from "@/lib/server/auth";
 import { NextResponse } from "next/server";
 import { log } from "@/lib/server/logger";
 import { cookies } from "next/headers";
-import { MP_OAUTH_STATE_COOKIE } from "@/lib/server/mp-oauth-state";
+import {
+  MP_OAUTH_RETURN_COOKIE,
+  MP_OAUTH_STATE_COOKIE,
+  safeMpReturnPath,
+} from "@/lib/server/mp-oauth-state";
 
 export async function GET(request: Request): Promise<Response> {
   const { searchParams } = new URL(request.url);
@@ -28,8 +32,9 @@ export async function GET(request: Request): Promise<Response> {
 
   const { getAppUrl } = await import("@/lib/shared/app-url");
   const appUrl = getAppUrl();
-  const accountUrl = `${appUrl}/account`;
-  const errorUrl = `${appUrl}/account?mp_error=`;
+  const cookieStore = await cookies();
+  const returnUrl = `${appUrl}${safeMpReturnPath(cookieStore.get(MP_OAUTH_RETURN_COOKIE)?.value)}`;
+  const errorUrl = `${returnUrl}?mp_error=`;
 
   if (error) {
     log.warn("MP OAuth callback error", { error, errorDesc });
@@ -40,7 +45,6 @@ export async function GET(request: Request): Promise<Response> {
     return clearStateCookie(NextResponse.redirect(`${errorUrl}invalid_callback`));
   }
 
-  const cookieStore = await cookies();
   const expectedState = cookieStore.get(MP_OAUTH_STATE_COOKIE)?.value ?? "";
   const [expectedUserId, expectedNonce] = expectedState.split(":");
 
@@ -65,7 +69,7 @@ export async function GET(request: Request): Promise<Response> {
     });
 
     log.info("Seller connected MP", { sellerId: user.id, mpUserId: tokens.mpUserId });
-    return clearStateCookie(NextResponse.redirect(`${accountUrl}?mp_connected=1`));
+    return clearStateCookie(NextResponse.redirect(`${returnUrl}?mp_connected=1`));
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     log.error("MP OAuth exchange failed", { sellerId: user.id, message });
@@ -76,11 +80,9 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 function clearStateCookie(response: NextResponse): NextResponse {
-  response.cookies.set(MP_OAUTH_STATE_COOKIE, "", {
-    httpOnly: true,
-    path: "/",
-    maxAge: 0,
-  });
+  for (const name of [MP_OAUTH_STATE_COOKIE, MP_OAUTH_RETURN_COOKIE]) {
+    response.cookies.set(name, "", { httpOnly: true, path: "/", maxAge: 0 });
+  }
   return response;
 }
 

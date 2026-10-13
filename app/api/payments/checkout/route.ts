@@ -21,8 +21,8 @@ import { getValidAccessToken } from "@/lib/server/mp-auth";
 import { createMpPreference } from "@/lib/server/mp-client";
 import { getRequestIp, rateLimit } from "@/lib/server/rate-limit";
 import { log } from "@/lib/server/logger";
-
-const PLATFORM_FEE_PERCENT = Number(process.env.PLATFORM_FEE_PERCENT ?? "1") / 100;
+import { computePlatformFeeArs, getPlatformFeeConfig } from "@/lib/shared/platform-fee";
+import { checkoutExpiresAt } from "@/lib/shared/reservations";
 
 export async function POST(request: Request): Promise<Response> {
   const user = await requireAuthenticatedUser().catch(() => null);
@@ -34,7 +34,7 @@ export async function POST(request: Request): Promise<Response> {
   const limit = rateLimit(`checkout:${user.id}:${ip}`, 10, 60_000);
   if (!limit.allowed) {
     return Response.json(
-      { error: `Too many requests. Retry in ${limit.retryAfterSeconds}s.` },
+      { error: `Demasiados intentos seguidos. Esperá ${limit.retryAfterSeconds} segundos.` },
       { status: 429 },
     );
   }
@@ -44,11 +44,11 @@ export async function POST(request: Request): Promise<Response> {
     const body = await request.json() as { listingId?: unknown };
     listingId = String(body.listingId ?? "").trim();
   } catch {
-    return Response.json({ error: "Invalid request body." }, { status: 400 });
+    return Response.json({ error: "Pedido inválido." }, { status: 400 });
   }
 
   if (!listingId) {
-    return Response.json({ error: "listingId is required." }, { status: 400 });
+    return Response.json({ error: "Falta la publicación." }, { status: 400 });
   }
 
   let pendingReservation: { listingId: string; transactionId: string } | null = null;
@@ -57,16 +57,19 @@ export async function POST(request: Request): Promise<Response> {
     // 1. Validate listing exists and is purchasable
     const listing = await getListingById(listingId);
     if (!listing) {
-      return Response.json({ error: "Listing not found." }, { status: 404 });
+      return Response.json({ error: "Esta publicación ya no existe." }, { status: 404 });
     }
     if (listing.status !== "active") {
-      return Response.json({ error: "Listing is not available." }, { status: 409 });
+      return Response.json(
+        { error: "Alguien la está comprando ahora mismo o ya se vendió." },
+        { status: 409 },
+      );
     }
     if (listing.sellerId === user.id) {
-      return Response.json({ error: "Cannot purchase your own listing." }, { status: 409 });
+      return Response.json({ error: "No podés comprar tu propia publicación." }, { status: 409 });
     }
     if (!listing.sellerId) {
-      return Response.json({ error: "Listing has no seller." }, { status: 409 });
+      return Response.json({ error: "Esta publicación no se puede comprar." }, { status: 409 });
     }
 
     // 2. Get seller's valid MP access token
@@ -75,7 +78,7 @@ export async function POST(request: Request): Promise<Response> {
       sellerAccessToken = await getValidAccessToken(listing.sellerId);
     } catch {
       return Response.json(
-        { error: "El vendedor no tiene Mercado Pago conectado. Contactalo directamente." },
+        { error: "Este vendedor todavía no puede cobrar por Mercado Pago." },
         { status: 422 },
       );
     }
@@ -88,9 +91,9 @@ export async function POST(request: Request): Promise<Response> {
     });
     pendingReservation = { listingId, transactionId: reservation.transactionId };
 
-    // 4. Compute platform fee (rounded to nearest ARS peso)
+    // 4. Compute platform fee (whole pesos; 0 while the launch promo is on)
     const priceArs = listing.priceArs;
-    const platformFeeArs = Math.max(1, Math.round(priceArs * PLATFORM_FEE_PERCENT));
+    const platformFeeArs = computePlatformFeeArs(priceArs, getPlatformFeeConfig());
 
     // 5. Build back URLs and notification URL
     const { getAppUrl } = await import("@/lib/shared/app-url");
@@ -114,6 +117,7 @@ export async function POST(request: Request): Promise<Response> {
       notificationUrl,
       externalReference: reservation.transactionId,
       payerEmail: buyerProfile?.email ?? undefined,
+      expiresAt: checkoutExpiresAt(),
     });
 
     // 8. Stamp payment_event with MP data
@@ -158,7 +162,16 @@ export async function POST(request: Request): Promise<Response> {
       }
     }
     log.error("Checkout error", { listingId, buyerId: user.id, message });
-    const status = message === "Listing is not available." ? 409 : 500;
-    return Response.json({ error: message }, { status });
+    // reserveListing throws "Listing is not available." when another buyer won the race.
+    if (message === "Listing is not available.") {
+      return Response.json(
+        { error: "Alguien la está comprando ahora mismo o ya se vendió." },
+        { status: 409 },
+      );
+    }
+    return Response.json(
+      { error: "No pudimos abrir el pago. Probá de nuevo en unos segundos." },
+      { status: 500 },
+    );
   }
 }

@@ -5,13 +5,15 @@ import {
   getPublicProfileByUsername,
   listInventoryEntries,
 } from "@/lib/server/repository";
+import { getSellerReputationSummary } from "@/lib/server/reputation/queries";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
+import { secondaryFormatsEnabled } from "@/lib/shared/features";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ArrowLeftRight, Package, Search, ShoppingBag } from "@/components/ui/icon";
+import { ArrowLeftRight, Package, Search, ShieldCheck, ShoppingBag, Star } from "@/components/ui/icon";
 import { FollowProfileButton } from "@/components/follow-profile-button";
 import { TradeProposalForm } from "@/components/trade-proposal-form";
 
@@ -25,17 +27,24 @@ export default async function PublicUserPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { username } = await params;
-  const { tab = "trade" } = await searchParams;
+  const { tab = "listings" } = await searchParams;
+  const tradesEnabled = secondaryFormatsEnabled();
   const user = await getAuthenticatedUser();
   const detail = await getPublicProfileByUsername(username, user?.id);
   if (!detail) notFound();
 
   const { profile, tradeCards, wantedCards, listings } = detail;
+  const reputation = await getSellerReputationSummary(profile.userId).catch(() => null);
   const myInventory =
-    user && user.id !== profile.userId
+    tradesEnabled && user && user.id !== profile.userId
       ? await listInventoryEntries({ ownerId: user.id })
       : [];
-  const visibleTab = ["trade", "wants", "listings"].includes(tab) ? tab : "trade";
+  const tabs = [
+    { key: "listings", label: "Publicaciones" },
+    ...(tradesEnabled ? [{ key: "trade", label: "Tiene para trade" }] : []),
+    { key: "wants", label: "Busca" },
+  ];
+  const visibleTab = tabs.some((item) => item.key === tab) ? tab : "listings";
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
@@ -49,7 +58,7 @@ export default async function PublicUserPage({
               className="h-16 w-16 text-lg"
             />
             <div className="min-w-0">
-              <p className="text-overline text-[var(--color-ink-subtle)]">Perfil publico</p>
+              <p className="text-overline text-[var(--color-ink-subtle)]">Perfil público</p>
               <h1 className="truncate text-h1 [font-family:var(--font-display)]">
                 {profile.displayName || `@${profile.username}`}
               </h1>
@@ -80,18 +89,33 @@ export default async function PublicUserPage({
           {profile.location ? <Chip>{profile.location}</Chip> : null}
           {profile.favoriteGame ? <Chip>{profile.favoriteGame}</Chip> : null}
           {profile.favoriteCard ? <Chip>{profile.favoriteCard}</Chip> : null}
-          {profile.instagram ? <Chip>Instagram {profile.instagram}</Chip> : null}
-          {profile.discord ? <Chip>Discord {profile.discord}</Chip> : null}
+          {reputation && reputation.ratingCount > 0 ? (
+            <Chip variant="success">
+              <Star className="h-3 w-3 fill-current" />
+              {reputation.averageRating.toFixed(1)} ({reputation.ratingCount} calificaciones)
+            </Chip>
+          ) : (
+            <Chip>Todavía sin calificaciones</Chip>
+          )}
+          {reputation ? <Chip>{reputation.completedSalesCount} ventas cerradas</Chip> : null}
+          {reputation?.verifiedSeller ? (
+            <Chip variant="success">
+              <ShieldCheck className="h-3 w-3" />
+              Identidad validada por Mercado Pago
+            </Chip>
+          ) : null}
           {profile.badges.map((badge) => (
             <Chip key={badge} variant="success">{badge}</Chip>
           ))}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Card padding="sm" variant="muted">
-            <p className="text-overline text-[var(--color-ink-subtle)]">Para trade</p>
-            <p className="mt-1 text-2xl font-semibold">{profile.tradeCount}</p>
-          </Card>
+          {tradesEnabled ? (
+            <Card padding="sm" variant="muted">
+              <p className="text-overline text-[var(--color-ink-subtle)]">Para trade</p>
+              <p className="mt-1 text-2xl font-semibold">{profile.tradeCount}</p>
+            </Card>
+          ) : null}
           <Card padding="sm" variant="muted">
             <p className="text-overline text-[var(--color-ink-subtle)]">Busca</p>
             <p className="mt-1 text-2xl font-semibold">{profile.wantedCount}</p>
@@ -107,7 +131,7 @@ export default async function PublicUserPage({
         </div>
       </Card>
 
-      {user && user.id !== profile.userId ? (
+      {!tradesEnabled ? null : user && user.id !== profile.userId ? (
         <TradeProposalForm
           recipientId={profile.userId}
           recipientHandle={profile.username}
@@ -119,9 +143,9 @@ export default async function PublicUserPage({
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-overline text-[var(--color-ink-subtle)]">Trade</p>
-              <h2 className="mt-1 text-h3">Inicia sesion para proponer intercambio</h2>
+              <h2 className="mt-1 text-h3">Iniciá sesión para proponer un intercambio</h2>
               <p className="mt-1 text-body-sm text-[var(--color-ink-muted)]">
-                Necesitas una cuenta y cartas cargadas en tu inventario para enviar una propuesta.
+                Necesitás una cuenta y cartas cargadas en tu inventario para enviar una propuesta.
               </p>
             </div>
             <Button asChild>
@@ -132,11 +156,7 @@ export default async function PublicUserPage({
       ) : null}
 
       <nav className="glass-soft flex gap-1 overflow-x-auto rounded-[var(--r-md)] p-1">
-        {[
-          { key: "trade", label: "Tiene para trade" },
-          { key: "wants", label: "Busca" },
-          { key: "listings", label: "Publicaciones" },
-        ].map((item) => (
+        {tabs.map((item) => (
           <Link
             key={item.key}
             href={`/u/${profile.username}?tab=${item.key}`}
@@ -162,7 +182,7 @@ export default async function PublicUserPage({
             <EmptyState
               icon={<Package className="h-7 w-7" />}
               title="Sin cartas para trade"
-              description="Este perfil todavia no marco cartas disponibles."
+              description="Este perfil todavía no marcó cartas disponibles."
             />
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
@@ -208,7 +228,7 @@ export default async function PublicUserPage({
             <EmptyState
               icon={<Search className="h-7 w-7" />}
               title="Sin buscadas publicas"
-              description="Este perfil todavia no publico cartas buscadas."
+              description="Este perfil todavía no publicó cartas buscadas."
             />
           ) : (
             <div className="flex flex-wrap gap-2">
@@ -261,7 +281,7 @@ export default async function PublicUserPage({
       ) : null}
 
       <Button asChild variant="secondary">
-        <Link href="/profiles">Volver a perfiles</Link>
+        <Link href="/market">Volver al mercado</Link>
       </Button>
     </main>
   );

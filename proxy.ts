@@ -2,9 +2,19 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createClient, type Session } from "@supabase/supabase-js";
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/shared/auth-cookies";
+import { frozenPathKind } from "@/lib/shared/features";
 import { logger } from "@/lib/server/logger";
 
-const protectedPaths = ["/inventory", "/listings", "/transactions", "/disputes", "/alerts"];
+const protectedPaths = [
+  "/inventory",
+  "/listings",
+  "/transactions",
+  "/disputes",
+  "/alerts",
+  "/account",
+  "/dashboard",
+  "/onboarding",
+];
 const authPaths = ["/login", "/register"];
 
 type RefreshOutcome =
@@ -110,6 +120,15 @@ export async function proxy(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
 
+  // v0 scope: frozen formats never reach their routes (see lib/shared/features.ts).
+  const frozen = frozenPathKind(path);
+  if (frozen === "api") {
+    return NextResponse.json({ error: "No disponible por ahora." }, { status: 404 });
+  }
+  if (frozen === "page") {
+    return NextResponse.redirect(new URL("/market", request.url));
+  }
+
   const refresh = await tryRefreshSession(request);
   if (refresh.kind === "refreshed") {
     // make downstream Server Components see the new tokens
@@ -134,7 +153,7 @@ export async function proxy(request: NextRequest) {
     loginUrl.searchParams.set("next", path);
     response = NextResponse.redirect(loginUrl);
   } else if (authPaths.some((authPath) => path.startsWith(authPath)) && hasSession) {
-    response = NextResponse.redirect(new URL("/inventory", request.url));
+    response = NextResponse.redirect(new URL("/dashboard", request.url));
   } else {
     response = NextResponse.next({ request });
   }

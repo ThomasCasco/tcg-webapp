@@ -1,6 +1,11 @@
 import { InventoryCreateForm } from "@/components/inventory-create-form";
 import { InventoryEntryCard } from "@/components/inventory-entry-card";
-import { listInventoryEntries, listListings } from "@/lib/server/repository";
+import {
+  getMpConnectionStatus,
+  listInventoryEntries,
+  listListings,
+} from "@/lib/server/repository";
+import { MpConnectButton } from "@/components/mp-connect-button";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import { redirect } from "next/navigation";
@@ -9,6 +14,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Info } from "@/components/ui/icon";
+import { getPlatformFeeConfig } from "@/lib/shared/platform-fee";
+import { secondaryFormatsEnabled } from "@/lib/shared/features";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +25,11 @@ export default async function InventoryPage() {
     redirect("/login");
   }
 
+  const feeConfig = getPlatformFeeConfig();
+  const tradesEnabled = secondaryFormatsEnabled();
+  const { mpConnected } = await getMpConnectionStatus(user.id).catch(() => ({
+    mpConnected: false,
+  }));
   let inventoryEntries = [] as Awaited<ReturnType<typeof listInventoryEntries>>;
   let activeListingsByInventoryId = new Set<string>();
   let loadError: string | null = null;
@@ -48,11 +60,20 @@ export default async function InventoryPage() {
         </h1>
         <p className="mt-2 text-body-sm text-[var(--color-ink-muted)]">
           Cargá acá las cartas que tenés físicamente. Es tu stock privado.
-          Cuando estés listo, poné un precio y tocá <strong>Publicar en Mercado</strong> para
-          que otros usuarios puedan comprarla. También podés marcarlas como disponibles
-          para trade y sumar notas de intercambio.
+          Cuando estés listo, poné un precio y tocá <strong>Publicar</strong> para que otros
+          usuarios puedan comprarla.
         </p>
       </Card>
+
+      {!mpConnected ? (
+        <Card as="article" padding="md" className="space-y-2">
+          <p className="font-semibold">Para publicar, conectá Mercado Pago</p>
+          <MpConnectButton
+            status="disconnected"
+            connectUrl="/api/auth/mercadopago?return_to=/inventory"
+          />
+        </Card>
+      ) : null}
 
       {!isSupabaseConfigured() ? (
         <Card as="article" padding="md" className="border-amber-300 bg-amber-50">
@@ -64,7 +85,9 @@ export default async function InventoryPage() {
 
       {loadError ? (
         <Card as="article" padding="md" className="border-rose-300 bg-rose-50">
-          <p className="text-sm text-rose-900">Error de backend: {loadError}</p>
+          <p className="text-sm text-rose-900">
+            No pudimos cargar tu inventario. Recargá la página en unos segundos.
+          </p>
         </Card>
       ) : null}
 
@@ -85,7 +108,10 @@ export default async function InventoryPage() {
         </Card>
       </div>
 
-      <InventoryCreateForm defaultOpen={inventoryEntries.length === 0} />
+      <InventoryCreateForm
+        defaultOpen={inventoryEntries.length === 0}
+        tradesEnabled={tradesEnabled}
+      />
 
       {inventoryEntries.length === 0 ? (
         <EmptyState
@@ -123,6 +149,8 @@ export default async function InventoryPage() {
               key={`${entry.id}:${entry.askingPriceArs ?? 0}:${entry.quantity}:${entry.imageUrl ?? ""}:${activeListingsByInventoryId.has(entry.id)}`}
               entry={entry}
               alreadyListed={activeListingsByInventoryId.has(entry.id)}
+              feeConfig={feeConfig}
+              tradesEnabled={tradesEnabled}
             />
           ))}
         </div>

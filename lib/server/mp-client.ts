@@ -26,7 +26,14 @@ export type MpPreferenceInput = {
   externalReference: string;
   /** Buyer email (pre-fill on MP checkout) */
   payerEmail?: string;
+  /** After this moment MP no longer accepts payments for the preference. */
+  expiresAt: Date;
 };
+
+/** MP expects ISO 8601 with an explicit offset; Argentina is UTC-3 all year. */
+function toMpDate(date: Date): string {
+  return new Date(date.getTime() - 3 * 3_600_000).toISOString().replace("Z", "-03:00");
+}
 
 export type MpPreferenceResult = {
   id: string;
@@ -122,7 +129,13 @@ export async function createMpPreference(input: MpPreferenceInput): Promise<MpPr
         currency_id: "ARS",
       },
     ],
-    marketplace_fee: input.platformFeeArs,
+    ...(input.platformFeeArs > 0 ? { marketplace_fee: input.platformFeeArs } : {}),
+    // Approve or reject on the spot: no deferred cash payments (Rapipago, Pago
+    // Fácil) that could be credited after the reservation was released.
+    binary_mode: true,
+    expires: true,
+    expiration_date_from: toMpDate(new Date()),
+    expiration_date_to: toMpDate(input.expiresAt),
     back_urls: {
       success: input.successUrl,
       failure: input.failureUrl,

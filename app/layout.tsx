@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     template: "%s | TCG Marketplace AR",
   },
   description:
-    "Pokemon-first marketplace para semi-vendedores de TCG en Argentina.",
+    "Comprá y vendé cartas Pokémon en Argentina, en pesos y con pago por Mercado Pago.",
   applicationName: "TCG Marketplace AR",
   openGraph: {
     title: "TCG Marketplace AR",
@@ -45,7 +45,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="es"
+      lang="es-AR"
       data-theme="dark"
       className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} h-full antialiased`}
     >

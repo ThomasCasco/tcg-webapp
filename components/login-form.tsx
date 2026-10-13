@@ -7,7 +7,7 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, ArrowRight, Eye, EyeOff } from "@/components/ui/icon";
 
-export function LoginForm() {
+export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export function LoginForm() {
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error ?? "No se pudo iniciar sesión.");
-      router.push("/inventory");
+      router.push(nextPath);
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Error desconocido.");

@@ -1,6 +1,7 @@
 import {
   cancelListing,
   createListing,
+  getMpConnectionStatus,
   listListings,
   updateListing,
 } from "@/lib/server/repository";
@@ -118,6 +119,15 @@ export async function POST(request: Request) {
     payload = (await request.json()) as CreateListingPayload;
   } catch {
     return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  // Every sale is paid through the seller's own Mercado Pago account.
+  const { mpConnected } = await getMpConnectionStatus(user.id);
+  if (!mpConnected) {
+    return Response.json(
+      { error: "Conectá tu cuenta de Mercado Pago para publicar (Cuenta → Cobros)." },
+      { status: 409 },
+    );
   }
 
   if (payload.listingType === "mystery_pack") {

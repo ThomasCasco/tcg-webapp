@@ -47,10 +47,10 @@ export default async function RegisterPage() {
           <div className="grid h-12 w-12 place-items-center rounded-[var(--r-sm)] bg-[var(--accent)] text-white">
             <Sparkles className="h-5 w-5" />
           </div>
-          <p className="mt-4 t-eyebrow">Onboarding vendedor</p>
+          <p className="mt-4 t-eyebrow">Cuenta nueva</p>
           <h1 className="mt-1 t-h1 text-[2rem]">Creá tu cuenta</h1>
           <p className="mt-2 t-sm t-mute">
-            Empezá a vender, comprar y tradear cartas reales.
+            Comprá y vendé cartas Pokémon en pesos, con pago por Mercado Pago.
           </p>
 
           <div className="mt-6">
