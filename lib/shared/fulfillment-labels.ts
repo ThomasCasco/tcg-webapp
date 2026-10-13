@@ -1,8 +1,8 @@
 import type { FulfillmentStatus, PaymentVerificationStatus } from "@/lib/domain/types";
 
 export const verificationLabelEs: Record<PaymentVerificationStatus, string> = {
-  verified: "Verificado con el proveedor (MP/Stripe)",
-  pending_review: "Pendiente de revisión / comprobante manual",
+  verified: "Acreditado en Mercado Pago",
+  pending_review: "Pendiente de pago",
 };
 
 export const fulfillmentLabelEs: Record<FulfillmentStatus, string> = {

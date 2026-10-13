@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import type { Session } from "@supabase/supabase-js";
+import type { JWK, Session, SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/server/supabase";
 import { logger } from "@/lib/server/logger";
@@ -126,32 +126,30 @@ type AccessTokenClaims = {
   exp: number;
 };
 
-// Local JWT decode — no signature check, no network. The cookie is httpOnly +
-// secure, set by our own login/refresh flow that already validated the token
-// against Supabase. Trusting the cookie's contents is the same trust model
-// supabase-js uses for getSession().
-export function decodeAccessToken(token: string): AccessTokenClaims | null {
+// The cookie is httpOnly, which stops scripts from reading it but not the user
+// from writing it, so its contents must never be trusted without checking the
+// signature. getClaims() verifies asymmetric (ES256) tokens locally against the
+// project's cached JWKS, and falls back to asking the Auth server for anything
+// else (HS*, alg "none", unknown kid), so forged tokens fail closed.
+export async function verifyAccessToken(
+  token: string,
+  options?: { client?: SupabaseClient; jwks?: { keys: JWK[] } },
+): Promise<AccessTokenClaims | null> {
+  if (!token || token.split(".").length !== 3) return null;
+
   try {
-    const payloadB64 = token.split(".")[1];
-    if (!payloadB64) return null;
-    const padded = payloadB64.replace(/-/g, "+").replace(/_/g, "/").padEnd(
-      payloadB64.length + ((4 - (payloadB64.length % 4)) % 4),
-      "=",
+    const client = options?.client ?? getSupabaseAdminClient();
+    const { data, error } = await client.auth.getClaims(
+      token,
+      options?.jwks ? { jwks: options.jwks } : undefined,
     );
-    const json =
-      typeof atob === "function"
-        ? atob(padded)
-        : Buffer.from(padded, "base64").toString("utf8");
-    const payload = JSON.parse(json) as Partial<AccessTokenClaims>;
-    if (typeof payload.sub !== "string" || typeof payload.exp !== "number") {
-      return null;
-    }
-    return {
-      sub: payload.sub,
-      email: typeof payload.email === "string" ? payload.email : "",
-      exp: payload.exp,
-    };
+    if (error || !data) return null;
+
+    const { sub, email, exp } = data.claims;
+    if (typeof sub !== "string" || typeof exp !== "number") return null;
+    return { sub, email: typeof email === "string" ? email : "", exp };
   } catch {
+    // getClaims throws on expired or malformed tokens.
     return null;
   }
 }
@@ -162,21 +160,12 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> 
     return null;
   }
 
-  const claims = decodeAccessToken(accessToken);
+  const claims = await verifyAccessToken(accessToken);
   if (!claims) {
-    logger.warn("auth.getAuthenticatedUser.decode_failed");
-    return null;
-  }
-
-  const nowSec = Math.floor(Date.now() / 1000);
-  if (claims.exp <= nowSec) {
-    // Cookie outlived the JWT — proxy refresh didn't catch it. Return null
-    // (header shows logged-out) instead of redirecting; the next request will
-    // give the proxy another chance to refresh.
-    logger.warn("auth.getAuthenticatedUser.token_expired", {
-      expSec: claims.exp,
-      nowSec,
-    });
+    // Invalid signature, expired (the proxy refresh didn't catch it) or
+    // malformed. Return null so the UI shows logged-out; the next request gives
+    // the proxy another chance to refresh.
+    logger.warn("auth.getAuthenticatedUser.verify_failed");
     return null;
   }
 
