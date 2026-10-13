@@ -30,7 +30,15 @@ import type {
   TradeProposalStatus,
   TradeProfile,
 } from "@/lib/domain/types";
+import { checkFulfillmentTransition } from "@/lib/domain/fulfillment";
 import { assertListingLogisticsValid } from "@/lib/shared/listing-logistics";
+import {
+  RESERVATION_TTL_MINUTES,
+  isReservationExpired,
+  reservationCutoff,
+} from "@/lib/shared/reservations";
+import { log } from "@/lib/server/logger";
+import { createNotification } from "@/lib/server/notifications";
 import { getSupabaseAdminClient, isSupabaseConfigured } from "@/lib/server/supabase";
 
 const INVENTORY_TABLE = "inventory_entries";
@@ -438,7 +446,11 @@ function mapListingRow(row: ListingRow): Listing {
     condition: row.condition,
     priceArs: row.price_ars,
     quantity: row.quantity,
-    status: row.status,
+    // An expired reservation is buyable again; reserveListing accepts it too.
+    status:
+      row.status === "pending_payment" && isReservationExpired(row.reserved_at)
+        ? "active"
+        : row.status,
     listingType: row.listing_type ?? "single",
     packCardCount: row.pack_card_count ?? undefined,
     packRarityFloor: row.pack_rarity_floor ?? undefined,
@@ -505,6 +517,8 @@ function mapPaymentRow(row: PaymentRow): PaymentEvent {
     verificationStatus: row.verification_status,
     fulfillmentStatus: row.fulfillment_status,
     shippingTracking: row.shipping_tracking ?? undefined,
+    mpCheckoutUrl: row.mp_checkout_url ?? undefined,
+    platformFeeArs: row.platform_fee_ars == null ? undefined : Number(row.platform_fee_ars),
     checkedAt: row.checked_at,
     createdAt: row.created_at,
   };
@@ -1973,7 +1987,7 @@ export async function closeAuction(input: {
     const provider = resolveTransactionProviderFromSellerPayment(
       sellerProfile?.payment_provider ?? undefined,
     );
-    const transactionId = `tx_auction_${Date.now()}`;
+    const transactionId = `tx_auction_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
     const now = new Date().toISOString();
 
     await client.from(PAYMENTS_TABLE).insert({
@@ -2238,10 +2252,12 @@ export async function updateListing(input: UpdateListingInput): Promise<Listing>
   return mapListingRow(data as ListingRow);
 }
 
-export async function releaseStalePendingListings(maxAgeHours = 24): Promise<number> {
+export async function releaseStalePendingListings(
+  maxAgeMinutes = RESERVATION_TTL_MINUTES,
+): Promise<number> {
   assertSupabaseReady();
 
-  const cutoff = new Date(Date.now() - maxAgeHours * 3_600_000).toISOString();
+  const cutoff = new Date(Date.now() - maxAgeMinutes * 60_000).toISOString();
   const client = getSupabaseAdminClient();
 
   const { data, error } = await client
@@ -2289,11 +2305,14 @@ export async function reserveListing(input: ReserveListingInput): Promise<{
   }
 
   const reservedAt = new Date().toISOString();
+  const cutoff = reservationCutoff().toISOString();
+  // Conditional update = the lock: only one buyer can flip an available listing.
+  // A reservation past its TTL counts as available (see lib/shared/reservations).
   const { data: activeListing, error: activeError } = await client
     .from(LISTINGS_TABLE)
     .update({ status: "pending_payment", reserved_at: reservedAt })
     .eq("id", listingId)
-    .eq("status", "active")
+    .or(`status.eq.active,and(status.eq.pending_payment,reserved_at.lt."${cutoff}")`)
     .select("*")
     .single();
 
@@ -2323,7 +2342,7 @@ export async function reserveListing(input: ReserveListingInput): Promise<{
   const transactionProvider = resolveTransactionProviderFromSellerPayment(
     sellerPayment.paymentProvider,
   );
-  const transactionId = `tx_${Date.now()}`;
+  const transactionId = `tx_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
   const now = new Date().toISOString();
 
   const { error: paymentError } = await client.from(PAYMENTS_TABLE).insert({
@@ -2387,6 +2406,67 @@ export async function releasePendingCheckoutReservation(input: {
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Buyer gives up an unpaid reservation. The payment row is kept (marked
+ * cancelled) instead of deleted, so a payment that still arrives from an open
+ * MP tab is recorded and handled by settleListingAfterPayment. The listing is
+ * released only if this transaction holds the latest reservation on it, so an
+ * old, expired transaction can't free a reservation another buyer made since.
+ */
+export async function cancelPendingReservation(input: {
+  transactionId: string;
+  buyerId: string;
+}): Promise<void> {
+  assertSupabaseReady();
+  const client = getSupabaseAdminClient();
+
+  const { data, error } = await client
+    .from(PAYMENTS_TABLE)
+    .select("transaction_id,listing_id,buyer_id,verification_status")
+    .eq("transaction_id", input.transactionId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  const payment = data as Pick<
+    PaymentRow,
+    "transaction_id" | "listing_id" | "buyer_id" | "verification_status"
+  > | null;
+  if (!payment || payment.buyer_id !== input.buyerId) {
+    throw new FulfillmentTransitionError("No encontramos esta reserva.");
+  }
+  if (payment.verification_status === "verified") {
+    throw new FulfillmentTransitionError("El pago ya está acreditado: no se puede cancelar.");
+  }
+
+  const { error: cancelError } = await client
+    .from(PAYMENTS_TABLE)
+    .update({ provider_status: "cancelled", checked_at: new Date().toISOString() })
+    .eq("transaction_id", payment.transaction_id)
+    .eq("verification_status", "pending_review");
+  if (cancelError) throw new Error(cancelError.message);
+
+  if (!payment.listing_id) return;
+
+  const { data: latest, error: latestError } = await client
+    .from(PAYMENTS_TABLE)
+    .select("transaction_id")
+    .eq("listing_id", payment.listing_id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (latestError) throw new Error(latestError.message);
+  if ((latest as { transaction_id: string } | null)?.transaction_id !== payment.transaction_id) {
+    return;
+  }
+
+  const { error: releaseError } = await client
+    .from(LISTINGS_TABLE)
+    .update({ status: "active", reserved_at: null })
+    .eq("id", payment.listing_id)
+    .eq("status", "pending_payment");
+  if (releaseError) throw new Error(releaseError.message);
+}
+
 export async function verifyTransaction(input: VerifyTransactionInput): Promise<{
   payment: PaymentEvent;
   requiresManualCheck: boolean;
@@ -2417,6 +2497,12 @@ export async function verifyTransaction(input: VerifyTransactionInput): Promise<
     throw new Error("You are not allowed to verify this transaction.");
   }
 
+  // Idempotent: webhook retries and the redirect/cron safety nets may verify the
+  // same payment again. Re-running would reset shipping progress and stock.
+  if ((existingPayment as PaymentRow).verification_status === "verified") {
+    return { payment: mapPaymentRow(existingPayment as PaymentRow), requiresManualCheck: false };
+  }
+
   const { data: paymentData, error: paymentError } = await client
     .from(PAYMENTS_TABLE)
     .update({
@@ -2437,15 +2523,8 @@ export async function verifyTransaction(input: VerifyTransactionInput): Promise<
 
   const payment = mapPaymentRow(paymentData as PaymentRow);
 
-  if (payment.verificationStatus === "verified") {
-    const { error: listingError } = await client
-      .from(LISTINGS_TABLE)
-      .update({ status: "sold", reserved_at: null })
-      .eq("id", payment.listingId);
-
-    if (listingError) {
-      throw new Error(listingError.message);
-    }
+  if (payment.verificationStatus === "verified" && payment.listingId) {
+    await settleListingAfterPayment(payment);
   }
 
   return {
@@ -2453,6 +2532,74 @@ export async function verifyTransaction(input: VerifyTransactionInput): Promise<
     requiresManualCheck:
       payment.verificationStatus !== "verified" || input.provider === "external_link",
   };
+}
+
+/**
+ * Takes one unit off the listing a verified payment was for. With stock left
+ * it goes back to "active"; otherwise it is "sold". A payment for a listing
+ * that is no longer available (sold to someone else, cancelled) is not
+ * swallowed: both parties are told the seller has to refund it.
+ */
+async function settleListingAfterPayment(payment: PaymentEvent): Promise<void> {
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client
+    .from(LISTINGS_TABLE)
+    .select("id,status,quantity,card_name,seller_id")
+    .eq("id", payment.listingId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return;
+
+  const listing = data as {
+    id: string;
+    status: ListingStatus;
+    quantity: number;
+    card_name: string;
+    seller_id: string | null;
+  };
+
+  if (listing.status === "sold" || listing.status === "cancelled") {
+    log.error("verifyTransaction: payment for a listing that is no longer available", {
+      transactionId: payment.transactionId,
+      listingId: listing.id,
+      listingStatus: listing.status,
+    });
+    const linkPath = `/transactions/${payment.transactionId}`;
+    if (listing.seller_id) {
+      await createNotification({
+        userId: listing.seller_id,
+        type: "sale_conflict",
+        title: "Cobraste una carta que ya no estaba disponible",
+        body: `${payment.buyerHandle} pagó ${listing.card_name}, pero la publicación ya estaba vendida o cancelada. Devolvele el dinero desde Mercado Pago o coordiná con el comprador.`,
+        linkPath,
+      });
+    }
+    if (payment.buyerId) {
+      await createNotification({
+        userId: payment.buyerId,
+        type: "sale_conflict",
+        title: "La carta ya no estaba disponible",
+        body: `Tu pago por ${listing.card_name} llegó cuando la publicación ya no estaba disponible. El vendedor tiene que devolverte el dinero; si no lo hace, abrí una disputa desde la operación.`,
+        linkPath,
+      });
+    }
+    return;
+  }
+
+  const remaining = Number(listing.quantity) - 1;
+  const update =
+    remaining > 0
+      ? { status: "active", quantity: remaining, reserved_at: null }
+      : { status: "sold", reserved_at: null };
+
+  const { error: updateError } = await client
+    .from(LISTINGS_TABLE)
+    .update(update)
+    .eq("id", listing.id)
+    .eq("status", listing.status);
+
+  if (updateError) throw new Error(updateError.message);
 }
 
 export async function getTransactionProvider(transactionId: string): Promise<PaymentProvider> {
@@ -2736,13 +2883,14 @@ export async function getTransactionWithListingForUser(
         offersShipping: boolean;
         offersPickup: boolean;
         deliveryAreaNotes?: string;
+        priceArs?: number;
       }
     | null = null;
 
   if (payment.auctionId) {
     const { data: auctionRow } = await client
       .from(AUCTIONS_TABLE)
-      .select("id, card_name, set_name, seller_handle, seller_id, offers_shipping, offers_pickup, delivery_area_notes")
+      .select("id, card_name, set_name, seller_handle, seller_id, offers_shipping, offers_pickup, delivery_area_notes, current_price_ars")
       .eq("id", payment.auctionId)
       .maybeSingle();
     if (auctionRow) {
@@ -2754,8 +2902,10 @@ export async function getTransactionWithListingForUser(
         offers_shipping?: boolean | null;
         offers_pickup?: boolean | null;
         delivery_area_notes?: string | null;
+        current_price_ars?: number | null;
       };
       listingMeta = {
+        priceArs: row.current_price_ars == null ? undefined : Number(row.current_price_ars),
         cardName: row.card_name,
         setName: row.set_name ?? "",
         sellerHandle: row.seller_handle,
@@ -2768,7 +2918,7 @@ export async function getTransactionWithListingForUser(
   } else if (payment.listingId) {
     const { data: listingRow } = await client
       .from(LISTINGS_TABLE)
-      .select("id, card_name, set_name, seller_handle, seller_id, offers_shipping, offers_pickup, delivery_area_notes")
+      .select("id, card_name, set_name, seller_handle, seller_id, offers_shipping, offers_pickup, delivery_area_notes, price_ars")
       .eq("id", payment.listingId)
       .maybeSingle();
     if (listingRow) {
@@ -2780,8 +2930,10 @@ export async function getTransactionWithListingForUser(
         offers_shipping?: boolean | null;
         offers_pickup?: boolean | null;
         delivery_area_notes?: string | null;
+        price_ars?: number | null;
       };
       listingMeta = {
+        priceArs: row.price_ars == null ? undefined : Number(row.price_ars),
         cardName: row.card_name,
         setName: row.set_name,
         sellerHandle: row.seller_handle,
@@ -2805,6 +2957,7 @@ export async function getTransactionWithListingForUser(
     offersShipping: listingMeta?.offersShipping,
     offersPickup: listingMeta?.offersPickup,
     deliveryAreaNotes: listingMeta?.deliveryAreaNotes,
+    priceArs: listingMeta?.priceArs,
   };
 }
 
@@ -2827,28 +2980,19 @@ export async function updateFulfillmentStatus(
 
   const payment = paymentData as PaymentRow;
   const isBuyer = payment.buyer_id === input.actorUserId;
-
-  const { data: listing, error: listingError } = await client
-    .from(LISTINGS_TABLE)
-    .select("seller_id")
-    .eq("id", payment.listing_id)
-    .single();
-
-  if (listingError || !listing) {
-    throw new Error(listingError?.message ?? "Listing not found.");
-  }
-
-  const isSeller = (listing as { seller_id: string | null }).seller_id === input.actorUserId;
+  const isSeller = (await resolveTransactionSellerId(payment)) === input.actorUserId;
   if (!isBuyer && !isSeller) {
     throw new Error("Not allowed to update this transaction.");
   }
 
-  if (input.nextStatus === "shipped" && !isSeller) {
-    throw new Error("Only seller can set shipped status.");
-  }
-
-  if (input.nextStatus === "delivered" && !isBuyer) {
-    throw new Error("Only buyer can confirm delivery.");
+  const check = checkFulfillmentTransition({
+    actor: isSeller ? "seller" : "buyer",
+    from: payment.fulfillment_status,
+    to: input.nextStatus,
+    paymentVerified: payment.verification_status === "verified",
+  });
+  if (!check.ok) {
+    throw new FulfillmentTransitionError(check.reason);
   }
 
   const { data: updated, error: updateError } = await client
@@ -2859,6 +3003,7 @@ export async function updateFulfillmentStatus(
       checked_at: new Date().toISOString(),
     })
     .eq("transaction_id", input.transactionId)
+    .eq("fulfillment_status", payment.fulfillment_status)
     .select("*")
     .single();
 
@@ -2869,13 +3014,37 @@ export async function updateFulfillmentStatus(
   return mapPaymentRow(updated as PaymentRow);
 }
 
+/** Thrown when a requested status change breaks the transaction rules. */
+export class FulfillmentTransitionError extends Error {}
+
+/**
+ * Seller of a transaction: stored on the payment row since migrate-v14, and
+ * looked up from the listing for older rows. Auction transactions have no
+ * listing, so the stored value is the only source.
+ */
+async function resolveTransactionSellerId(
+  payment: Pick<PaymentRow, "seller_id" | "listing_id">,
+): Promise<string | null> {
+  if (payment.seller_id) return payment.seller_id;
+  if (!payment.listing_id) return null;
+
+  const { data, error } = await getSupabaseAdminClient()
+    .from(LISTINGS_TABLE)
+    .select("seller_id")
+    .eq("id", payment.listing_id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return (data as { seller_id: string | null } | null)?.seller_id ?? null;
+}
+
 export async function createDispute(input: CreateDisputeInput): Promise<DisputeEvent> {
   assertSupabaseReady();
 
   const client = getSupabaseAdminClient();
   const { data: paymentData, error: paymentError } = await client
     .from(PAYMENTS_TABLE)
-    .select("buyer_id,listing_id")
+    .select("buyer_id,listing_id,seller_id,verification_status,fulfillment_status")
     .eq("transaction_id", input.transactionId)
     .single();
 
@@ -2883,20 +3052,21 @@ export async function createDispute(input: CreateDisputeInput): Promise<DisputeE
     throw new Error(paymentError?.message ?? "Transaction not found.");
   }
 
-  const { data: listing, error: listingError } = await client
-    .from(LISTINGS_TABLE)
-    .select("seller_id")
-    .eq("id", (paymentData as { listing_id: string }).listing_id)
-    .single();
-
-  if (listingError || !listing) {
-    throw new Error(listingError?.message ?? "Listing not found.");
-  }
-
-  const buyerId = (paymentData as { buyer_id: string | null }).buyer_id;
-  const sellerId = (listing as { seller_id: string | null }).seller_id;
-  if (input.openedById !== buyerId && input.openedById !== sellerId) {
+  const payment = paymentData as Pick<
+    PaymentRow,
+    "buyer_id" | "listing_id" | "seller_id" | "verification_status" | "fulfillment_status"
+  >;
+  const sellerId = await resolveTransactionSellerId(payment);
+  if (input.openedById !== payment.buyer_id && input.openedById !== sellerId) {
     throw new Error("Only buyer or seller can open a dispute.");
+  }
+  if (payment.verification_status !== "verified") {
+    throw new FulfillmentTransitionError(
+      "Solo se puede abrir una disputa cuando el pago está acreditado.",
+    );
+  }
+  if (payment.fulfillment_status === "closed" || payment.fulfillment_status === "disputed") {
+    throw new FulfillmentTransitionError("Esta operación ya está cerrada o en disputa.");
   }
 
   const { data, error } = await client

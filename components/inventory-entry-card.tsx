@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { InventoryEntry } from "@/lib/domain/types";
 import { formatConditionEs } from "@/lib/shared/condition-labels";
 import { assertListingLogisticsValid } from "@/lib/shared/listing-logistics";
+import { computePlatformFeeArs, type PlatformFeeConfig } from "@/lib/shared/platform-fee";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
@@ -26,11 +27,12 @@ const conditionVariant: Record<string, "success" | "warning" | "danger" | "defau
 type Props = {
   entry: InventoryEntry;
   alreadyListed: boolean;
+  feeConfig: PlatformFeeConfig;
 };
 
 type Panel = "none" | "edit" | "publish";
 
-export function InventoryEntryCard({ entry, alreadyListed }: Props) {
+export function InventoryEntryCard({ entry, alreadyListed, feeConfig }: Props) {
   const router = useRouter();
   const [panel, setPanel] = useState<Panel>("none");
 
@@ -153,7 +155,7 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
 
   const preview = imageUrl ?? entry.imageUrl;
   const priceNum = Number(price);
-  const platformFee = priceNum > 0 ? Math.max(1, Math.round(priceNum * 0.01)) : 0;
+  const platformFee = computePlatformFeeArs(priceNum, feeConfig);
   const netArs = priceNum - platformFee;
 
   return (
@@ -345,7 +347,10 @@ export function InventoryEntryCard({ entry, alreadyListed }: Props) {
                 Te quedan ARS {netArs.toLocaleString("es-AR")}
               </p>
               <p className="text-[var(--color-ink-muted)]">
-                Comisión plataforma 1 %: ARS {platformFee.toLocaleString("es-AR")}
+                {platformFee > 0
+                  ? `Comisión TCG (${feeConfig.percent} %): ARS ${platformFee.toLocaleString("es-AR")}. `
+                  : "Sin comisión de TCG durante el lanzamiento. "}
+                Mercado Pago descuenta su comisión aparte.
               </p>
             </div>
           )}

@@ -21,8 +21,8 @@ import { getValidAccessToken } from "@/lib/server/mp-auth";
 import { createMpPreference } from "@/lib/server/mp-client";
 import { getRequestIp, rateLimit } from "@/lib/server/rate-limit";
 import { log } from "@/lib/server/logger";
-
-const PLATFORM_FEE_PERCENT = Number(process.env.PLATFORM_FEE_PERCENT ?? "1") / 100;
+import { computePlatformFeeArs, getPlatformFeeConfig } from "@/lib/shared/platform-fee";
+import { checkoutExpiresAt } from "@/lib/shared/reservations";
 
 export async function POST(request: Request): Promise<Response> {
   const user = await requireAuthenticatedUser().catch(() => null);
@@ -88,9 +88,9 @@ export async function POST(request: Request): Promise<Response> {
     });
     pendingReservation = { listingId, transactionId: reservation.transactionId };
 
-    // 4. Compute platform fee (rounded to nearest ARS peso)
+    // 4. Compute platform fee (whole pesos; 0 while the launch promo is on)
     const priceArs = listing.priceArs;
-    const platformFeeArs = Math.max(1, Math.round(priceArs * PLATFORM_FEE_PERCENT));
+    const platformFeeArs = computePlatformFeeArs(priceArs, getPlatformFeeConfig());
 
     // 5. Build back URLs and notification URL
     const { getAppUrl } = await import("@/lib/shared/app-url");
@@ -114,6 +114,7 @@ export async function POST(request: Request): Promise<Response> {
       notificationUrl,
       externalReference: reservation.transactionId,
       payerEmail: buyerProfile?.email ?? undefined,
+      expiresAt: checkoutExpiresAt(),
     });
 
     // 8. Stamp payment_event with MP data

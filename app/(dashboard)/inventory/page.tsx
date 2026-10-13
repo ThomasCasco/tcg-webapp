@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Info } from "@/components/ui/icon";
+import { getPlatformFeeConfig } from "@/lib/shared/platform-fee";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export default async function InventoryPage() {
     redirect("/login");
   }
 
+  const feeConfig = getPlatformFeeConfig();
   let inventoryEntries = [] as Awaited<ReturnType<typeof listInventoryEntries>>;
   let activeListingsByInventoryId = new Set<string>();
   let loadError: string | null = null;
@@ -123,6 +125,7 @@ export default async function InventoryPage() {
               key={`${entry.id}:${entry.askingPriceArs ?? 0}:${entry.quantity}:${entry.imageUrl ?? ""}:${activeListingsByInventoryId.has(entry.id)}`}
               entry={entry}
               alreadyListed={activeListingsByInventoryId.has(entry.id)}
+              feeConfig={feeConfig}
             />
           ))}
         </div>

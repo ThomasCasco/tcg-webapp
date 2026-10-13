@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { TransactionCard } from "@/components/transaction-card";
 import { getAuthenticatedUser } from "@/lib/server/auth";
 import {
+  cancelPendingReservation,
   getPaymentEventByExternalRef,
   listTransactionsForUser,
-  releasePendingCheckoutReservation,
 } from "@/lib/server/repository";
 import { reconcileMpTransaction } from "@/lib/server/mp-reconcile";
 import { log } from "@/lib/server/logger";
@@ -146,9 +146,9 @@ export default async function TransactionsPage({
         !payment.providerPaymentId &&
         payment.verificationStatus === "pending_review"
       ) {
-        await releasePendingCheckoutReservation({
-          listingId: payment.listingId,
+        await cancelPendingReservation({
           transactionId: payment.transactionId,
+          buyerId: user.id,
         });
         postRedirectMessage = {
           kind: "warn",

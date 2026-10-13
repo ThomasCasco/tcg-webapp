@@ -146,10 +146,16 @@ export async function sendSaleConfirmedSeller(p: SaleConfirmedSellerParams): Pro
     intro: `<p>Hola <strong>${escHtml(p.sellerName)}</strong>, <strong>${escHtml(p.buyerName)}</strong> acaba de pagar por <strong>${escHtml(p.cardName)}</strong>.</p><p>El dinero ya está en tu cuenta de Mercado Pago.</p>`,
     bodyHtml: tableHtml([
       tableRow("Carta", `<strong>${escHtml(p.cardName)}</strong>`),
-      tableRow("Precio bruto", formatArs(p.grossArs)),
-      tableRow("Comisión plataforma (1 %)", `−${formatArs(p.platformFeeArs)}`),
-      tableRow("<strong>Tu ingreso neto</strong>", `<strong>${formatArs(p.netArs)}</strong>`, true),
-    ]) + `<p>Coordiná la entrega o el envío con el comprador desde la página de la operación.</p>`,
+      tableRow("Precio", formatArs(p.grossArs)),
+      ...(p.platformFeeArs > 0
+        ? [tableRow("Comisión TCG", `−${formatArs(p.platformFeeArs)}`)]
+        : []),
+      tableRow(
+        "<strong>Te queda</strong>",
+        `<strong>${formatArs(p.netArs)}</strong>`,
+        true,
+      ),
+    ]) + `<p>Mercado Pago descuenta además su propia comisión según el plazo de acreditación de tu cuenta.</p><p>Coordiná la entrega o el envío con el comprador desde la página de la operación.</p>`,
     ctaLabel: "Coordinar entrega",
     ctaUrl: txUrl(p.transactionId),
   });

@@ -18,7 +18,8 @@ export type NotificationType =
   | "rate_seller_prompt"
   | "rating_received_seller"
   | "dispute_opened"
-  | "dispute_resolved";
+  | "dispute_resolved"
+  | "sale_conflict";
 
 export type CreateNotificationInput = {
   userId: string;
