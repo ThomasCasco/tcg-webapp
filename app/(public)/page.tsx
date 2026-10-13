@@ -45,7 +45,7 @@ export default async function HomePage() {
             </h1>
             <p className="mt-5 max-w-xl t-body-lg t-mute">
               Mercado entre coleccionistas: foto, condición y precio en pesos.
-              Reservás, pagás con Mercado Pago o coordinás retiro.
+              Pagás con Mercado Pago directo al vendedor y la recibís por envío o en mano.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">

@@ -43,7 +43,7 @@ request so it skips the SSO wall.
 |---|---|
 | `login-and-session` | Cookie jar after login, protected route reachable. |
 | `listing-crud` | Create listing as seller, see it in public list, patch its price. |
-| `reserve-and-self-purchase-blocked` | Seller can't reserve own listing; buyer reservation flips listing to `pending_payment`. |
+| `purchase-guards` | Seller can't check out their own listing (409); the retired alias/CBU reserve endpoint answers 410; the listing stays `active`. |
 | `webhook-bad-signature` | POST with `ts=…,v1=deadbeef` returns 401 in prod / 200 in dev. |
 | `webhook-good-signature-unknown-payment` | HMAC-signed payload accepted; MP API 404 → webhook still 200. |
 | `post-payment-shipping-happy` | seller-confirmed → shipped (requires tracking) → delivered → rate 5★ → closed; reputation row + idempotent re-rate. |

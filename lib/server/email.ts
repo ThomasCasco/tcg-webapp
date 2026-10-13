@@ -9,6 +9,7 @@
 
 import { Resend } from "resend";
 import { getAppUrl } from "@/lib/shared/app-url";
+import { log } from "@/lib/server/logger";
 
 function resendClient(): Resend {
   const key = process.env.RESEND_API_KEY?.trim();
@@ -17,7 +18,9 @@ function resendClient(): Resend {
 }
 
 function fromAddress(): string {
-  return process.env.EMAIL_FROM?.trim() ?? "TCG Marketplace <noreply@tcg.ar>";
+  // resend.dev only delivers to the Resend account owner; set EMAIL_FROM on a
+  // verified domain to reach real users.
+  return process.env.EMAIL_FROM?.trim() || "TCG Marketplace AR <onboarding@resend.dev>";
 }
 
 function appUrl(): string {
@@ -262,6 +265,11 @@ export async function sendRatingReceived(p: RatingReceivedParams): Promise<void>
 // ────────────────────────────────────────────────────────────────────────────
 
 async function sendMail(to: string, subject: string, html: string): Promise<void> {
+  if (!process.env.RESEND_API_KEY?.trim()) {
+    // v0 can run without email: in-app notifications still cover every event.
+    log.info("email skipped: RESEND_API_KEY not set", { subject });
+    return;
+  }
   const resend = resendClient();
   const { error } = await resend.emails.send({
     from: fromAddress(),
