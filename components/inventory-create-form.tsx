@@ -25,9 +25,14 @@ const conditions: CardCondition[] = [
 
 type InventoryCreateFormProps = {
   defaultOpen?: boolean;
+  /** Trades are frozen in v0; hide the option until they come back. */
+  tradesEnabled?: boolean;
 };
 
-export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateFormProps) {
+export function InventoryCreateForm({
+  defaultOpen = false,
+  tradesEnabled = false,
+}: InventoryCreateFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -224,9 +229,10 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
               </div>
             </section>
 
-            <div className="h-px bg-[var(--hairline)]" />
+            {tradesEnabled ? <div className="h-px bg-[var(--hairline)]" /> : null}
 
             {/* Step 3: Trade */}
+            {tradesEnabled ? (
             <section className="space-y-3">
               <StepHeader index={3} title="Disponibilidad" subtitle="Definí si la querés tradear además de venderla." />
               <TradeToggle active={availableForTrade} onChange={setAvailableForTrade} />
@@ -245,6 +251,7 @@ export function InventoryCreateForm({ defaultOpen = false }: InventoryCreateForm
                 </FormField>
               )}
             </section>
+            ) : null}
 
             <div className="flex flex-col gap-3 border-t border-[var(--hairline)] pt-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-col gap-1">

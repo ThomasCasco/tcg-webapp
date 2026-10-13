@@ -1,18 +1,23 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingBag, ArrowLeftRight, Layers, Tag } from "@/components/ui/icon";
+import { Layers, Package, ShoppingBag, Tag, User } from "@/components/ui/icon";
 import { cn } from "@/lib/ui/cn";
 
+// The five most frequent tasks: browse, stock, sell, follow purchases/sales, account.
 const items = [
   { href: "/market", label: "Mercado", icon: ShoppingBag },
-  { href: "/trades", label: "Trades", icon: ArrowLeftRight },
   { href: "/inventory", label: "Inventario", icon: Layers },
   { href: "/listings", label: "Ventas", icon: Tag },
+  { href: "/transactions", label: "Operaciones", icon: Package },
+  { href: "/account", label: "Cuenta", icon: User },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
+  // Listing pages pin their own buy bar to the bottom.
+  if (pathname && /^\/market\/[^/]+$/.test(pathname)) return null;
+
   return (
     <nav
       aria-label="Navegación principal"
@@ -26,10 +31,10 @@ export function BottomNav() {
               <Link
                 href={href}
                 className={cn(
-                  "relative flex h-16 flex-col items-center justify-center gap-1 text-[10px] font-semibold transition-colors",
+                  "relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-colors",
                   active
                     ? "text-[var(--accent-hi)]"
-                    : "text-[var(--ink-soft)] hover:text-[var(--ink)]"
+                    : "text-[var(--ink-mute)] hover:text-[var(--ink)]"
                 )}
                 aria-current={active ? "page" : undefined}
               >

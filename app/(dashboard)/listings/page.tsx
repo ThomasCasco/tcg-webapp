@@ -43,8 +43,7 @@ export default async function ListingsPage() {
           <Link href="/market" className="underline">Mercado</Link>. Para publicar
           una carta a precio fijo, cargala en{" "}
           <Link href="/inventory" className="underline">Inventario</Link>{" "}y tocá
-          &quot;Publicar en Mercado&quot;. Si preferís subastarla, andá a{" "}
-          <Link href="/my-auctions" className="underline">Mis subastas</Link>.
+          &quot;Publicar&quot;.
         </p>
       </Card>
 

@@ -28,11 +28,17 @@ type Props = {
   entry: InventoryEntry;
   alreadyListed: boolean;
   feeConfig: PlatformFeeConfig;
+  tradesEnabled?: boolean;
 };
 
 type Panel = "none" | "edit" | "publish";
 
-export function InventoryEntryCard({ entry, alreadyListed, feeConfig }: Props) {
+export function InventoryEntryCard({
+  entry,
+  alreadyListed,
+  feeConfig,
+  tradesEnabled = false,
+}: Props) {
   const router = useRouter();
   const [panel, setPanel] = useState<Panel>("none");
 
@@ -290,6 +296,7 @@ export function InventoryEntryCard({ entry, alreadyListed, feeConfig }: Props) {
             </div>
           </div>
 
+          {tradesEnabled ? (
           <div className="glass-soft rounded-[var(--r-sm)] p-3">
             <label className="flex cursor-pointer items-center gap-2 text-body-sm font-medium">
               <input
@@ -318,6 +325,7 @@ export function InventoryEntryCard({ entry, alreadyListed, feeConfig }: Props) {
               </FormField>
             )}
           </div>
+          ) : null}
 
           <Button size="sm" onClick={save} disabled={!dirty || busy !== null} loading={busy === "save"}>
             Guardar cambios

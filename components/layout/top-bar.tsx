@@ -99,9 +99,6 @@ export function TopBar({ user }: Props) {
         {showNav && (
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegacion publica">
             {navLink("/market", "Mercado")}
-            {navLink("/auctions", "Subastas")}
-            {navLink("/claims", "Claims")}
-            {navLink("/trades", "Trades")}
             {navLink("/how-it-works", "Cómo funciona")}
           </nav>
         )}

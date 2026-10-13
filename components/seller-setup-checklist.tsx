@@ -41,13 +41,9 @@ export function SellerSetupChecklist({
               Setup completo
             </p>
             <p className="text-caption text-[var(--color-ink-muted)]">
-              Estás listo para vender. Si querés, ya podés{" "}
-              <Link href="/listings" className="font-semibold underline">
+              Estás listo para vender. Ya podés{" "}
+              <Link href="/inventory" className="font-semibold underline">
                 publicar una carta
-              </Link>{" "}
-              o{" "}
-              <Link href="/my-auctions" className="font-semibold underline">
-                crear una subasta
               </Link>
               .
             </p>

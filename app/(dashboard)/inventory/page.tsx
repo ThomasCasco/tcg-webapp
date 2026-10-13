@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Info } from "@/components/ui/icon";
 import { getPlatformFeeConfig } from "@/lib/shared/platform-fee";
+import { secondaryFormatsEnabled } from "@/lib/shared/features";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ export default async function InventoryPage() {
   }
 
   const feeConfig = getPlatformFeeConfig();
+  const tradesEnabled = secondaryFormatsEnabled();
   const { mpConnected } = await getMpConnectionStatus(user.id).catch(() => ({
     mpConnected: false,
   }));
@@ -106,7 +108,10 @@ export default async function InventoryPage() {
         </Card>
       </div>
 
-      <InventoryCreateForm defaultOpen={inventoryEntries.length === 0} />
+      <InventoryCreateForm
+        defaultOpen={inventoryEntries.length === 0}
+        tradesEnabled={tradesEnabled}
+      />
 
       {inventoryEntries.length === 0 ? (
         <EmptyState
@@ -145,6 +150,7 @@ export default async function InventoryPage() {
               entry={entry}
               alreadyListed={activeListingsByInventoryId.has(entry.id)}
               feeConfig={feeConfig}
+              tradesEnabled={tradesEnabled}
             />
           ))}
         </div>

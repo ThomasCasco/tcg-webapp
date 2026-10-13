@@ -6,14 +6,12 @@ import { Chip } from "@/components/ui/chip";
 import { HeroCardStack } from "@/components/hero-card-stack";
 import { MarketListingCard } from "@/components/market-listing-card";
 import { listListings } from "@/lib/server/repository";
-import { getAuthenticatedUser } from "@/lib/server/auth";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
-import { ArrowRight, Gavel, Info, Package, ShoppingBag } from "@/components/ui/icon";
+import { ArrowRight, Info, Package, ShieldCheck, ShoppingBag, Star } from "@/components/ui/icon";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const user = await getAuthenticatedUser();
 
   let featured: Awaited<ReturnType<typeof listListings>> = [];
   if (isSupabaseConfigured()) {
@@ -63,17 +61,20 @@ export default async function HomePage() {
               </Button>
             </div>
 
-            <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 t-sm t-mute">
-              <Link href="/auctions" className="inline-flex items-center gap-1 hover:text-[var(--ink)]">
-                <Gavel className="h-4 w-4" /> Subastas
-              </Link>
-              <Link href="/trades" className="inline-flex items-center gap-1 hover:text-[var(--ink)]">
-                Trades
-              </Link>
-              <Link href="/claims" className="inline-flex items-center gap-1 hover:text-[var(--ink)]">
-                <Package className="h-4 w-4" /> Claims abiertos
-              </Link>
-            </div>
+            <ul className="mt-10 grid gap-2 t-sm t-mute">
+              <li className="inline-flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 shrink-0 text-[var(--accent-hi)]" />
+                Pagás por Mercado Pago a la cuenta del vendedor: nada de transferencias.
+              </li>
+              <li className="inline-flex items-center gap-2">
+                <Star className="h-4 w-4 shrink-0 text-[var(--accent-hi)]" />
+                Reputación armada solo con compras pagadas en la app.
+              </li>
+              <li className="inline-flex items-center gap-2">
+                <Package className="h-4 w-4 shrink-0 text-[var(--accent-hi)]" />
+                Seguimiento del envío y chat con el vendedor en cada compra.
+              </li>
+            </ul>
           </div>
 
           {showHeroStack ? (

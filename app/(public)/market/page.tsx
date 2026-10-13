@@ -4,7 +4,6 @@ import { listListings } from "@/lib/server/repository";
 import { getSellerReputationSummaries } from "@/lib/server/reputation/queries";
 import { getPokemonTypesForCardTitle } from "@/lib/server/pokeapi";
 import { isSupabaseConfigured } from "@/lib/server/supabase";
-import { getAuthenticatedUser } from "@/lib/server/auth";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Search, X } from "@/components/ui/icon";
@@ -60,7 +59,6 @@ export default async function MarketPage({
     sort?: string;
   }>;
 }) {
-  const user = await getAuthenticatedUser();
   const {
     tab = "all",
     q = "",
